@@ -5,6 +5,14 @@ export {
 
 export type { ArtifactReference, ArtifactStorage } from './artifact.js';
 
+export { validatePublicationEnvelope } from './publication-envelope.js';
+
+export type {
+  DeliveryDependency,
+  DeliveryIntent,
+  PublicationEnvelope,
+} from './publication-envelope.js';
+
 export {
   DELIVERY_STATES,
   canTransitionDelivery,
