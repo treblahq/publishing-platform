@@ -1,0 +1,15 @@
+{
+  "name": "@treblahq/publishing-adapter-r2",
+  "version": "0.0.0",
+  "type": "module",
+  "license": "MIT",
+  "exports": "./dist/activate.js",
+  "types": "./dist/activate.d.ts",
+  "files": ["dist"],
+  "dependencies": {
+    "@treblahq/publishing-contracts": "0.0.0"
+  },
+  "scripts": {
+    "build": "tsc --project tsconfig.json"
+  }
+}

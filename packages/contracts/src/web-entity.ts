@@ -59,7 +59,7 @@ export function validateWebEntityRevision(value: unknown): WebEntityRevision {
   }
   requireRecord(entity.content, 'Web entity content');
 
-  const expectedPath = canonicalPath(entity.kind as WebEntityKind, entity.id as string);
+  const expectedPath = canonicalPath(entity.kind as WebEntityKind, entity.id);
   if (entity.canonicalPath !== expectedPath) {
     throw new Error('Invalid web entity canonical path');
   }
