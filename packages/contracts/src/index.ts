@@ -36,3 +36,16 @@ export {
 } from './delivery.js';
 
 export type { DeliveryState } from './delivery.js';
+
+export {
+  MAX_WEB_ENTITY_BYTES,
+  WEB_ENTITY_KINDS,
+  WEB_ENTITY_STATUSES,
+  validateWebEntityRevision,
+} from './web-entity.js';
+
+export type {
+  WebEntityKind,
+  WebEntityRevision,
+  WebEntityStatus,
+} from './web-entity.js';
