@@ -14,10 +14,11 @@
   "scripts": {
     "build": "npm run build --workspaces --if-present",
     "lint": "eslint .",
+    "scan:secrets": "node tooling/secret-scan.mjs",
     "pretest": "npm run build --workspace @treblahq/publishing-contracts && npm run build --workspace @treblahq/publishing-adapter-kit",
     "test": "vitest run --passWithNoTests",
     "typecheck": "tsc --noEmit",
-    "validate": "npm run lint && npm run typecheck && npm test && npm run build"
+    "validate": "npm run scan:secrets && npm run lint && npm run typecheck && npm test && npm run build"
   },
   "devDependencies": {
     "@eslint/js": "^9.35.0",
