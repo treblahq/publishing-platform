@@ -50,6 +50,20 @@ export function validateAdapterManifest(value: unknown): AdapterManifest {
   return value as AdapterManifest;
 }
 
+export function assertAdapterSupports(
+  manifestValue: unknown,
+  channel: (typeof DELIVERY_PAYLOAD_TYPES)[number],
+  operation: string,
+): void {
+  const manifest = validateAdapterManifest(manifestValue);
+  if (!manifest.channels.includes(channel)) {
+    throw new Error(`Adapter ${manifest.name} does not support ${channel}`);
+  }
+  if (!manifest.operations.includes(operation)) {
+    throw new Error(`Adapter ${manifest.name} does not support operation ${operation}`);
+  }
+}
+
 function validateUniqueStrings(value: unknown, label: string): asserts value is string[] {
   if (!Array.isArray(value) || value.length === 0) throw new Error(`Adapter ${label}s are required`);
   if (value.some((item) => typeof item !== 'string' || item.length === 0)) {
