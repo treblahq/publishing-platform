@@ -1,6 +1,7 @@
 node_modules/
 dist/
 coverage/
+apps/worker/src/worker-configuration.d.ts
 .wrangler/
 .dev.vars
 *.local
