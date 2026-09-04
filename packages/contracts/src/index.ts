@@ -13,6 +13,10 @@ export {
 
 export type { DeliveryErrorCategory, DeliveryErrorOptions } from './errors.js';
 
+export { validateDeliveryReceipt } from './receipt.js';
+
+export type { DeliveryReceipt } from './receipt.js';
+
 export {
   DELIVERY_PAYLOAD_TYPES,
   MAX_ENVELOPE_BYTES,
