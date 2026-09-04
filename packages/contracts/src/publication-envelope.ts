@@ -16,6 +16,15 @@ export interface DeliveryIntent {
   providerOptions?: Record<string, unknown>;
 }
 
+export const DELIVERY_PAYLOAD_TYPES = [
+  'web.page',
+  'push.notification',
+  'social.post',
+  'video.upload',
+] as const;
+
+export const MAX_ENVELOPE_BYTES = 256 * 1024;
+
 export interface PublicationEnvelope {
   schemaVersion: 1;
   identity: {
@@ -63,6 +72,9 @@ const SECRET_KEY = /(?:authorization|credential|password|secret|token)/iu;
 
 export function validatePublicationEnvelope(value: unknown): PublicationEnvelope {
   rejectNonDataOrSecretFields(value);
+  if (new TextEncoder().encode(JSON.stringify(value)).byteLength > MAX_ENVELOPE_BYTES) {
+    throw new Error('Publication envelope is too large');
+  }
   const root = requireRecord(value, 'Publication envelope');
   requireOnlyKeys(root, ROOT_KEYS, 'Publication envelope');
 
@@ -115,6 +127,7 @@ function validateDelivery(value: unknown): DeliveryIntent {
   }
   const payload = requireRecord(delivery.payload, 'Delivery payload');
   requireNonEmptyString(payload.type, 'Delivery payload type');
+  validatePayload(payload);
 
   if (delivery.providerOptions !== undefined) {
     requireRecord(delivery.providerOptions, 'Provider options');
@@ -135,6 +148,34 @@ function validateDelivery(value: unknown): DeliveryIntent {
   }
 
   return value as DeliveryIntent;
+}
+
+function validatePayload(payload: Record<string, unknown>): void {
+  if (!DELIVERY_PAYLOAD_TYPES.includes(payload.type as (typeof DELIVERY_PAYLOAD_TYPES)[number])) {
+    throw new Error(`Unsupported delivery payload type: ${String(payload.type)}`);
+  }
+
+  switch (payload.type) {
+    case 'web.page':
+      requireNonEmptyString(payload.route, 'Web page route');
+      if (!payload.route.startsWith('/')) throw new Error('Web page route must be absolute');
+      break;
+    case 'push.notification': {
+      const audience = requireRecord(payload.audience, 'Push audience');
+      if (audience.type !== 'all-subscribers') throw new Error('Unsupported push audience');
+      requireNonEmptyString(payload.title, 'Push title');
+      requireNonEmptyString(payload.body, 'Push body');
+      optionalUrl(payload.url, 'Push URL');
+      break;
+    }
+    case 'social.post':
+      requireNonEmptyString(payload.text, 'Social post text');
+      break;
+    case 'video.upload':
+      requireNonEmptyString(payload.artifactId, 'Video artifact ID');
+      requireNonEmptyString(payload.title, 'Video title');
+      break;
+  }
 }
 
 function validateDependencies(deliveries: DeliveryIntent[]): void {

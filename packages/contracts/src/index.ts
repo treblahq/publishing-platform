@@ -5,7 +5,11 @@ export {
 
 export type { ArtifactReference, ArtifactStorage } from './artifact.js';
 
-export { validatePublicationEnvelope } from './publication-envelope.js';
+export {
+  DELIVERY_PAYLOAD_TYPES,
+  MAX_ENVELOPE_BYTES,
+  validatePublicationEnvelope,
+} from './publication-envelope.js';
 
 export type {
   DeliveryDependency,

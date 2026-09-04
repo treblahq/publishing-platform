@@ -90,4 +90,23 @@ describe('publication envelope', () => {
     delivery(value, 0).dependsOn = [{ deliveryId: 'push', state: 'verified' }];
     expect(() => validatePublicationEnvelope(value)).toThrow('Delivery dependency cycle');
   });
+
+  it('rejects an unsupported channel payload', () => {
+    const value = validEnvelope();
+    delivery(value, 0).payload.type = 'email.message';
+    expect(() => validatePublicationEnvelope(value)).toThrow('Unsupported delivery payload type');
+  });
+
+  it('rejects a push audience other than all subscribers in schema version 1', () => {
+    const value = validEnvelope();
+    const pushPayload = delivery(value, 1).payload;
+    Object.assign(pushPayload, { audience: { type: 'segment', id: 'paid-users' } });
+    expect(() => validatePublicationEnvelope(value)).toThrow('Unsupported push audience');
+  });
+
+  it('rejects an envelope larger than the configured intake limit', () => {
+    const value = validEnvelope();
+    value.canonical.summary = 'x'.repeat(256 * 1024);
+    expect(() => validatePublicationEnvelope(value)).toThrow('Publication envelope is too large');
+  });
 });
