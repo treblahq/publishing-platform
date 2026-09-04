@@ -6,6 +6,14 @@ export {
 export type { ArtifactReference, ArtifactStorage } from './artifact.js';
 
 export {
+  DELIVERY_ERROR_CATEGORIES,
+  DeliveryError,
+  redactErrorMessage,
+} from './errors.js';
+
+export type { DeliveryErrorCategory, DeliveryErrorOptions } from './errors.js';
+
+export {
   DELIVERY_PAYLOAD_TYPES,
   MAX_ENVELOPE_BYTES,
   validatePublicationEnvelope,
