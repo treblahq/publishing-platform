@@ -9,6 +9,7 @@ const maintenanceMigrationPath = resolve('apps/worker/migrations/0003_maintenanc
 const reservationMigrationPath = resolve('apps/worker/migrations/0004_capacity_reservations.sql');
 const webEntitiesMigrationPath = resolve('apps/worker/migrations/0005_web_entities.sql');
 const outboxClaimsMigrationPath = resolve('apps/worker/migrations/0006_outbox_claims.sql');
+const artifactUploadsMigrationPath = resolve('apps/worker/migrations/0007_artifact_uploads.sql');
 let database: DatabaseSync;
 
 beforeEach(() => {
@@ -18,6 +19,7 @@ beforeEach(() => {
   expect(existsSync(reservationMigrationPath)).toBe(true);
   expect(existsSync(webEntitiesMigrationPath)).toBe(true);
   expect(existsSync(outboxClaimsMigrationPath)).toBe(true);
+  expect(existsSync(artifactUploadsMigrationPath)).toBe(true);
   database = new DatabaseSync(':memory:');
   database.exec('PRAGMA foreign_keys = ON');
   database.exec(readFileSync(migrationPath, 'utf8'));
@@ -26,6 +28,7 @@ beforeEach(() => {
   database.exec(readFileSync(reservationMigrationPath, 'utf8'));
   database.exec(readFileSync(webEntitiesMigrationPath, 'utf8'));
   database.exec(readFileSync(outboxClaimsMigrationPath, 'utf8'));
+  database.exec(readFileSync(artifactUploadsMigrationPath, 'utf8'));
   database.prepare("INSERT INTO tenants (id, name, enabled) VALUES ('tenant-1', 'openings', 1)").run();
   database.prepare("INSERT INTO producer_clients (id, tenant_id, name, enabled, secret_hash) VALUES ('client-1', 'tenant-1', 'pipeline', 1, 'hash')").run();
 });
@@ -103,5 +106,39 @@ describe('authoritative D1 schema', () => {
     expect(() => reserve.run('reservation-2', 'tenant-2', 11)).toThrow();
     const row = database.prepare("SELECT COUNT(*) AS count FROM capacity_reservations WHERE tenant_id = 'tenant-2'").get() as { count: number };
     expect(row.count).toBe(0);
+  });
+
+  it('keeps one immutable upload identity per tenant locator', () => {
+    database.prepare(`INSERT INTO capacity_reservations
+      (id, tenant_id, resource, amount, state, expires_at)
+      VALUES ('upload-capacity-1', 'tenant-1', 'r2Bytes', 10, 'reserved', '2099-01-01T00:00:00.000Z')`).run();
+    const insert = database.prepare(`INSERT INTO artifact_uploads
+      (id, tenant_id, producer_client_id, locator, sha256, byte_size, media_type,
+       state, capacity_reservation_id, expires_at)
+      VALUES (?, 'tenant-1', 'client-1', 'temporary/tenant-1/file', ?, 10,
+       'image/png', 'uploading', 'upload-capacity-1', '2099-01-01T00:00:00.000Z')`);
+    insert.run('upload-1', 'a'.repeat(64));
+    expect(() => insert.run('upload-2', 'b'.repeat(64))).toThrow();
+  });
+
+  it('rejects upload reservations at the global R2 safety boundary', () => {
+    database.prepare("UPDATE capacity_limits SET reject_limit = 70, warning_limit = 60, internal_limit = 100, free_allowance = 143 WHERE resource = 'r2Bytes'").run();
+    database.prepare(`INSERT INTO capacity_reservations
+      (id, tenant_id, resource, amount, state, expires_at)
+      VALUES ('upload-capacity-1', 'tenant-1', 'r2Bytes', 60, 'reserved', '2099-01-01T00:00:00.000Z')`).run();
+    expect(() => database.prepare(`INSERT INTO capacity_reservations
+      (id, tenant_id, resource, amount, state, expires_at)
+      VALUES ('upload-capacity-2', 'tenant-1', 'r2Bytes', 10, 'reserved', '2099-01-01T00:00:00.000Z')`).run()).toThrow();
+  });
+
+  it('keeps every configured rejection boundary strictly below forty percent', () => {
+    const rows = database.prepare(`SELECT resource, free_allowance, reject_limit
+      FROM capacity_limits ORDER BY resource`).all() as Array<{
+        resource: string; free_allowance: number; reject_limit: number;
+      }>;
+    expect(rows.length).toBeGreaterThan(0);
+    for (const row of rows) {
+      expect(row.reject_limit * 100, row.resource).toBeLessThan(row.free_allowance * 40);
+    }
   });
 });

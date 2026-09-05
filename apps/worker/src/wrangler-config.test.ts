@@ -23,7 +23,7 @@ describe('wrangler environment isolation', () => {
     expect(config).toHaveProperty('env.production.vars.ENABLED_ADAPTERS', '');
     expect(config).toHaveProperty('env.staging.vars.ADAPTER_CONFIGS');
     expect(serialized).toContain('https://cloudflare-preview.openings-dev-web.pages.dev');
-    const freeBudgets = JSON.stringify({ d1Rows: 70000, queueOperations: 7000, r2Bytes: 7516192768 });
+    const freeBudgets = JSON.stringify({ d1Rows: 55000, queueOperations: 5500, r2Bytes: 5500000000 });
     expect(serialized.split(JSON.stringify(freeBudgets))).toHaveLength(4);
   });
 });
