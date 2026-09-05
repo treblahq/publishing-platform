@@ -20,7 +20,8 @@
         "queue": "publishing-delivery-local",
         "max_retries": 3,
         "dead_letter_queue": "publishing-delivery-dlq-local"
-      }
+      },
+      { "queue": "publishing-delivery-dlq-local", "max_retries": 3 }
     ]
   },
   "r2_buckets": [
@@ -51,7 +52,8 @@
             "queue": "publishing-delivery-staging",
             "max_retries": 3,
             "dead_letter_queue": "publishing-delivery-dlq-staging"
-          }
+          },
+          { "queue": "publishing-delivery-dlq-staging", "max_retries": 3 }
         ]
       },
       "r2_buckets": [
@@ -83,7 +85,8 @@
             "queue": "publishing-delivery-production",
             "max_retries": 3,
             "dead_letter_queue": "publishing-delivery-dlq-production"
-          }
+          },
+          { "queue": "publishing-delivery-dlq-production", "max_retries": 3 }
         ]
       },
       "r2_buckets": [

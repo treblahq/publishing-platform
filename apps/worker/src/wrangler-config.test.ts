@@ -11,6 +11,9 @@ describe('wrangler environment isolation', () => {
     expect(config).toHaveProperty('env.production');
     const serialized = JSON.stringify(config);
     expect(serialized).toContain('DELIVERY_DLQ');
+    expect(config).toHaveProperty('queues.consumers.1.queue', 'publishing-delivery-dlq-local');
+    expect(config).toHaveProperty('env.staging.queues.consumers.1.queue', 'publishing-delivery-dlq-staging');
+    expect(config).toHaveProperty('env.production.queues.consumers.1.queue', 'publishing-delivery-dlq-production');
     expect(serialized).toContain('ENABLED_ADAPTERS');
     expect(serialized).toContain('publishing-artifacts-local');
     expect(serialized).toContain('publishing-artifacts-staging');

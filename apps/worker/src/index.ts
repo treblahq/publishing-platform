@@ -22,6 +22,7 @@ import { reconcileDelivery } from './reconciliation/reconcile-delivery.js';
 import { refreshD1CapacityUsage } from './capacity/d1-refresh.js';
 import { isD1AdapterEnabled } from './delivery/d1-adapter-control.js';
 import { createD1FailureRecorder } from './delivery/d1-failure-recorder.js';
+import { handleD1DeadLetterBatch } from './delivery/d1-dead-letter.js';
 
 type Environment = Record<string, unknown>;
 type RouteHandler = (request: Request, environment: Environment) => Promise<Response>;
@@ -77,6 +78,10 @@ async function handleRuntimeAdmin(request: Request, environment: Environment): P
 async function consumeRuntimeBatch(batch: MessageBatch, environment: Environment): Promise<void> {
   const bindings = parseWorkerBindings(environment);
   const database = bindings.ledger as D1Database;
+  if (batch.queue.includes('dlq')) {
+    await handleD1DeadLetterBatch(database, batch.messages);
+    return;
+  }
   const configs = parseAdapterConfigs(environment.ADAPTER_CONFIGS);
   const oneSignal = createOneSignalAdapter({ send: sendOneSignal, now: () => new Date() });
   const pages = createPagesAdapter({ request: (url, init) => fetch(url, init) });
