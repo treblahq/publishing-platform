@@ -25,6 +25,8 @@ jobs:
           node-version: "24"
           cache: npm
       - run: npm ci
+      - name: Build canary dependencies
+        run: npm run build --workspace @treblahq/publishing-contracts && npm run build --workspace @treblahq/publishing-client
       - run: node tooling/r2-canary-staging.mjs
         env:
           STAGING_BASE_URL: https://publishing-platform-staging.business-850.workers.dev
