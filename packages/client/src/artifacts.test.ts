@@ -45,6 +45,22 @@ describe('local artifact preparation', () => {
     });
   });
 
+  it('builds a content-addressed locator from the computed hash', async () => {
+    const path = await fixture(new TextEncoder().encode('media'));
+
+    const artifact = await prepareArtifactReference({
+      id: 'campaign-video',
+      filePath: path,
+      storage: 'r2-temporary',
+      locator: (sha256) => `temporary/troco/campaign/${sha256}.mp4`,
+      mediaType: 'video/mp4',
+      allowedMediaTypes: ['video/mp4'],
+      maxByteSize: 1024,
+    });
+
+    expect(artifact.locator).toBe(`temporary/troco/campaign/${artifact.sha256}.mp4`);
+  });
+
   it('rejects empty files', async () => {
     const path = await fixture(new Uint8Array());
 

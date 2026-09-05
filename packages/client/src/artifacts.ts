@@ -13,7 +13,7 @@ export interface PrepareArtifactReferenceInput {
   id: string;
   filePath: string;
   storage: ArtifactStorage;
-  locator: string;
+  locator: string | ((sha256: string) => string);
   mediaType: string;
   allowedMediaTypes: readonly string[];
   maxByteSize: number;
@@ -38,13 +38,14 @@ export async function prepareArtifactReference(
 
   const hash = createHash('sha256');
   await pipeline(createReadStream(input.filePath), hash);
+  const sha256 = hash.digest('hex');
 
   return validateArtifactReference({
     id: input.id,
     storage: input.storage,
-    sha256: hash.digest('hex'),
+    sha256,
     byteSize: file.size,
     mediaType: input.mediaType,
-    locator: input.locator,
+    locator: typeof input.locator === 'function' ? input.locator(sha256) : input.locator,
   });
 }
