@@ -27,6 +27,7 @@ export interface DeliveryStateStore {
     state: DeliveryState,
     receipt?: DeliveryReceipt,
     dueAt?: string,
+    safeArtifactIds?: readonly string[],
   ): Promise<void>;
 }
 
@@ -95,7 +96,20 @@ export async function consumeDelivery(
       ? 'processing'
       : 'verified';
     if (attemptId !== undefined) await dependencies.attempts?.finish(delivery.tenant, attemptId);
-    await commit(dependencies, delivery, lease.token, state, receipt);
+    const safeArtifactIds: string[] = [];
+    if (resolution.adapter.artifactRetention !== undefined) {
+      for (const artifact of delivery.artifacts.filter((item) => item.storage === 'r2-temporary')) {
+        try {
+          const decision = await resolution.adapter.artifactRetention({
+            tenant: delivery.tenant, deliveryId: delivery.id, artifact, receipt,
+          });
+          if (decision.safeToDelete) safeArtifactIds.push(artifact.id);
+        } catch {
+          // A failed retention check keeps bytes safely retained without undoing a verified provider effect.
+        }
+      }
+    }
+    await commit(dependencies, delivery, lease.token, state, receipt, undefined, safeArtifactIds);
   } catch (error) {
     if (attemptId !== undefined) {
       const details = error instanceof DeliveryError
@@ -148,7 +162,8 @@ async function commit(
   state: DeliveryState,
   receipt?: DeliveryReceipt,
   dueAt?: string,
+  safeArtifactIds?: readonly string[],
 ): Promise<void> {
-  await dependencies.states.commit(delivery.tenant, delivery.id, token, state, receipt, dueAt);
+  await dependencies.states.commit(delivery.tenant, delivery.id, token, state, receipt, dueAt, safeArtifactIds);
   await dependencies.leases.commit(delivery.tenant, delivery.id, token);
 }

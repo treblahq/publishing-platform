@@ -24,14 +24,15 @@ describe('D1 delivery store', () => {
   });
 
   it('commits a fenced state and receipt in one D1 batch', async () => {
-    const batch = vi.fn().mockResolvedValue([{ meta: { changes: 1 } }, { meta: { changes: 1 } }]);
+    const batch = vi.fn().mockResolvedValue([{ meta: { changes: 1 } }, { meta: { changes: 1 } }, { meta: { changes: 1 } }]);
     const database = { prepare: vi.fn().mockImplementation(() => statement({})), batch };
     const store = createD1DeliveryStore(database, () => ({}), () => 'receipt-id');
     await store.commit('openings', 'delivery-1', 7, 'verified', {
       provider: 'push.onesignal', remoteId: 'remote-1', acceptedAt: '2026-09-04T12:00:00.000Z',
-    });
+    }, undefined, ['artifact-1']);
     expect(batch).toHaveBeenCalledOnce();
-    expect(database.prepare).toHaveBeenCalledTimes(2);
+    expect(database.prepare).toHaveBeenCalledTimes(3);
+    expect(database.prepare.mock.calls.map((call) => String(call[0])).join('\n')).toContain('safe_to_delete = 1');
   });
 
   it('rejects a stale fenced commit', async () => {

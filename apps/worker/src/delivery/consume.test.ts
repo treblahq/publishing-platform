@@ -15,8 +15,9 @@ const delivery = {
 function states() {
   const values: string[] = [];
   const dueDates: Array<string | undefined> = [];
-  return { values, dueDates, commit: (_tenant: string, _id: string, _token: number, state: string, _receipt?: unknown, dueAt?: string) => {
-    values.push(state); dueDates.push(dueAt); return Promise.resolve();
+  const safeArtifacts: string[][] = [];
+  return { values, dueDates, safeArtifacts, commit: (_tenant: string, _id: string, _token: number, state: string, _receipt?: unknown, dueAt?: string, safeIds: readonly string[] = []) => {
+    values.push(state); dueDates.push(dueAt); safeArtifacts.push([...safeIds]); return Promise.resolve();
   } };
 }
 
@@ -126,5 +127,19 @@ describe('duplicate-safe delivery consumer', () => {
       now: () => new Date('2026-09-04T15:00:00.000Z'),
     });
     expect(record).toHaveBeenCalledWith('openings', 'test.fake', 'credential', 'FAKE_CREDENTIAL');
+  });
+
+  it('records the adapter deletion gate only after verified delivery', async () => {
+    const adapter = createFakeAdapter();
+    const stateStore = states();
+    await consumer.consumeDelivery({
+      ...delivery,
+      artifacts: [{ id: 'artifact-1', storage: 'r2-temporary', sha256: 'a'.repeat(64), byteSize: 10, mediaType: 'image/png', locator: 'objects/a' }],
+    }, {
+      registry: createAdapterRegistry([adapter], ['test.fake']),
+      leases: createMemoryLeaseStore(), states: stateStore,
+      now: () => new Date('2026-09-04T15:00:00.000Z'),
+    });
+    expect(stateStore.safeArtifacts).toEqual([['artifact-1']]);
   });
 });

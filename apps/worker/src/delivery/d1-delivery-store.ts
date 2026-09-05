@@ -53,15 +53,24 @@ export function createD1DeliveryStore(
         state: row.state as DeliveryState,
       };
     },
-    commit: async (tenantId, deliveryId, fencingToken, state, receipt, dueAt) => {
+    commit: async (tenantId, deliveryId, fencingToken, state, receipt, dueAt, safeArtifactIds = []) => {
       const statements = [stateStatement(database, tenantId, deliveryId, fencingToken, state, dueAt)];
       if (receipt !== undefined) {
         statements.push(receiptStatement(database, tenantId, deliveryId, fencingToken, receipt, createId()));
+      }
+      for (const artifactId of safeArtifactIds) {
+        statements.push(safeArtifactStatement(database, tenantId, deliveryId, artifactId));
       }
       const [stateResult] = await database.batch(statements);
       if (stateResult?.meta?.changes !== 1) throw new Error('Cannot commit delivery with stale fencing token');
     },
   };
+}
+
+function safeArtifactStatement(database: Database, tenant: string, delivery: string, artifact: string) {
+  return database.prepare(`UPDATE artifact_references SET safe_to_delete = 1,
+    updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
+    WHERE tenant_id = ? AND delivery_id = ? AND artifact_id = ?`).bind(tenant, delivery, artifact);
 }
 
 function stateStatement(database: Database, tenant: string, id: string, token: number, state: DeliveryState, dueAt?: string) {

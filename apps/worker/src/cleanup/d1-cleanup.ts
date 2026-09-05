@@ -26,11 +26,11 @@ export async function runD1ArtifactCleanup(
       )
       AND (
         artifact.state = 'tombstoned'
-        OR (artifact.state = 'staged' AND artifact.created_at < datetime('now', '-24 hours'))
+        OR (artifact.state = 'staged' AND artifact.created_at < strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-24 hours'))
         OR NOT EXISTS (SELECT 1 FROM artifact_references AS reference WHERE reference.artifact_id = artifact.id)
         OR NOT EXISTS (SELECT 1 FROM artifact_references AS reference
           WHERE reference.artifact_id = artifact.id AND reference.safe_to_delete = 0)
-        OR (artifact.created_at < datetime('now', '-7 days')
+        OR (artifact.created_at < strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-7 days')
           AND EXISTS (SELECT 1 FROM artifact_references AS reference
             JOIN deliveries AS delivery ON delivery.id = reference.delivery_id
             WHERE reference.artifact_id = artifact.id
