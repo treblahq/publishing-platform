@@ -16,11 +16,11 @@
     "lint": "eslint .",
     "scan:secrets": "node tooling/secret-scan.mjs",
     "pretest": "npm run build --workspace @treblahq/publishing-contracts && npm run build --workspace @treblahq/publishing-adapter-kit && npm run build --workspace @treblahq/publishing-adapter-test",
-    "prevalidate": "npm run pretest && npm run types:worker && npm run build",
     "test": "NODE_NO_WARNINGS=1 vitest run --passWithNoTests",
+    "test:prepared": "NODE_NO_WARNINGS=1 vitest run --passWithNoTests",
     "types:worker": "wrangler types apps/worker/src/worker-configuration.d.ts --config apps/worker/wrangler.json",
     "typecheck": "tsc --noEmit",
-    "validate": "npm run scan:secrets && npm run lint && npm run types:worker && npm run typecheck && npm test && npm run build"
+    "validate": "npm run scan:secrets && npm run types:worker && npm run build && npm run lint && npm run typecheck && npm run test:prepared"
   },
   "devDependencies": {
     "@eslint/js": "^9.35.0",
