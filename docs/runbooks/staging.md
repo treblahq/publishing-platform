@@ -70,9 +70,13 @@ deploys the Worker. Only `web.pages` is enabled. Its fixed target is:
 The existing Hostinger deployment and all production publisher workflows remain
 unchanged. A failed staging run therefore has no production blast radius.
 
-After deployment, verify `/health/live`, send one signed sanitized shadow
-publication, and inspect it through the authenticated admin API. Do not enable
-OneSignal until its separate test-audience canary is configured and verified.
+The staging Worker is available at
+`https://publishing-platform-staging.business-850.workers.dev`. Every deployment
+verifies `/health/live` externally and ends with one signed, sanitized,
+Pages-only shadow publication that is inspected through the authenticated admin
+API. The same check can be run independently through the manual `Smoke staging`
+workflow. Do not enable OneSignal until its separate test-audience canary is
+configured and verified.
 
 For that later canary, configure `push.onesignal` with
 `audienceMode: "staging-segment"` and a non-empty `testSegment` created only for
