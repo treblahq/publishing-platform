@@ -6,7 +6,7 @@ import { authenticateRequest, type ProducerClientLoader } from './authenticate.j
 export interface PublicationRouteDependencies {
   now(): Date;
   loadClient: ProducerClientLoader;
-  capacity(tenant: string): Promise<IntakeCapacity>;
+  capacity(tenant: string, envelope: unknown): Promise<IntakeCapacity>;
   store: AtomicIntakeStore;
 }
 
@@ -48,7 +48,7 @@ export async function handlePublicationRequest(
       envelope,
       principal,
       store: dependencies.store,
-      capacity: await dependencies.capacity(principal.tenant),
+      capacity: await dependencies.capacity(principal.tenant, envelope),
     });
     if (result.outcome === 'retry-later') {
       return Response.json(result, {
