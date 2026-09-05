@@ -28,7 +28,7 @@
   ],
   "triggers": { "crons": ["*/15 * * * *", "7 * * * *", "23 */6 * * *"] },
   "vars": {
-    "CAPACITY_BUDGETS": "{\"d1Rows\":100000,\"queueOperations\":100000,\"r2Bytes\":1073741824}",
+    "CAPACITY_BUDGETS": "{\"d1Rows\":70000,\"queueOperations\":7000,\"r2Bytes\":7516192768}",
     "ENABLED_ADAPTERS": ""
   },
   "env": {
@@ -59,7 +59,7 @@
       ],
       "triggers": { "crons": ["*/15 * * * *", "7 * * * *", "23 */6 * * *"] },
       "vars": {
-        "CAPACITY_BUDGETS": "{\"d1Rows\":100000,\"queueOperations\":100000,\"r2Bytes\":1073741824}",
+        "CAPACITY_BUDGETS": "{\"d1Rows\":70000,\"queueOperations\":7000,\"r2Bytes\":7516192768}",
         "ENABLED_ADAPTERS": ""
       }
     },
@@ -90,7 +90,7 @@
       ],
       "triggers": { "crons": ["*/15 * * * *", "7 * * * *", "23 */6 * * *"] },
       "vars": {
-        "CAPACITY_BUDGETS": "{\"d1Rows\":100000,\"queueOperations\":100000,\"r2Bytes\":1073741824}",
+        "CAPACITY_BUDGETS": "{\"d1Rows\":70000,\"queueOperations\":7000,\"r2Bytes\":7516192768}",
         "ENABLED_ADAPTERS": ""
       }
     }

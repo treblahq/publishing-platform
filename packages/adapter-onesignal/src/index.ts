@@ -67,21 +67,26 @@ export function createOneSignalAdapter(
         });
       }
       const idempotencyKey = await deriveOneSignalIdempotencyKey(context.idempotencyKey);
-      const response = await dependencies.send({
-        url: 'https://api.onesignal.com/notifications',
-        headers: {
-          Authorization: `Key ${context.config.restApiKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: {
-          app_id: context.config.appId,
-          included_segments: ['Subscribed Users'],
-          headings: { en: context.payload.title },
-          contents: { en: context.payload.body },
-          ...(context.payload.url === undefined ? {} : { url: context.payload.url }),
-          idempotency_key: idempotencyKey,
-        },
-      });
+      let response: OneSignalResponse;
+      try {
+        response = await dependencies.send({
+          url: 'https://api.onesignal.com/notifications',
+          headers: {
+            Authorization: `Key ${context.config.restApiKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: {
+            app_id: context.config.appId,
+            included_segments: ['Subscribed Users'],
+            headings: { en: context.payload.title },
+            contents: { en: context.payload.body },
+            ...(context.payload.url === undefined ? {} : { url: context.payload.url }),
+            idempotency_key: idempotencyKey,
+          },
+        });
+      } catch {
+        throw providerError('ONESIGNAL_TRANSPORT', 'retryable', 'OneSignal transport failed before a response');
+      }
       return parseResponse(response, dependencies.now());
     },
     reconcile: () => Promise.resolve({ status: 'unknown' }),

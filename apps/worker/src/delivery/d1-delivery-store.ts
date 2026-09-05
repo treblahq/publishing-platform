@@ -54,7 +54,9 @@ export function createD1DeliveryStore(
     },
     commit: async (tenantId, deliveryId, fencingToken, state, receipt) => {
       const statements = [stateStatement(database, tenantId, deliveryId, fencingToken, state)];
-      if (receipt !== undefined) statements.push(receiptStatement(database, tenantId, deliveryId, receipt, createId()));
+      if (receipt !== undefined) {
+        statements.push(receiptStatement(database, tenantId, deliveryId, fencingToken, receipt, createId()));
+      }
       const [stateResult] = await database.batch(statements);
       if (stateResult?.meta?.changes !== 1) throw new Error('Cannot commit delivery with stale fencing token');
     },
@@ -68,10 +70,20 @@ function stateStatement(database: Database, tenant: string, id: string, token: n
     WHERE tenant_id = ? AND id = ? AND lease_token = ?`).bind(state, state, tenant, id, token);
 }
 
-function receiptStatement(database: Database, tenant: string, delivery: string, receipt: DeliveryReceipt, id: string) {
+function receiptStatement(
+  database: Database,
+  tenant: string,
+  delivery: string,
+  token: number,
+  receipt: DeliveryReceipt,
+  id: string,
+) {
   return database.prepare(`INSERT OR IGNORE INTO receipts
-    (id, tenant_id, delivery_id, provider, remote_id, receipt_json) VALUES (?, ?, ?, ?, ?, ?)`)
-    .bind(id, tenant, delivery, receipt.provider, receipt.remoteId, JSON.stringify(receipt));
+    (id, tenant_id, delivery_id, provider, remote_id, receipt_json)
+    SELECT ?, ?, ?, ?, ?, ? WHERE EXISTS (
+      SELECT 1 FROM deliveries WHERE tenant_id = ? AND id = ? AND lease_token = ?
+    )`)
+    .bind(id, tenant, delivery, receipt.provider, receipt.remoteId, JSON.stringify(receipt), tenant, delivery, token);
 }
 
 function deliveryRow(value: unknown) {

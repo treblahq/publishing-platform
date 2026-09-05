@@ -94,4 +94,15 @@ describe('OneSignal adapter', () => {
     await expect(adapter.deliver(context)).rejects.toMatchObject({ category: 'ambiguous' });
     await expect(adapter.deliver(context)).rejects.not.toThrow('private-value');
   });
+
+  it('classifies transport failures before a response as retryable', async () => {
+    const adapter = createOneSignalAdapter({
+      send: () => Promise.reject(new Error('socket reset with private-value')),
+      now: () => now,
+    });
+    await expect(adapter.deliver(context)).rejects.toMatchObject({
+      category: 'retryable', code: 'ONESIGNAL_TRANSPORT',
+    });
+    await expect(adapter.deliver(context)).rejects.not.toThrow('private-value');
+  });
 });

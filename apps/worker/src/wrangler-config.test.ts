@@ -16,5 +16,7 @@ describe('wrangler environment isolation', () => {
     expect(serialized).toContain('publishing-artifacts-staging');
     expect(serialized).toContain('publishing-artifacts-production');
     expect(serialized.match(/"ENABLED_ADAPTERS":""/gu)).toHaveLength(3);
+    const freeBudgets = JSON.stringify({ d1Rows: 70000, queueOperations: 7000, r2Bytes: 7516192768 });
+    expect(serialized.split(JSON.stringify(freeBudgets))).toHaveLength(4);
   });
 });

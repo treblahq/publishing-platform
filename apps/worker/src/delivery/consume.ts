@@ -3,6 +3,7 @@ import { DeliveryError, validateDeliveryReceipt } from '@treblahq/publishing-con
 
 import type { AdapterRegistry } from '../registry.js';
 import type { DeliveryLeaseStore } from './lease.js';
+import type { DeliveryAttemptStore } from './d1-attempt-store.js';
 
 export interface DeliveryWork {
   tenant: string;
@@ -31,6 +32,7 @@ export interface ConsumerDependencies {
   states: DeliveryStateStore;
   now(): Date;
   leaseDurationMs?: number;
+  attempts?: DeliveryAttemptStore;
 }
 
 export async function consumeDelivery(
@@ -60,6 +62,7 @@ export async function consumeDelivery(
     payload: delivery.payload,
     artifacts: delivery.artifacts,
   };
+  const attemptId = await dependencies.attempts?.start(delivery.tenant, delivery.id, lease.token);
 
   try {
     const validation = await resolution.adapter.validate(context);
@@ -71,8 +74,15 @@ export async function consumeDelivery(
     const state = resolution.adapter.manifest.capabilities.asynchronousIngestion
       ? 'processing'
       : 'verified';
+    if (attemptId !== undefined) await dependencies.attempts?.finish(delivery.tenant, attemptId);
     await commit(dependencies, delivery, lease.token, state, receipt);
   } catch (error) {
+    if (attemptId !== undefined) {
+      const details = error instanceof DeliveryError
+        ? { category: error.category, code: error.code }
+        : { category: 'internal', code: 'UNCLASSIFIED' };
+      await dependencies.attempts?.finish(delivery.tenant, attemptId, details.category, details.code);
+    }
     await commit(dependencies, delivery, lease.token, classifyFailure(error));
   }
 }

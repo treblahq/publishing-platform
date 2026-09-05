@@ -27,4 +27,10 @@ describe('Cloudflare Pages verification adapter', () => {
     const adapter = createPagesAdapter({ request: () => Promise.resolve(new Response('', { status: 503 })) });
     await expect(adapter.deliver(context)).rejects.toMatchObject({ category: 'retryable' });
   });
+
+  it('classifies a transport failure as retryable without exposing its details', async () => {
+    const adapter = createPagesAdapter({ request: () => Promise.reject(new Error('private origin detail')) });
+    await expect(adapter.deliver(context)).rejects.toMatchObject({ category: 'retryable' });
+    await expect(adapter.deliver(context)).rejects.not.toThrow('private origin detail');
+  });
 });

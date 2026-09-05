@@ -24,14 +24,14 @@ export function createPagesAdapter(dependencies: Dependencies): DeliveryAdapter<
       const result = validate(config, payload);
       if (!result.valid) throw new DeliveryError({ code: 'PAGES_INVALID_ROUTE', category: 'terminal', message: result.issues.join('; ') });
       const url = pageUrl(config, payload);
-      const response = await dependencies.request(url, { method: 'GET', redirect: 'follow' });
+      const response = await requestPage(dependencies, url);
       if (!response.ok) throw new DeliveryError({
         code: 'PAGES_NOT_READY', category: 'retryable', message: 'Pages route is not ready',
       });
       return { provider: 'web.pages', remoteId: url, remoteUrl: url, acceptedAt: now().toISOString() };
     },
     reconcile: async ({ config, payload }) => {
-      const response = await dependencies.request(pageUrl(config, payload), { method: 'GET', redirect: 'follow' });
+      const response = await requestPage(dependencies, pageUrl(config, payload));
       if (response.status === 404) return { status: 'absent' };
       if (!response.ok) return { status: 'unknown' };
       const url = pageUrl(config, payload);
@@ -41,6 +41,14 @@ export function createPagesAdapter(dependencies: Dependencies): DeliveryAdapter<
       };
     },
   };
+}
+
+async function requestPage(dependencies: Dependencies, url: string): Promise<Response> {
+  try {
+    return await dependencies.request(url, { method: 'GET', redirect: 'follow' });
+  } catch {
+    throw new DeliveryError({ code: 'PAGES_TRANSPORT', category: 'retryable', message: 'Pages verification transport failed' });
+  }
 }
 
 function validate(config: PagesConfig, payload: Record<string, unknown>) {
