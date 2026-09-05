@@ -14,6 +14,7 @@
   "scripts": {
     "build": "npm run build --workspace @treblahq/publishing-contracts && npm run build --workspace @treblahq/publishing-adapter-kit && npm run build --workspaces --if-present",
     "lint": "eslint .",
+    "rehearse:local": "node tooling/rehearse-local.mjs",
     "scan:secrets": "node tooling/secret-scan.mjs",
     "pretest": "npm run build --workspace @treblahq/publishing-contracts && npm run build --workspace @treblahq/publishing-adapter-kit && npm run build --workspace @treblahq/publishing-adapter-test",
     "test": "NODE_NO_WARNINGS=1 vitest run --passWithNoTests",
