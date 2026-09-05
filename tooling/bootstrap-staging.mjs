@@ -17,6 +17,9 @@ export function createStagingBootstrapSql(clientId, secret, now = new Date()) {
 INSERT INTO producer_clients (id, tenant_id, name, enabled, secret_hash)
   VALUES ('${clientId}', 'openings', 'Openings preview pipeline', 1, '${secretHash}')
   ON CONFLICT(id) DO UPDATE SET secret_hash = excluded.secret_hash, enabled = 1;
+INSERT INTO adapter_controls (tenant_id, adapter, enabled, reason)
+  VALUES ('openings', 'push.onesignal', 0, 'Staging push remains paused outside an explicit canary')
+  ON CONFLICT(tenant_id, adapter) DO UPDATE SET enabled = 0, reason = excluded.reason;
 ${usage}
 `;
 }

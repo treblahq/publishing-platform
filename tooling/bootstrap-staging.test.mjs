@@ -9,6 +9,8 @@ describe('staging D1 bootstrap', () => {
     expect(sql).not.toContain(secret);
     expect(sql).toContain(createHash('sha256').update(secret).digest('hex'));
     expect(sql).toContain("'openings-preview'");
+    expect(sql).toContain("VALUES ('openings', 'push.onesignal', 0");
+    expect(sql).toContain('enabled = 0');
     expect(sql.match(/INSERT INTO capacity_usage/gu)).toHaveLength(3);
     expect(sql).not.toMatch(/\bBEGIN\b/u);
     expect(sql).not.toMatch(/\bCOMMIT\b/u);
