@@ -5,6 +5,7 @@ export { createFileOutbox } from './outbox.js';
 export { prepareArtifactReference } from './artifacts.js';
 export { createLocalProducer } from './producer.js';
 export { createArtifactUploader } from './upload.js';
+export { stagePlatformHandoff, uploadPlatformHandoff } from './handoff.js';
 
 export type { CanonicalRequestInput } from './sign.js';
 export type { SignedHeadersInput } from './headers.js';
@@ -26,3 +27,4 @@ export type {
   ArtifactUploaderOptions,
   ArtifactUploadResult,
 } from './upload.js';
+export type { PlatformHandoff, PlatformUploadOutcome } from './handoff.js';
