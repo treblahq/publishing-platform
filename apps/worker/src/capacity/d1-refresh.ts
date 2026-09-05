@@ -23,9 +23,14 @@ export async function refreshD1CapacityUsage(
   const measuredAt = now().toISOString();
   const windowStart = `${measuredAt.slice(0, 10)}T00:00:00.000Z`;
   for (const tenant of tenants) {
-    const storage = await database.prepare(`SELECT COALESCE(SUM(byte_size), 0) AS used FROM artifacts
-      WHERE tenant_id = ? AND storage IN ('r2-temporary', 'r2-live') AND deleted_at IS NULL`)
-      .bind(tenant).first();
+    const storage = await database.prepare(`SELECT COALESCE(SUM(byte_size), 0) AS used FROM (
+      SELECT byte_size FROM artifacts
+        WHERE tenant_id = ? AND storage IN ('r2-temporary', 'r2-live') AND deleted_at IS NULL
+      UNION ALL
+      SELECT byte_size FROM artifact_uploads
+        WHERE tenant_id = ? AND state = 'available'
+    )`)
+      .bind(tenant, tenant).first();
     const r2Bytes = usageValue(storage);
     await database.batch([
       refreshStatement(database, tenant, 'd1Rows', windowStart, 0, measuredAt, false),

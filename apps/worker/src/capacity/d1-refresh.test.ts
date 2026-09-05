@@ -21,7 +21,9 @@ describe('capacity measurement refresh', () => {
 
     await expect(refreshD1CapacityUsage(database, 25, () => new Date('2026-09-04T15:00:00.000Z'))).resolves.toBe(1);
     expect(tenantStatement.bind).toHaveBeenCalledWith(25);
-    expect(storageStatement.bind).toHaveBeenCalledWith('openings');
+    expect(storageStatement.bind).toHaveBeenCalledWith('openings', 'openings');
+    expect(database.prepare.mock.calls.map((call) => String(call[0])).join('\n')).toContain("FROM artifact_uploads");
+    expect(database.prepare.mock.calls.map((call) => String(call[0])).join('\n')).toContain("state = 'available'");
     expect(database.batch).toHaveBeenCalledOnce();
     const bound = capturedBatch.map((item) => item.bindings);
     expect(bound).toContainEqual(['openings', 'r2Bytes', '2026-09-04T00:00:00.000Z', 2048, '2026-09-04T15:00:00.000Z']);

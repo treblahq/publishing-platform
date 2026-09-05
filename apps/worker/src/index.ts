@@ -17,7 +17,7 @@ import { handleDeliveryBatch } from './delivery/queue-handler.js';
 import { createD1AttemptStore } from './delivery/d1-attempt-store.js';
 import { handleAdminRequest } from './admin/routes.js';
 import { createD1AdminDependencies } from './admin/d1-admin.js';
-import { runD1ArtifactCleanup } from './cleanup/d1-cleanup.js';
+import { runD1ArtifactCleanup, runD1UploadCleanup } from './cleanup/d1-cleanup.js';
 import { runD1Reconciliation } from './reconciliation/d1-reconciliation.js';
 import { reconcileDelivery } from './reconciliation/reconcile-delivery.js';
 import { refreshD1CapacityUsage } from './capacity/d1-refresh.js';
@@ -163,6 +163,7 @@ async function dispatchRuntimeOutbox(environment: Environment): Promise<number> 
   await refreshD1CapacityUsage(database, 25);
   await reconcileRuntimeDeliveries(environment, database, bindings.enabledAdapters);
   await enqueueDueRetries(database, 25);
+  await runD1UploadCleanup(database, bindings.artifacts as R2Bucket, 25);
   await runD1ArtifactCleanup(database, bindings.artifacts as R2Bucket, 25);
   return dispatchOutbox(createD1OutboxStore(database), {
     send: async (message) => { await queue.send(message); },

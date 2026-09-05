@@ -31,7 +31,7 @@ const artifact = await prepareArtifactReference({
   id: 'social-video',
   filePath: '/absolute/product-owned/output/video.mp4',
   storage: 'r2-temporary',
-  locator: 'temporary/troco/campaign-id/video.mp4',
+  locator: (sha256) => `temporary/troco/campaign-id/${sha256}.mp4`,
   mediaType: 'video/mp4',
   allowedMediaTypes: ['video/mp4'],
   maxByteSize: 50 * 1024 * 1024,
@@ -72,9 +72,47 @@ Submission is a separate, explicit operation. Construct a
 `PUBLISHING_CLIENT_ID`, and `PUBLISHING_CLIENT_SECRET`, then pass it to
 `createLocalProducer` before calling `drain`.
 
-For an `r2-temporary` artifact, do not drain its envelope until a future
-authenticated upload flow has uploaded and verified the exact hash, size, and
-locator. The current local preparation API intentionally does not upload.
+For each `r2-temporary` artifact, construct `createArtifactUploader` with the
+same environment-provided endpoint and credentials. Upload the local file
+before draining its envelope. The uploader verifies that the local size still
+matches the prepared reference, signs the already-computed hash, and streams
+the file without loading it all into memory.
+
+The required order is:
+
+1. Prepare and durably save the envelope locally.
+2. Upload every temporary artifact using its exact content-addressed locator.
+3. Retry only results marked `retry-later`; stop on conflicts or malformed
+   responses.
+4. Drain the envelope only after every upload is `available`.
+5. Keep the local media until the platform accepts the envelope and the local
+   accepted record is durable.
+
+```ts
+import { createArtifactUploader } from '@treblahq/publishing-client';
+
+const uploader = createArtifactUploader({
+  baseUrl: process.env.PUBLISHING_BASE_URL!,
+  clientId: process.env.PUBLISHING_CLIENT_ID!,
+  secret: process.env.PUBLISHING_CLIENT_SECRET!,
+});
+
+const uploaded = await uploader.upload({
+  tenant: 'troco',
+  reference: artifact,
+  filePath: '/absolute/product-owned/output/video.mp4',
+});
+if (uploaded.outcome !== 'available') {
+  // Leave the local outbox entry and source file intact for a later bounded retry.
+  return;
+}
+await producer.drain({ limit: 25 });
+```
+
+The Worker independently verifies the checksum, byte size, media type, tenant,
+and locator in R2 before publication intake can claim the upload. Repeating an
+identical upload or envelope is safe. Reusing a locator with different metadata
+is rejected.
 
 The drain operation is bounded to at most 100 entries per call:
 
@@ -88,8 +126,8 @@ network write structurally unavailable during preparation.
 
 ## Temporary media ownership
 
-The product owns the original bytes while work is local. After the future
-upload flow verifies an R2 object, the platform may retain that temporary copy
+The product owns the original bytes while work is local. After the upload flow
+verifies an R2 object, the platform may retain that temporary copy
 only until every referencing provider confirms ingestion. An API acceptance
 response is not sufficient when a provider downloads or processes media
 asynchronously.
@@ -97,6 +135,11 @@ asynchronously.
 After safe deletion, D1 keeps only metadata and delivery receipts. The product
 may remove its local generated file according to its own retention policy once
 platform acceptance and recovery requirements are satisfied.
+
+Uploads that fail or remain unclaimed past their 24-hour expiry are collected
+in bounded scheduled batches. Claimed uploads and artifacts with ambiguous or
+active provider references remain protected. Temporary bytes are counted once:
+as an available upload before intake, then as an artifact after intake.
 
 ## Product adoption order
 
