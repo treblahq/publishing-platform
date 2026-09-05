@@ -31,4 +31,11 @@ describe('worker HTTP router', () => {
     expect(waitUntil).toHaveBeenCalledOnce();
     await expect(waitUntil.mock.calls[0]?.[0]).resolves.toBe(2);
   });
+
+  it('routes queue batches through the durable consumer', async () => {
+    const queueHandler = vi.fn().mockResolvedValue(undefined);
+    const batch = { messages: [] } as unknown as MessageBatch;
+    await createWorker({ queueHandler }).queue(batch, { marker: true });
+    expect(queueHandler).toHaveBeenCalledWith(batch, { marker: true });
+  });
 });

@@ -5,6 +5,12 @@ import { createD1IntakeStore } from './intake/d1-intake-store.js';
 import { handlePublicationRequest } from './intake/routes.js';
 import { createD1OutboxStore } from './coordinator/d1-outbox-store.js';
 import { dispatchOutbox } from './coordinator/dispatch-outbox.js';
+import { createOneSignalAdapter } from '@treblahq/publishing-adapter-onesignal';
+import { createAdapterRegistry } from './registry.js';
+import { acquireD1Lease } from './delivery/d1-lease.js';
+import { createD1DeliveryStore } from './delivery/d1-delivery-store.js';
+import { consumeDelivery } from './delivery/consume.js';
+import { handleDeliveryBatch } from './delivery/queue-handler.js';
 
 type Environment = Record<string, unknown>;
 type RouteHandler = (request: Request, environment: Environment) => Promise<Response>;
@@ -12,6 +18,7 @@ type RouteHandler = (request: Request, environment: Environment) => Promise<Resp
 interface WorkerOverrides {
   publicationHandler?: RouteHandler;
   scheduledHandler?: (environment: Environment) => Promise<number>;
+  queueHandler?: (batch: MessageBatch, environment: Environment) => Promise<void>;
 }
 
 export function createWorker(overrides: WorkerOverrides = {}) {
@@ -33,7 +40,42 @@ export function createWorker(overrides: WorkerOverrides = {}) {
     ): void {
       context.waitUntil((overrides.scheduledHandler ?? dispatchRuntimeOutbox)(environment));
     },
+    async queue(batch: MessageBatch, environment: Environment): Promise<void> {
+      await (overrides.queueHandler ?? consumeRuntimeBatch)(batch, environment);
+    },
   };
+}
+
+async function consumeRuntimeBatch(batch: MessageBatch, environment: Environment): Promise<void> {
+  const bindings = parseWorkerBindings(environment);
+  const database = bindings.ledger as D1Database;
+  const configs = parseAdapterConfigs(environment.ADAPTER_CONFIGS);
+  const oneSignal = createOneSignalAdapter({ send: sendOneSignal, now: () => new Date() });
+  const registry = createAdapterRegistry([oneSignal], bindings.enabledAdapters);
+  const store = createD1DeliveryStore(database, (adapter, tenant) => configs[tenant]?.[adapter] ?? {});
+  await handleDeliveryBatch(batch.messages, async ({ tenantId, deliveryId }) => {
+    const delivery = await store.load(tenantId, deliveryId);
+    if (delivery === null) throw new Error('Delivery not found');
+    await consumeDelivery(delivery, {
+      registry,
+      leases: {
+        acquire: (tenant, id, now, duration) => acquireD1Lease(database, tenant, id, now, duration),
+        commit: () => Promise.resolve(),
+      },
+      states: store,
+      now: () => new Date(),
+    });
+  });
+}
+
+async function sendOneSignal(request: { url: string; headers: Readonly<Record<string, string>>; body: Readonly<Record<string, unknown>> }) {
+  const response = await fetch(request.url, {
+    method: 'POST', headers: request.headers, body: JSON.stringify(request.body),
+  });
+  let body: unknown;
+  try { body = await response.json(); } catch { body = undefined; }
+  const retryAfter = response.headers.get('retry-after');
+  return { status: response.status, body, ...(retryAfter === null ? {} : { retryAfter }) };
 }
 
 async function dispatchRuntimeOutbox(environment: Environment): Promise<number> {
@@ -70,6 +112,13 @@ function parseProducerSecrets(value: unknown): Readonly<Record<string, string>> 
     throw new Error('Invalid producer secret');
   }
   return Object.fromEntries(entries) as Record<string, string>;
+}
+
+function parseAdapterConfigs(value: unknown): Record<string, Record<string, unknown>> {
+  if (typeof value !== 'string' || value.length === 0) return {};
+  const parsed: unknown = JSON.parse(value);
+  if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) throw new Error('Invalid adapter configs');
+  return parsed as Record<string, Record<string, unknown>>;
 }
 
 export default createWorker();
