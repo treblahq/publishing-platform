@@ -19,6 +19,7 @@ import { createD1AdminDependencies } from './admin/d1-admin.js';
 import { runD1ArtifactCleanup } from './cleanup/d1-cleanup.js';
 import { runD1Reconciliation } from './reconciliation/d1-reconciliation.js';
 import { reconcileDelivery } from './reconciliation/reconcile-delivery.js';
+import { refreshD1CapacityUsage } from './capacity/d1-refresh.js';
 
 type Environment = Record<string, unknown>;
 type RouteHandler = (request: Request, environment: Environment) => Promise<Response>;
@@ -109,6 +110,7 @@ async function dispatchRuntimeOutbox(environment: Environment): Promise<number> 
   const bindings = parseWorkerBindings(environment);
   const database = bindings.ledger as D1Database;
   const queue = bindings.deliveryQueue as Queue;
+  await refreshD1CapacityUsage(database, 25);
   await reconcileRuntimeDeliveries(environment, database, bindings.enabledAdapters);
   await enqueueDueRetries(database, 25);
   await runD1ArtifactCleanup(database, bindings.artifacts as R2Bucket, 25);
