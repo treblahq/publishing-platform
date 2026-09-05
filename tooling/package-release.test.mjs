@@ -30,6 +30,7 @@ describe('public package release metadata', () => {
 
       expect(packageJson.private).not.toBe(true);
       expect(packageJson.license).toBe('MIT');
+      expect(packageJson.engines.node).toBe('>=20');
       expect(packageJson.publishConfig).toEqual({
         access: 'public',
         registry: 'https://registry.npmjs.org/',

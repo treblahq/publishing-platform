@@ -13,7 +13,7 @@
     "registry": "https://registry.npmjs.org/"
   },
   "engines": {
-    "node": ">=24"
+    "node": ">=20"
   },
   "exports": "./dist/index.js",
   "types": "./dist/index.d.ts",
