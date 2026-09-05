@@ -1,6 +1,7 @@
 import type { PublicationEnvelope } from '@treblahq/publishing-contracts';
 
 import type { AtomicAcceptance, AtomicIntakeStore } from './accept-publication.js';
+import { estimateCapacityRequests } from '../capacity/d1-capacity.js';
 
 export interface D1IntakeStatement {
   bind(...values: unknown[]): D1IntakeStatement;
@@ -103,6 +104,27 @@ function buildStatements(
       VALUES (?, ?, ?, 'delivery.ready', ?, ?)`)
       .bind(createStableChildId(ids.publicationId, `outbox:${delivery.id}`), principal.tenant,
         deliveryId, JSON.stringify({ deliveryId }), acceptedAt));
+  }
+
+  const reservedUntil = new Date(Date.parse(acceptedAt) + 30 * 24 * 60 * 60 * 1_000).toISOString();
+  const usageWindow = `${acceptedAt.slice(0, 10)}T00:00:00.000Z`;
+  const capacity = estimateCapacityRequests(envelope);
+  for (const resource of ['d1Rows', 'queueOperations', 'r2Bytes'] as const) {
+    const amount = capacity[resource];
+    if (amount === 0) continue;
+    statements.push(database.prepare(`INSERT INTO capacity_reservations
+      (id, tenant_id, publication_id, resource, amount, state, expires_at)
+      VALUES (?, ?, ?, ?, ?, 'reserved', ?)`)
+      .bind(createStableChildId(ids.publicationId, `capacity:${resource}`), principal.tenant,
+        ids.publicationId, resource, amount, reservedUntil));
+    statements.push(database.prepare(`INSERT INTO capacity_usage
+      (tenant_id, resource, window_start, used, measured_at) VALUES (?, ?, ?, ?, ?)
+      ON CONFLICT(tenant_id, resource, window_start) DO UPDATE SET
+        used = capacity_usage.used + excluded.used, measured_at = excluded.measured_at`)
+      .bind(principal.tenant, resource, usageWindow, amount, acceptedAt));
+    statements.push(database.prepare(`UPDATE capacity_reservations SET state = 'consumed', updated_at = ?
+      WHERE id = ? AND tenant_id = ? AND state = 'reserved'`)
+      .bind(acceptedAt, createStableChildId(ids.publicationId, `capacity:${resource}`), principal.tenant));
   }
 
   statements.push(database.prepare(`INSERT INTO audit_events

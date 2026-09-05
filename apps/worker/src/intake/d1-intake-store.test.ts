@@ -45,9 +45,14 @@ describe('D1 atomic intake store', () => {
     await expect(store.acceptAtomic({ envelope, principal: { tenant: 'openings', clientId: 'client-1', nonce: 'nonce-1' } })).resolves.toBe('id-1');
 
     const sql = database.batches[0]?.map((statement) => statement.sql).join('\n') ?? '';
-    for (const table of ['nonces', 'publications', 'source_leases', 'deliveries', 'delivery_dependencies', 'artifacts', 'artifact_references', 'audit_events', 'outbox']) {
+    for (const table of ['nonces', 'publications', 'source_leases', 'deliveries', 'delivery_dependencies', 'artifacts', 'artifact_references', 'capacity_reservations', 'capacity_usage', 'audit_events', 'outbox']) {
       expect(sql).toContain(`INTO ${table}`);
     }
+    const reservations = database.batches[0]?.filter((statement) => statement.sql.includes('INTO capacity_reservations')) ?? [];
+    expect(reservations).toHaveLength(2);
+    expect(reservations.every((statement) => statement.bindings.includes('openings'))).toBe(true);
+    expect(reservations.every((statement) => statement.bindings.includes('id-1'))).toBe(true);
+    expect(sql).toContain("state = 'consumed'");
     expect(database.batches).toHaveLength(1);
   });
 });

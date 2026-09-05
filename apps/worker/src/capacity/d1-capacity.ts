@@ -23,7 +23,7 @@ export function createD1CapacityChecker(
   now: () => Date = () => new Date(),
 ) {
   return async (tenant: string, envelope: unknown): Promise<IntakeCapacity> => {
-    const requests = estimateRequests(envelope);
+    const requests = estimateCapacityRequests(envelope);
     const currentTime = now();
     for (const resource of ['d1Rows', 'queueOperations', 'r2Bytes'] as const) {
       const value = await database.prepare(`
@@ -51,7 +51,7 @@ export function createD1CapacityChecker(
   };
 }
 
-function estimateRequests(value: unknown): CapacityBudgets {
+export function estimateCapacityRequests(value: unknown): CapacityBudgets {
   if (typeof value !== 'object' || value === null || Array.isArray(value)) {
     return { d1Rows: Number.MAX_SAFE_INTEGER, queueOperations: Number.MAX_SAFE_INTEGER, r2Bytes: Number.MAX_SAFE_INTEGER };
   }
@@ -66,7 +66,7 @@ function estimateRequests(value: unknown): CapacityBudgets {
       : total;
   }, 0);
   return {
-    d1Rows: 4 + deliveries.length * (3 + artifacts.length) + artifacts.length,
+    d1Rows: 10 + deliveries.length * (3 + artifacts.length) + artifacts.length,
     queueOperations: deliveries.length * 3,
     r2Bytes,
   };

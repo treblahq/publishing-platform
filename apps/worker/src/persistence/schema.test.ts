@@ -6,17 +6,20 @@ import { beforeEach, describe, expect, it } from 'vitest';
 const migrationPath = resolve('apps/worker/migrations/0001_core.sql');
 const capacityMigrationPath = resolve('apps/worker/migrations/0002_capacity.sql');
 const maintenanceMigrationPath = resolve('apps/worker/migrations/0003_maintenance.sql');
+const reservationMigrationPath = resolve('apps/worker/migrations/0004_capacity_reservations.sql');
 let database: DatabaseSync;
 
 beforeEach(() => {
   expect(existsSync(migrationPath)).toBe(true);
   expect(existsSync(capacityMigrationPath)).toBe(true);
   expect(existsSync(maintenanceMigrationPath)).toBe(true);
+  expect(existsSync(reservationMigrationPath)).toBe(true);
   database = new DatabaseSync(':memory:');
   database.exec('PRAGMA foreign_keys = ON');
   database.exec(readFileSync(migrationPath, 'utf8'));
   database.exec(readFileSync(capacityMigrationPath, 'utf8'));
   database.exec(readFileSync(maintenanceMigrationPath, 'utf8'));
+  database.exec(readFileSync(reservationMigrationPath, 'utf8'));
   database.prepare("INSERT INTO tenants (id, name, enabled) VALUES ('tenant-1', 'openings', 1)").run();
   database.prepare("INSERT INTO producer_clients (id, tenant_id, name, enabled, secret_hash) VALUES ('client-1', 'tenant-1', 'pipeline', 1, 'hash')").run();
 });
@@ -83,5 +86,16 @@ describe('authoritative D1 schema', () => {
     expect(() => {
       database.prepare("INSERT INTO capacity_limits (resource, free_allowance, internal_limit, warning_limit, reject_limit) VALUES ('r2_bytes', 1000, 700, 600, 700)").run();
     }).not.toThrow();
+  });
+
+  it('atomically prevents one tenant from consuming capacity reserved by another', () => {
+    database.prepare("INSERT INTO tenants (id, name, enabled) VALUES ('tenant-2', 'troco', 1)").run();
+    database.prepare("UPDATE capacity_limits SET reject_limit = 70, warning_limit = 60, internal_limit = 100, free_allowance = 143 WHERE resource = 'queueOperations'").run();
+    const reserve = database.prepare(`INSERT INTO capacity_reservations
+      (id, tenant_id, resource, amount, state, expires_at) VALUES (?, ?, 'queueOperations', ?, 'reserved', '2099-01-01T00:00:00.000Z')`);
+    reserve.run('reservation-1', 'tenant-1', 60);
+    expect(() => reserve.run('reservation-2', 'tenant-2', 11)).toThrow();
+    const row = database.prepare("SELECT COUNT(*) AS count FROM capacity_reservations WHERE tenant_id = 'tenant-2'").get() as { count: number };
+    expect(row.count).toBe(0);
   });
 });
