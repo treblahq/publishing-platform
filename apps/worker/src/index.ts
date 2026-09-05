@@ -11,6 +11,8 @@ import { acquireD1Lease } from './delivery/d1-lease.js';
 import { createD1DeliveryStore } from './delivery/d1-delivery-store.js';
 import { consumeDelivery } from './delivery/consume.js';
 import { handleDeliveryBatch } from './delivery/queue-handler.js';
+import { handleAdminRequest } from './admin/routes.js';
+import { createD1AdminDependencies } from './admin/d1-admin.js';
 
 type Environment = Record<string, unknown>;
 type RouteHandler = (request: Request, environment: Environment) => Promise<Response>;
@@ -19,6 +21,7 @@ interface WorkerOverrides {
   publicationHandler?: RouteHandler;
   scheduledHandler?: (environment: Environment) => Promise<number>;
   queueHandler?: (batch: MessageBatch, environment: Environment) => Promise<void>;
+  adminHandler?: RouteHandler;
 }
 
 export function createWorker(overrides: WorkerOverrides = {}) {
@@ -30,6 +33,9 @@ export function createWorker(overrides: WorkerOverrides = {}) {
       }
       if (pathname === '/v1/publications') {
         return (overrides.publicationHandler ?? handleRuntimePublication)(request, environment);
+      }
+      if (pathname.startsWith('/admin/')) {
+        return (overrides.adminHandler ?? handleRuntimeAdmin)(request, environment);
       }
       return Response.json({ code: 'NOT_FOUND' }, { status: 404 });
     },
@@ -44,6 +50,19 @@ export function createWorker(overrides: WorkerOverrides = {}) {
       await (overrides.queueHandler ?? consumeRuntimeBatch)(batch, environment);
     },
   };
+}
+
+async function handleRuntimeAdmin(request: Request, environment: Environment): Promise<Response> {
+  try {
+    const bindings = parseWorkerBindings(environment);
+    if (typeof environment.ADMIN_TOKEN !== 'string') throw new Error('Admin token is required');
+    return await handleAdminRequest(
+      request,
+      createD1AdminDependencies(bindings.ledger as D1Database, environment.ADMIN_TOKEN),
+    );
+  } catch {
+    return Response.json({ code: 'SERVICE_UNAVAILABLE' }, { status: 503 });
+  }
 }
 
 async function consumeRuntimeBatch(batch: MessageBatch, environment: Environment): Promise<void> {

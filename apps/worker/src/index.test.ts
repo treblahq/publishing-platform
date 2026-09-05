@@ -38,4 +38,12 @@ describe('worker HTTP router', () => {
     await createWorker({ queueHandler }).queue(batch, { marker: true });
     expect(queueHandler).toHaveBeenCalledWith(batch, { marker: true });
   });
+
+  it('routes admin requests through authenticated runtime operations', async () => {
+    const adminHandler = vi.fn().mockResolvedValue(Response.json({ ready: true }));
+    const request = new Request('https://worker.test/admin/health/ready');
+    const response = await createWorker({ adminHandler }).fetch(request, { marker: true });
+    expect(response.status).toBe(200);
+    expect(adminHandler).toHaveBeenCalledWith(request, { marker: true });
+  });
 });
