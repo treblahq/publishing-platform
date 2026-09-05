@@ -75,4 +75,13 @@ describe('D1 temporary upload store', () => {
     expect(sql).toContain("state = 'uploading'");
     expect(database.batches[0]?.[0]?.sql).toContain('INTO capacity_usage');
   });
+
+  it('releases capacity after a failed streamed upload', async () => {
+    const database = new Database();
+    await createD1UploadStore(database).markFailed('troco', 'upload-1', request.now);
+
+    const sql = database.batches[0]?.map(({ sql }) => sql).join('\n') ?? '';
+    expect(sql).toContain("state = 'released'");
+    expect(sql).toContain("state = 'failed'");
+  });
 });

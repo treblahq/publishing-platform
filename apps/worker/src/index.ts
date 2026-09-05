@@ -27,12 +27,15 @@ import { handleD1DeadLetterBatch } from './delivery/d1-dead-letter.js';
 import { parseAdapterConfigs } from './adapter-configs.js';
 import { createD1R2EntityStores, find as findWebEntity } from './web/d1-entity-stores.js';
 import { handleWebEntityRequest } from './web/routes.js';
+import { handleArtifactUploadRequest } from './artifacts/routes.js';
+import { createD1UploadStore } from './artifacts/d1-uploads.js';
 
 type Environment = Record<string, unknown>;
 type RouteHandler = (request: Request, environment: Environment) => Promise<Response>;
 
 interface WorkerOverrides {
   publicationHandler?: RouteHandler;
+  artifactHandler?: RouteHandler;
   scheduledHandler?: (environment: Environment) => Promise<number>;
   queueHandler?: (batch: MessageBatch, environment: Environment) => Promise<void>;
   adminHandler?: RouteHandler;
@@ -51,6 +54,9 @@ export function createWorker(overrides: WorkerOverrides = {}) {
           context.waitUntil((overrides.scheduledHandler ?? dispatchRuntimeOutbox)(environment));
         }
         return response;
+      }
+      if (pathname === '/v1/artifacts') {
+        return (overrides.artifactHandler ?? handleRuntimeArtifactUpload)(request, environment);
       }
       if (request.method === 'GET' && pathname.startsWith('/web/')) {
         return handleRuntimeWebEntity(request, environment);
@@ -71,6 +77,22 @@ export function createWorker(overrides: WorkerOverrides = {}) {
       await (overrides.queueHandler ?? consumeRuntimeBatch)(batch, environment);
     },
   };
+}
+
+async function handleRuntimeArtifactUpload(request: Request, environment: Environment): Promise<Response> {
+  try {
+    const bindings = parseWorkerBindings(environment);
+    const database = bindings.ledger as D1Database;
+    const secrets = parseProducerSecrets(environment.PRODUCER_SECRETS);
+    return await handleArtifactUploadRequest(request, {
+      now: () => new Date(),
+      loadClient: createD1ProducerClientLoader(database, (clientId) => secrets[clientId]),
+      uploads: createD1UploadStore(database),
+      bucket: bindings.artifacts as R2Bucket,
+    });
+  } catch {
+    return Response.json({ code: 'SERVICE_UNAVAILABLE' }, { status: 503 });
+  }
 }
 
 async function handleRuntimeAdmin(request: Request, environment: Environment): Promise<Response> {

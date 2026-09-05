@@ -18,6 +18,21 @@ describe('worker HTTP router', () => {
     expect(handler).toHaveBeenCalledWith(request, { marker: true });
   });
 
+  it('routes artifact uploads without waking delivery work', async () => {
+    const artifactHandler = vi.fn().mockResolvedValue(new Response('stored', { status: 201 }));
+    const scheduledHandler = vi.fn();
+    const waitUntil = vi.fn();
+    const worker = createWorker({ artifactHandler, scheduledHandler });
+    const request = new Request('https://worker.test/v1/artifacts', { method: 'PUT' });
+
+    const response = await worker.fetch(request, { marker: true }, { waitUntil } as unknown as ExecutionContext);
+
+    expect(response.status).toBe(201);
+    expect(artifactHandler).toHaveBeenCalledWith(request, { marker: true });
+    expect(scheduledHandler).not.toHaveBeenCalled();
+    expect(waitUntil).not.toHaveBeenCalled();
+  });
+
   it('wakes the durable outbox immediately after accepted intake', async () => {
     const publicationHandler = vi.fn().mockResolvedValue(new Response('accepted', { status: 202 }));
     const scheduledHandler = vi.fn().mockResolvedValue(1);

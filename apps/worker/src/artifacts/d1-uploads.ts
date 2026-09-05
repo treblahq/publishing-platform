@@ -39,6 +39,7 @@ interface UploadRow {
 export interface D1UploadStore {
   reserve(request: UploadReservationRequest): Promise<UploadReservation>;
   markAvailable(tenant: string, uploadId: string, now: Date): Promise<void>;
+  markFailed(tenant: string, uploadId: string, now: Date): Promise<void>;
 }
 
 export function createD1UploadStore(
@@ -119,6 +120,20 @@ export function createD1UploadStore(
           .bind(measuredAt, measuredAt, tenant, uploadId),
       ]);
     },
+
+    markFailed: async (tenant, uploadId, now) => {
+      const failedAt = now.toISOString();
+      await database.batch([
+        database.prepare(`UPDATE capacity_reservations SET state = 'released', updated_at = ?
+          WHERE tenant_id = ? AND id = (SELECT capacity_reservation_id FROM artifact_uploads
+            WHERE tenant_id = ? AND id = ? AND state = 'uploading') AND state = 'reserved'`)
+          .bind(failedAt, tenant, tenant, uploadId),
+        database.prepare(`UPDATE artifact_uploads SET state = 'failed', updated_at = ?
+          WHERE tenant_id = ? AND id = ? AND state = 'uploading'`)
+          .bind(failedAt, tenant, uploadId),
+      ]);
+    },
+
   };
 }
 
