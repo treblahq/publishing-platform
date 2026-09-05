@@ -7,8 +7,8 @@ import {
 import type { FileOutboxEntry } from './outbox.js';
 import type { ArtifactUploader } from './upload.js';
 
-export interface PlatformHandoff {
-  envelope: PublicationEnvelope;
+export interface PlatformHandoff<TEnvelope = PublicationEnvelope> {
+  envelope: TEnvelope;
   uploads: readonly Readonly<{ reference: ArtifactReference; filePath: string }>[];
 }
 
@@ -16,16 +16,16 @@ export type PlatformUploadOutcome =
   | { outcome: 'available'; uploaded: number }
   | { outcome: 'retry-later'; uploaded: number; code: string; retryAfter: string | undefined };
 
-export async function stagePlatformHandoff(
-  handoff: PlatformHandoff,
+export async function stagePlatformHandoff<TEnvelope>(
+  handoff: PlatformHandoff<TEnvelope>,
   producer: { prepare(envelope: PublicationEnvelope): Promise<FileOutboxEntry> },
 ): Promise<FileOutboxEntry> {
   const envelope = validateHandoff(handoff);
   return producer.prepare(envelope);
 }
 
-export async function uploadPlatformHandoff(
-  handoff: PlatformHandoff,
+export async function uploadPlatformHandoff<TEnvelope>(
+  handoff: PlatformHandoff<TEnvelope>,
   uploader: ArtifactUploader,
 ): Promise<PlatformUploadOutcome> {
   const envelope = validateHandoff(handoff);
@@ -44,7 +44,7 @@ export async function uploadPlatformHandoff(
   return { outcome: 'available', uploaded };
 }
 
-function validateHandoff(handoff: PlatformHandoff): PublicationEnvelope {
+function validateHandoff<TEnvelope>(handoff: PlatformHandoff<TEnvelope>): PublicationEnvelope {
   const envelope = validatePublicationEnvelope(handoff.envelope);
   const temporary = envelope.artifacts.filter(({ storage }) => storage === 'r2-temporary');
   if (handoff.uploads.length !== temporary.length) {

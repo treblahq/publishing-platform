@@ -26,6 +26,21 @@ describe('platform handoff coordinator', () => {
     expect(uploader.upload).not.toHaveBeenCalled();
   });
 
+  it('accepts a deeply immutable envelope from a product adapter', async () => {
+    const prepare = vi.fn().mockResolvedValue({ id: 'entry' });
+    const mutable = envelope([artifact('a')]);
+    const handoff = {
+      envelope: {
+        ...mutable,
+        artifacts: mutable.artifacts as readonly ArtifactReference[],
+        deliveries: mutable.deliveries as readonly PublicationEnvelope['deliveries'][number][],
+      },
+      uploads: [{ reference: artifact('a'), filePath: '/tmp/a.mp4' }] as const,
+    } as const;
+
+    await expect(stagePlatformHandoff(handoff, { prepare })).resolves.toEqual({ id: 'entry' });
+  });
+
   it('uploads sequentially and stops safely on a deferred artifact', async () => {
     const first = artifact('a');
     const second = artifact('b');

@@ -16,7 +16,7 @@ describe('public package release metadata', () => {
 
     expect(contracts.name).toBe('@trebla/publishing-contracts');
     expect(client.name).toBe('@trebla/publishing-client');
-    expect(contracts.version).toBe('0.1.0');
+    expect(contracts.version).toBe('0.1.1');
     expect(client.version).toBe(contracts.version);
     expect(client.dependencies['@trebla/publishing-contracts']).toBe(
       contracts.version,
