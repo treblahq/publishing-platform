@@ -15,11 +15,14 @@ const publicConfig = {
 };
 
 test('hydrates only the staging D1 identifier from the deployment environment', () => {
-  const hydrated = hydrateStagingConfig(publicConfig, {
-    CLOUDFLARE_D1_DATABASE_ID: '75c6770b-a94e-4b15-8b84-f6af7e7d2afe',
-  });
+  const hydrated = hydrateStagingConfig(
+    publicConfig,
+    { CLOUDFLARE_D1_DATABASE_ID: '75c6770b-a94e-4b15-8b84-f6af7e7d2afe' },
+    '/repo/apps/worker',
+  );
 
   assert.equal(hydrated.env.staging.d1_databases[0].database_id, '75c6770b-a94e-4b15-8b84-f6af7e7d2afe');
+  assert.equal(hydrated.env.staging.d1_databases[0].migrations_dir, '/repo/apps/worker/migrations');
   assert.equal(hydrated.env.production.d1_databases[0].database_id, '00000000-0000-0000-0000-000000000003');
   assert.equal(publicConfig.env.staging.d1_databases[0].database_id, '00000000-0000-0000-0000-000000000002');
 });
