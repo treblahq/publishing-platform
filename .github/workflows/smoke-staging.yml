@@ -1,0 +1,31 @@
+name: Smoke staging
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: publishing-platform-staging-smoke
+  cancel-in-progress: false
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    environment: staging
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - name: Build smoke dependencies
+        run: npm run build --workspace @treblahq/publishing-contracts && npm run build --workspace @treblahq/publishing-client
+      - name: Verify sanitized Pages-only publication
+        env:
+          STAGING_BASE_URL: https://publishing-platform-staging.business-850.workers.dev
+          PRODUCER_SIGNING_SECRET: ${{ secrets.PRODUCER_SIGNING_SECRET }}
+          ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+        run: node tooling/smoke-staging.mjs
