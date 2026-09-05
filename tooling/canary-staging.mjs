@@ -84,7 +84,7 @@ function createCanaryEnvelope(jobId, jobTitle, runId) {
         adapter: 'web.r2',
         operation: 'publish',
         required: true,
-        payload: { type: 'web.page', entity: {
+        payload: { type: 'web.page', route: `/jobs/${jobId}`, entity: {
           schemaVersion: 1, tenant: 'openings', kind: 'job', id: jobId, revision: runId,
           canonicalPath: `/jobs/${jobId}`, title: jobTitle,
           summary: 'Isolated OneSignal staging canary.', status: 'active',
