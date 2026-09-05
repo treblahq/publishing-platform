@@ -1,5 +1,5 @@
 PRODUCER_SECRETS={"openings-preview":"replace-with-a-long-random-signing-secret"}
 PRODUCER_SIGNING_SECRET=replace-with-the-same-long-random-signing-secret
 ADMIN_TOKEN=replace-with-a-long-random-admin-token
-# Initial staging keeps ADAPTER_CONFIGS in wrangler.json and enables only Pages.
-# A later OneSignal canary must use audienceMode "staging-segment" with an explicit testSegment.
+# Initial staging keeps ADAPTER_CONFIGS in wrangler.json and enables only web.r2.
+# OneSignal remains unconfigured until the Openings application is available.

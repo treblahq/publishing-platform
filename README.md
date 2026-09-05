@@ -21,6 +21,10 @@ provider payloads must never be committed to this repository.
 The isolated manual rollout procedure is documented in
 [`docs/runbooks/staging.md`](docs/runbooks/staging.md).
 
+Producer applications can prepare publications and artifact metadata without
+network access. The adoption sequence and safety gates are documented in
+[`docs/runbooks/producer_adoption.md`](docs/runbooks/producer_adoption.md).
+
 ## DNS cutover guard
 
 Capture the public web, mail, SPF, DMARC, CAA, verification, and known DKIM

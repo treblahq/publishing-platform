@@ -1,0 +1,128 @@
+# Producer Adoption
+
+> How product-owned publishers can prepare durable publication work locally without consuming cloud or provider quota.
+
+The publishing client separates preparation from submission. A product can
+hash media, validate an immutable publication envelope, and persist it in a
+local outbox without configuring a platform endpoint or signing secret.
+
+## Local preparation flow
+
+1. Finish the product-owned trigger, copy, approval, and rendering steps.
+2. Inspect each local file with `prepareArtifactReference`.
+3. Build a versioned `PublicationEnvelope` with final content and artifact
+   metadata only.
+4. Call `createLocalProducer({ outbox }).prepare(envelope)`.
+5. Keep the source bytes and the local outbox entry until later upload and
+   platform acceptance have both been confirmed.
+
+Preparation performs no HTTP request. It does not upload media, submit the
+envelope, run a GitHub Action, publish to a provider, or transfer delivery
+ownership.
+
+```ts
+import {
+  createFileOutbox,
+  createLocalProducer,
+  prepareArtifactReference,
+} from '@treblahq/publishing-client';
+
+const artifact = await prepareArtifactReference({
+  id: 'social-video',
+  filePath: '/absolute/product-owned/output/video.mp4',
+  storage: 'r2-temporary',
+  locator: 'temporary/troco/campaign-id/video.mp4',
+  mediaType: 'video/mp4',
+  allowedMediaTypes: ['video/mp4'],
+  maxByteSize: 50 * 1024 * 1024,
+});
+
+const producer = createLocalProducer({
+  outbox: createFileOutbox('/absolute/product-owned/state/platform-outbox'),
+});
+
+await producer.prepare({
+  schemaVersion: 1,
+  identity: {
+    tenant: 'troco',
+    sourceType: 'campaign',
+    sourceId: 'campaign-id',
+    revision: 'approved-revision',
+    idempotencyKey: 'troco:campaign:campaign-id:approved-revision',
+  },
+  canonical: { title: 'Approved campaign', language: 'pt-BR' },
+  artifacts: [artifact],
+  deliveries: [{
+    id: 'social',
+    adapter: 'social.shadow',
+    operation: 'publish',
+    required: false,
+    payload: { type: 'social.post', text: 'Final approved copy' },
+  }],
+});
+```
+
+The outbox path is product-owned runtime state. Do not place it inside Git or
+commit generated media.
+
+## Submission gate
+
+Submission is a separate, explicit operation. Construct a
+`createPublishingClient` with environment-provided `PUBLISHING_BASE_URL`,
+`PUBLISHING_CLIENT_ID`, and `PUBLISHING_CLIENT_SECRET`, then pass it to
+`createLocalProducer` before calling `drain`.
+
+For an `r2-temporary` artifact, do not drain its envelope until a future
+authenticated upload flow has uploaded and verified the exact hash, size, and
+locator. The current local preparation API intentionally does not upload.
+
+The drain operation is bounded to at most 100 entries per call:
+
+- accepted entries move to the outbox `accepted` directory;
+- capacity-deferred entries remain pending;
+- network and server failures remain pending;
+- repeated attempts reuse the envelope idempotency key.
+
+Dry runs must omit the publishing client entirely. This makes an accidental
+network write structurally unavailable during preparation.
+
+## Temporary media ownership
+
+The product owns the original bytes while work is local. After the future
+upload flow verifies an R2 object, the platform may retain that temporary copy
+only until every referencing provider confirms ingestion. An API acceptance
+response is not sufficient when a provider downloads or processes media
+asynchronously.
+
+After safe deletion, D1 keeps only metadata and delivery receipts. The product
+may remove its local generated file according to its own retention policy once
+platform acceptance and recovery requirements are satisfied.
+
+## Product adoption order
+
+Adopt one product and one non-writing shadow delivery at a time:
+
+1. Openings, reusing its existing envelope builder and keeping OneSignal
+   disabled.
+2. Troco, preserving campaign state and rendering ownership.
+3. Trebla, preserving human review and GitHub editorial reconciliation.
+4. Turma do Kako, after its current working tree is clean, preserving narrative
+   production and fail-closed approval rules.
+5. Equity, through a local executor that keeps YouTube OAuth material outside
+   the platform.
+
+Each product must pass local validation and a zero-network dry run before any
+staging submission. Live ownership remains with the legacy publisher until a
+separate cutover explicitly pauses the old owner and reconciles in-flight work.
+
+## Repository and secret boundaries
+
+- Keep signing secrets and provider credentials in environment variables or
+  the product's existing secret store.
+- Commit only variable names and placeholder examples.
+- Never commit generated media, outbox entries, signed URLs, raw provider
+  responses, or publication state.
+- Do not add automatic workflow triggers during adoption. Staging validation
+  remains manual until local checks are green.
+- Stop before any configured free-tier safety threshold; there is no paid
+  fallback.
