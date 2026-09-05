@@ -78,8 +78,8 @@
 - [x] Test deletion of expired uploading objects and available uploads never claimed by a publication.
 - [x] Test that claimed, ambiguous, and actively referenced artifacts remain protected.
 - [x] Document upload, verification, submission, local retention, and retry ordering.
-- [ ] Run the complete local validation suite and secret scan.
-- [ ] Commit as `feat(cleanup): collect abandoned temporary uploads`.
+- [x] Run the complete local validation suite and secret scan.
+- [x] Commit as `feat(cleanup): collect abandoned temporary uploads`.
 
 ## Safety gates
 
