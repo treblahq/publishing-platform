@@ -78,7 +78,18 @@ function createCanaryEnvelope(jobId, jobTitle, runId) {
     canonical: { title: jobTitle, summary: 'Isolated OneSignal staging canary.', canonicalUrl, language: 'pt-BR' },
     artifacts: [],
     deliveries: [
-      { id: 'web', adapter: 'web.pages', operation: 'publish', required: true, payload: { type: 'web.page', route: `/jobs/${jobId}` } },
+      {
+        id: 'web',
+        adapter: 'web.pages',
+        operation: 'publish',
+        required: true,
+        payload: {
+          type: 'web.page',
+          route: `/jobs/${jobId}`,
+          expectedTitle: jobTitle,
+          expectedCanonicalUrl: canonicalUrl,
+        },
+      },
       {
         id: 'push',
         adapter: 'push.onesignal',

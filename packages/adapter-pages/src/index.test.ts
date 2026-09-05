@@ -7,12 +7,21 @@ import { createPagesAdapter, type PagesConfig, type PagesPayload } from './index
 const context = {
   tenant: 'openings', deliveryId: 'web-1', idempotencyKey: 'stable-web', operation: 'publish',
   config: { baseUrl: 'https://preview.pages.dev' },
-  payload: { type: 'web.page', route: '/jobs/gh_123' }, artifacts: [],
+  payload: {
+    type: 'web.page',
+    route: '/jobs/gh_123',
+    expectedTitle: 'Platform Engineer',
+    expectedCanonicalUrl: 'https://openings.dev/jobs/gh_123',
+  },
+  artifacts: [],
 } satisfies AdapterContext<PagesConfig, PagesPayload>;
 
 describe('Cloudflare Pages verification adapter', () => {
   it('verifies the canonical route and passes adapter conformance', async () => {
-    const request = vi.fn().mockResolvedValue(new Response('', { status: 200 }));
+    const request = vi.fn().mockImplementation(() => Promise.resolve(new Response(`
+      <title>Platform Engineer | openings.dev</title>
+      <link rel="canonical" href="https://openings.dev/jobs/gh_123">
+    `, { status: 200 })));
     const adapter = createPagesAdapter({ request, now: () => new Date('2026-09-04T12:00:00.000Z') });
     await expect(runAdapterConformance(adapter, context)).resolves.toEqual({ remoteEffects: 1 });
     expect(request).toHaveBeenCalledWith('https://preview.pages.dev/jobs/gh_123', { method: 'GET', redirect: 'follow' });
@@ -26,6 +35,19 @@ describe('Cloudflare Pages verification adapter', () => {
   it('classifies unavailable pages as retryable', async () => {
     const adapter = createPagesAdapter({ request: () => Promise.resolve(new Response('', { status: 503 })) });
     await expect(adapter.deliver(context)).rejects.toMatchObject({ category: 'retryable' });
+  });
+
+  it.each([
+    ['the job title', '<link rel="canonical" href="https://openings.dev/jobs/gh_123">'],
+    ['the canonical URL', '<title>Platform Engineer | openings.dev</title>'],
+  ])('does not verify a successful generic shell missing %s', async (_label, html) => {
+    const adapter = createPagesAdapter({
+      request: () => Promise.resolve(new Response(html, { status: 200 })),
+    });
+    await expect(adapter.deliver(context)).rejects.toMatchObject({
+      code: 'PAGES_CONTENT_NOT_READY',
+      category: 'retryable',
+    });
   });
 
   it('classifies a transport failure as retryable without exposing its details', async () => {

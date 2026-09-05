@@ -2,7 +2,12 @@ import type { DeliveryAdapter } from '@treblahq/publishing-adapter-kit';
 import { DeliveryError } from '@treblahq/publishing-contracts';
 
 export interface PagesConfig { baseUrl: string }
-export interface PagesPayload extends Record<string, unknown> { type: 'web.page'; route: string }
+export interface PagesPayload extends Record<string, unknown> {
+  type: 'web.page';
+  route: string;
+  expectedTitle?: string;
+  expectedCanonicalUrl?: string;
+}
 
 interface Dependencies {
   request(url: string, init: RequestInit): Promise<Response>;
@@ -28,12 +33,16 @@ export function createPagesAdapter(dependencies: Dependencies): DeliveryAdapter<
       if (!response.ok) throw new DeliveryError({
         code: 'PAGES_NOT_READY', category: 'retryable', message: 'Pages route is not ready',
       });
+      if (!await hasExpectedContent(response, payload)) throw new DeliveryError({
+        code: 'PAGES_CONTENT_NOT_READY', category: 'retryable', message: 'Pages route content is not ready',
+      });
       return { provider: 'web.pages', remoteId: url, remoteUrl: url, acceptedAt: now().toISOString() };
     },
     reconcile: async ({ config, payload }) => {
       const response = await requestPage(dependencies, pageUrl(config, payload));
       if (response.status === 404) return { status: 'absent' };
       if (!response.ok) return { status: 'unknown' };
+      if (!await hasExpectedContent(response, payload)) return { status: 'unknown' };
       const url = pageUrl(config, payload);
       return {
         status: 'found',
@@ -59,7 +68,33 @@ function validate(config: PagesConfig, payload: Record<string, unknown>) {
   if (typeof payload.route !== 'string' || !payload.route.startsWith('/') || payload.route.startsWith('//')) {
     issues.push('Pages route must be absolute');
   }
+  for (const field of ['expectedTitle', 'expectedCanonicalUrl'] as const) {
+    if (payload[field] !== undefined && (typeof payload[field] !== 'string' || payload[field].trim().length === 0)) {
+      issues.push(`Pages ${field} must be a non-empty string`);
+    }
+  }
   return issues.length === 0 ? { valid: true as const } : { valid: false as const, issues };
+}
+
+async function hasExpectedContent(response: Response, payload: Record<string, unknown>): Promise<boolean> {
+  const expectedTitle = typeof payload.expectedTitle === 'string' ? payload.expectedTitle : undefined;
+  const expectedCanonicalUrl = typeof payload.expectedCanonicalUrl === 'string'
+    ? payload.expectedCanonicalUrl
+    : undefined;
+  if (expectedTitle === undefined && expectedCanonicalUrl === undefined) return true;
+  const html = await response.text();
+  if (expectedTitle !== undefined && !html.includes(escapeHtml(expectedTitle))) return false;
+  if (expectedCanonicalUrl !== undefined && !html.includes(escapeHtml(expectedCanonicalUrl))) return false;
+  return true;
+}
+
+function escapeHtml(value: string): string {
+  return value
+    .replaceAll('&', '&amp;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#39;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;');
 }
 
 function pageUrl(config: PagesConfig, payload: Record<string, unknown>): string {
