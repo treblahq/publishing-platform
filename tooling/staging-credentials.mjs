@@ -17,7 +17,7 @@ export function assertStagingCredentials(environment) {
   if (!UUID.test(databaseId) || PLACEHOLDER_ID.test(databaseId)) {
     throw new Error('CLOUDFLARE_D1_DATABASE_ID is missing, malformed, or a placeholder');
   }
-  for (const name of ['PRODUCER_SIGNING_SECRET', 'ADMIN_TOKEN']) {
+  for (const name of ['PRODUCER_SIGNING_SECRET', 'ADMIN_TOKEN', 'ONESIGNAL_REST_API_KEY']) {
     if (typeof environment[name] !== 'string' || environment[name].length === 0) {
       throw new Error(`${name} is missing`);
     }
