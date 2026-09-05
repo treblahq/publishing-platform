@@ -2,7 +2,7 @@ import { readFile } from 'node:fs/promises';
 import process from 'node:process';
 import { pathToFileURL } from 'node:url';
 
-const PLACEHOLDER_ID = /^0{8}-0{4}-0{4}-0{4}-0{12}$/u;
+const PLACEHOLDER_ID = /^0{8}-0{4}-0{4}-0{4}-0{11}[0-9]$/u;
 const OPENINGS_PREVIEW = 'https://cloudflare-preview.openings-dev-web.pages.dev';
 
 export function assertStagingReady(config) {

@@ -24,6 +24,7 @@ describe('staging deploy readiness', () => {
 
   it('fails closed on placeholder resources', () => {
     expect(() => assertStagingReady(config('00000000-0000-0000-0000-000000000000'))).toThrow('placeholder');
+    expect(() => assertStagingReady(config('00000000-0000-0000-0000-000000000002'))).toThrow('placeholder');
   });
 
   it('prevents OneSignal or production activation in the initial staging deploy', () => {
