@@ -19,10 +19,20 @@ export function createD1AdminDependencies(
     token,
     ready: async () => {
       const checks = await database.prepare(`SELECT
-        (SELECT COUNT(*) FROM outbox WHERE dispatched_at IS NULL AND due_at < datetime('now', '-15 minutes')) AS stale_outbox,
-        (SELECT COUNT(*) FROM deliveries WHERE lease_expires_at < datetime('now')) AS expired_leases,
-        (SELECT COUNT(*) FROM deliveries WHERE state = 'needs_attention') AS needs_attention`).first();
-      return { ready: checks !== null, checks };
+        (SELECT COUNT(*) FROM outbox WHERE dispatched_at IS NULL
+          AND due_at < strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-15 minutes')) AS stale_outbox,
+        (SELECT COUNT(*) FROM deliveries
+          WHERE lease_expires_at < strftime('%Y-%m-%dT%H:%M:%fZ', 'now')) AS expired_leases,
+        (SELECT COUNT(*) FROM deliveries WHERE state = 'needs_attention') AS needs_attention,
+        (SELECT COUNT(*) FROM adapter_controls WHERE enabled = 0) AS paused_adapters,
+        (SELECT COUNT(*) FROM incidents WHERE state = 'open') AS open_incidents,
+        (SELECT COUNT(*) FROM tenants AS tenant CROSS JOIN capacity_limits AS limits
+          WHERE tenant.enabled = 1 AND NOT EXISTS (
+            SELECT 1 FROM capacity_usage AS usage
+            WHERE usage.tenant_id = tenant.id AND usage.resource = limits.resource
+              AND usage.measured_at >= strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-1 hour')
+          )) AS stale_capacity`).first();
+      return { ready: readinessChecksClear(checks), checks };
     },
     inspect: async (tenant, publicationId) => {
       const publication = await database.prepare(`SELECT id, source_type, source_id, revision, state, created_at, updated_at
@@ -65,6 +75,13 @@ export function createD1AdminDependencies(
       return { changed: true };
     },
   };
+}
+
+function readinessChecksClear(value: unknown): boolean {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) return false;
+  const checks = value as Record<string, unknown>;
+  return ['stale_outbox', 'expired_leases', 'needs_attention', 'paused_adapters', 'open_incidents', 'stale_capacity']
+    .every((key) => checks[key] === 0);
 }
 
 function audit(database: Database, id: string, tenant: string, action: string, type: string, target: string, reason: string) {

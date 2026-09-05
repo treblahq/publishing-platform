@@ -11,6 +11,17 @@ function database(results: unknown[] = []) {
 }
 
 describe('D1 admin operations', () => {
+  it('fails readiness when durable work or free-tier accounting needs attention', async () => {
+    const db = database([{ stale_outbox: 0, expired_leases: 0, needs_attention: 1, paused_adapters: 0, open_incidents: 1, stale_capacity: 0 }]);
+    await expect(createD1AdminDependencies(db, 'token').ready()).resolves.toMatchObject({ ready: false });
+  });
+
+  it('reports ready only when every durable safety check is clear', async () => {
+    const checks = { stale_outbox: 0, expired_leases: 0, needs_attention: 0, paused_adapters: 0, open_incidents: 0, stale_capacity: 0 };
+    const db = database([checks]);
+    await expect(createD1AdminDependencies(db, 'token').ready()).resolves.toEqual({ ready: true, checks });
+  });
+
   it('keeps inspection tenant scoped', async () => {
     const db = database([{ id: 'publication-1' }]);
     const admin = createD1AdminDependencies(db, 'token');
