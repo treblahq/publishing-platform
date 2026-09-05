@@ -23,10 +23,14 @@ function config(databaseId = '11111111-2222-4333-8444-555555555555') {
         d1_databases: [{ database_id: databaseId, database_name: 'publishing-platform-staging' }],
         r2_buckets: [{ bucket_name: 'publishing-artifacts-staging' }],
         vars: {
-          ENABLED_ADAPTERS: 'web.pages,push.onesignal',
+          ENABLED_ADAPTERS: 'web.r2,push.onesignal',
           ADAPTER_CONFIGS: JSON.stringify({
             openings: {
-              'web.pages': { baseUrl: 'https://cloudflare-preview.openings-dev-web.pages.dev' },
+              'web.r2': {
+                publicBaseUrl: 'https://cloudflare-preview.openings-dev-web.pages.dev',
+                shellBaseUrl: 'https://cloudflare-preview.openings-dev-web.pages.dev',
+                canonicalBaseUrl: 'https://openings.dev',
+              },
               'push.onesignal': oneSignal,
             },
           }),
@@ -49,9 +53,9 @@ describe('staging deploy readiness', () => {
 
   it('prevents unknown adapters or production activation in staging', () => {
     const unsafe = config();
-    unsafe.env.staging.vars.ENABLED_ADAPTERS = 'web.pages,push.onesignal,social.unknown';
+    unsafe.env.staging.vars.ENABLED_ADAPTERS = 'web.r2,push.onesignal,social.unknown';
     expect(() => assertStagingReady(unsafe, now)).toThrow('only');
-    unsafe.env.staging.vars.ENABLED_ADAPTERS = 'web.pages,push.onesignal';
+    unsafe.env.staging.vars.ENABLED_ADAPTERS = 'web.r2,push.onesignal';
     unsafe.env.production.vars.ENABLED_ADAPTERS = 'web.pages';
     expect(() => assertStagingReady(unsafe, now)).toThrow('Production');
   });

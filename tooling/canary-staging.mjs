@@ -1,4 +1,4 @@
-import { randomUUID } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import process from 'node:process';
 import { pathToFileURL } from 'node:url';
 
@@ -21,7 +21,7 @@ export async function runOneSignalCanary({
     for (let attempt = 0; attempt < attempts; attempt += 1) {
       const record = await inspect(accepted.publicationId);
       const deliveries = Array.isArray(record?.deliveries) ? record.deliveries : [];
-      const web = deliveries.find((delivery) => delivery?.adapter === 'web.pages');
+      const web = deliveries.find((delivery) => delivery?.adapter === 'web.r2');
       const push = deliveries.find((delivery) => delivery?.adapter === 'push.onesignal');
       if (web?.state === 'verified' && push?.state === 'verified') {
         return { publicationId: accepted.publicationId };
@@ -66,6 +66,7 @@ async function main() {
 
 function createCanaryEnvelope(jobId, jobTitle, runId) {
   const canonicalUrl = `https://openings.dev/jobs/${encodeURIComponent(jobId)}`;
+  const content = { title: jobTitle, canary: true };
   return {
     schemaVersion: 1,
     identity: {
@@ -80,15 +81,15 @@ function createCanaryEnvelope(jobId, jobTitle, runId) {
     deliveries: [
       {
         id: 'web',
-        adapter: 'web.pages',
+        adapter: 'web.r2',
         operation: 'publish',
         required: true,
-        payload: {
-          type: 'web.page',
-          route: `/jobs/${jobId}`,
-          expectedTitle: jobTitle,
-          expectedCanonicalUrl: canonicalUrl,
-        },
+        payload: { type: 'web.page', entity: {
+          schemaVersion: 1, tenant: 'openings', kind: 'job', id: jobId, revision: runId,
+          canonicalPath: `/jobs/${jobId}`, title: jobTitle,
+          summary: 'Isolated OneSignal staging canary.', status: 'active',
+          contentSha256: createHash('sha256').update(JSON.stringify(content)).digest('hex'), content,
+        } },
       },
       {
         id: 'push',

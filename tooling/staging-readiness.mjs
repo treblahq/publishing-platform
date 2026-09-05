@@ -16,13 +16,15 @@ export function assertStagingReady(config, now = new Date()) {
     throw new Error('Staging D1 database_id is still a placeholder');
   }
   const enabled = staging.vars?.ENABLED_ADAPTERS;
-  if (enabled !== 'web.pages,push.onesignal') {
-    throw new Error('Staging must enable only web.pages and the isolated push.onesignal canary adapter');
+  if (enabled !== 'web.r2,push.onesignal') {
+    throw new Error('Staging must enable only web.r2 and the isolated push.onesignal canary adapter');
   }
   let adapters;
   try { adapters = JSON.parse(staging.vars?.ADAPTER_CONFIGS ?? ''); } catch { throw new Error('Staging adapter configuration is invalid'); }
-  if (adapters?.openings?.['web.pages']?.baseUrl !== OPENINGS_PREVIEW) {
-    throw new Error('Staging Pages base URL must use the verified Openings preview alias');
+  const web = adapters?.openings?.['web.r2'];
+  if (web?.publicBaseUrl !== OPENINGS_PREVIEW || web.shellBaseUrl !== OPENINGS_PREVIEW
+    || web.canonicalBaseUrl !== 'https://openings.dev') {
+    throw new Error('Staging R2 web URLs must use the verified Openings aliases');
   }
   assertOneSignalCanaryConfig(adapters?.openings?.['push.onesignal'], now);
   if (config?.env?.production?.vars?.ENABLED_ADAPTERS !== '') {

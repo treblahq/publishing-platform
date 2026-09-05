@@ -19,7 +19,7 @@ describe('wrangler environment isolation', () => {
     expect(serialized).toContain('publishing-artifacts-staging');
     expect(serialized).toContain('publishing-artifacts-production');
     expect(config).toHaveProperty('vars.ENABLED_ADAPTERS', '');
-    expect(config).toHaveProperty('env.staging.vars.ENABLED_ADAPTERS', 'web.pages,push.onesignal');
+    expect(config).toHaveProperty('env.staging.vars.ENABLED_ADAPTERS', 'web.r2,push.onesignal');
     expect(config).toHaveProperty('env.production.vars.ENABLED_ADAPTERS', '');
     expect(config).toHaveProperty('env.staging.vars.ADAPTER_CONFIGS');
     expect(serialized).toContain('https://cloudflare-preview.openings-dev-web.pages.dev');

@@ -14,8 +14,8 @@ describe('OneSignal staging canary', () => {
   it('resumes only for one publication and always pauses after both deliveries verify', async () => {
     const setAdapter = vi.fn().mockResolvedValue(undefined);
     const inspect = vi.fn()
-      .mockResolvedValueOnce({ deliveries: [{ adapter: 'web.pages', state: 'verified' }, { adapter: 'push.onesignal', state: 'planned' }] })
-      .mockResolvedValueOnce({ deliveries: [{ adapter: 'web.pages', state: 'verified' }, { adapter: 'push.onesignal', state: 'verified' }] });
+      .mockResolvedValueOnce({ deliveries: [{ adapter: 'web.r2', state: 'verified' }, { adapter: 'push.onesignal', state: 'planned' }] })
+      .mockResolvedValueOnce({ deliveries: [{ adapter: 'web.r2', state: 'verified' }, { adapter: 'push.onesignal', state: 'verified' }] });
     await expect(runOneSignalCanary({
       envelope,
       submit: () => Promise.resolve({ outcome: 'accepted', publicationId: 'publication-1' }),

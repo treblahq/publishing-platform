@@ -8,6 +8,7 @@ import { dispatchOutbox } from './coordinator/dispatch-outbox.js';
 import { enqueueDueRetries } from './coordinator/d1-retry.js';
 import { createOneSignalAdapter } from '@treblahq/publishing-adapter-onesignal';
 import { createPagesAdapter } from '@treblahq/publishing-adapter-pages';
+import { createR2WebAdapter } from '@treblahq/publishing-adapter-r2';
 import { createAdapterRegistry } from './registry.js';
 import { acquireD1Lease } from './delivery/d1-lease.js';
 import { createD1DeliveryStore } from './delivery/d1-delivery-store.js';
@@ -24,6 +25,8 @@ import { isD1AdapterEnabled } from './delivery/d1-adapter-control.js';
 import { createD1FailureRecorder } from './delivery/d1-failure-recorder.js';
 import { handleD1DeadLetterBatch } from './delivery/d1-dead-letter.js';
 import { parseAdapterConfigs } from './adapter-configs.js';
+import { createD1R2EntityStores, find as findWebEntity } from './web/d1-entity-stores.js';
+import { handleWebEntityRequest } from './web/routes.js';
 
 type Environment = Record<string, unknown>;
 type RouteHandler = (request: Request, environment: Environment) => Promise<Response>;
@@ -44,6 +47,9 @@ export function createWorker(overrides: WorkerOverrides = {}) {
       }
       if (pathname === '/v1/publications') {
         return (overrides.publicationHandler ?? handleRuntimePublication)(request, environment);
+      }
+      if (request.method === 'GET' && pathname.startsWith('/web/')) {
+        return handleRuntimeWebEntity(request, environment);
       }
       if (pathname.startsWith('/admin/')) {
         return (overrides.adminHandler ?? handleRuntimeAdmin)(request, environment);
@@ -86,7 +92,11 @@ async function consumeRuntimeBatch(batch: MessageBatch, environment: Environment
   const configs = parseAdapterConfigs(environment.ADAPTER_CONFIGS, environment.ONESIGNAL_REST_API_KEY);
   const oneSignal = createOneSignalAdapter({ send: sendOneSignal, now: () => new Date() });
   const pages = createPagesAdapter({ request: (url, init) => fetch(url, init) });
-  const adapters = [oneSignal, pages];
+  const r2 = createR2WebAdapter({
+    stores: (tenant) => createD1R2EntityStores(database, bindings.artifacts as R2Bucket, tenant),
+    request: (url, init) => fetch(url, init),
+  });
+  const adapters = [oneSignal, pages, r2];
   const registry = createAdapterRegistry(adapters, bindings.enabledAdapters);
   const store = createD1DeliveryStore(database, (adapter, tenant) => configs[tenant]?.[adapter] ?? {});
   await handleDeliveryBatch(batch.messages, async ({ tenantId, deliveryId }) => {
@@ -141,6 +151,10 @@ async function reconcileRuntimeDeliveries(
   const adapters = [
     createOneSignalAdapter({ send: sendOneSignal, now: () => new Date() }),
     createPagesAdapter({ request: (url, init) => fetch(url, init) }),
+    createR2WebAdapter({
+      stores: (tenant) => createD1R2EntityStores(database, (parseWorkerBindings(environment).artifacts as R2Bucket), tenant),
+      request: (url, init) => fetch(url, init),
+    }),
   ];
   const registry = createAdapterRegistry(adapters, enabledAdapters);
   const store = createD1DeliveryStore(database, (adapter, tenant) => configs[tenant]?.[adapter] ?? {});
@@ -160,6 +174,29 @@ async function reconcileRuntimeDeliveries(
       now: () => new Date(),
     });
   });
+}
+
+async function handleRuntimeWebEntity(request: Request, environment: Environment): Promise<Response> {
+  try {
+    const bindings = parseWorkerBindings(environment);
+    const database = bindings.ledger as D1Database;
+    const tenant = new URL(request.url).pathname.split('/').filter(Boolean)[1];
+    if (!tenant) return new Response('Not found', { status: 404 });
+    const configs = parseAdapterConfigs(environment.ADAPTER_CONFIGS, environment.ONESIGNAL_REST_API_KEY);
+    const config = configs[tenant]?.['web.r2'] as { shellBaseUrl?: unknown; canonicalBaseUrl?: unknown } | undefined;
+    if (typeof config?.shellBaseUrl !== 'string' || typeof config.canonicalBaseUrl !== 'string') {
+      return new Response('Not found', { status: 404 });
+    }
+    const stores = createD1R2EntityStores(database, bindings.artifacts as R2Bucket, tenant);
+    return await handleWebEntityRequest(request, {
+      find: (kind, id) => findWebEntity(database, tenant, kind, id),
+      getObject: (key) => stores.objects.get(key),
+      getShell: (kind) => fetch(new URL(kind === 'job' ? '/jobs/' : kind === 'author' ? '/route-indexes/authors/' : '/route-indexes/communities/', config.shellBaseUrl as string)),
+      canonicalBaseUrl: config.canonicalBaseUrl,
+    });
+  } catch {
+    return new Response('Service unavailable', { status: 503 });
+  }
 }
 
 async function handleRuntimePublication(request: Request, environment: Environment): Promise<Response> {

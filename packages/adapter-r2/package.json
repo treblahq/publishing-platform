@@ -3,10 +3,11 @@
   "version": "0.0.0",
   "type": "module",
   "license": "MIT",
-  "exports": "./dist/activate.js",
-  "types": "./dist/activate.d.ts",
+  "exports": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "files": ["dist"],
   "dependencies": {
+    "@treblahq/publishing-adapter-kit": "0.0.0",
     "@treblahq/publishing-contracts": "0.0.0"
   },
   "scripts": {
