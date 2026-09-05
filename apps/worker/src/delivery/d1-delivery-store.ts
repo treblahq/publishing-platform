@@ -63,8 +63,9 @@ export function createD1DeliveryStore(
 
 function stateStatement(database: Database, tenant: string, id: string, token: number, state: DeliveryState) {
   return database.prepare(`UPDATE deliveries SET state = ?, lease_expires_at = NULL,
+    due_at = CASE WHEN ? = 'retry_wait' THEN datetime('now', '+5 minutes') ELSE NULL END,
     updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
-    WHERE tenant_id = ? AND id = ? AND lease_token = ?`).bind(state, tenant, id, token);
+    WHERE tenant_id = ? AND id = ? AND lease_token = ?`).bind(state, state, tenant, id, token);
 }
 
 function receiptStatement(database: Database, tenant: string, delivery: string, receipt: DeliveryReceipt, id: string) {

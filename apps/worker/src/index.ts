@@ -5,7 +5,9 @@ import { createD1IntakeStore } from './intake/d1-intake-store.js';
 import { handlePublicationRequest } from './intake/routes.js';
 import { createD1OutboxStore } from './coordinator/d1-outbox-store.js';
 import { dispatchOutbox } from './coordinator/dispatch-outbox.js';
+import { enqueueDueRetries } from './coordinator/d1-retry.js';
 import { createOneSignalAdapter } from '@treblahq/publishing-adapter-onesignal';
+import { createPagesAdapter } from '@treblahq/publishing-adapter-pages';
 import { createAdapterRegistry } from './registry.js';
 import { acquireD1Lease } from './delivery/d1-lease.js';
 import { createD1DeliveryStore } from './delivery/d1-delivery-store.js';
@@ -70,7 +72,8 @@ async function consumeRuntimeBatch(batch: MessageBatch, environment: Environment
   const database = bindings.ledger as D1Database;
   const configs = parseAdapterConfigs(environment.ADAPTER_CONFIGS);
   const oneSignal = createOneSignalAdapter({ send: sendOneSignal, now: () => new Date() });
-  const registry = createAdapterRegistry([oneSignal], bindings.enabledAdapters);
+  const pages = createPagesAdapter({ request: (url, init) => fetch(url, init) });
+  const registry = createAdapterRegistry([oneSignal, pages], bindings.enabledAdapters);
   const store = createD1DeliveryStore(database, (adapter, tenant) => configs[tenant]?.[adapter] ?? {});
   await handleDeliveryBatch(batch.messages, async ({ tenantId, deliveryId }) => {
     const delivery = await store.load(tenantId, deliveryId);
@@ -101,6 +104,7 @@ async function dispatchRuntimeOutbox(environment: Environment): Promise<number> 
   const bindings = parseWorkerBindings(environment);
   const database = bindings.ledger as D1Database;
   const queue = bindings.deliveryQueue as Queue;
+  await enqueueDueRetries(database, 25);
   return dispatchOutbox(createD1OutboxStore(database), {
     send: async (message) => { await queue.send(message); },
   }, 50);

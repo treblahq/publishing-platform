@@ -6,6 +6,7 @@
   "dependencies": {
     "@treblahq/publishing-adapter-kit": "0.0.0",
     "@treblahq/publishing-adapter-onesignal": "0.0.0",
+    "@treblahq/publishing-adapter-pages": "0.0.0",
     "@treblahq/publishing-client": "0.0.0",
     "@treblahq/publishing-contracts": "0.0.0"
   },

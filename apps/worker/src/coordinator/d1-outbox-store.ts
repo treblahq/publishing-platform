@@ -17,9 +17,24 @@ export function createD1OutboxStore(
   return {
     listDue: async (limit) => {
       const page = await database.prepare(`
-        SELECT id, tenant_id, delivery_id FROM outbox
-        WHERE dispatched_at IS NULL AND due_at <= ?
-        ORDER BY due_at, id LIMIT ?
+        SELECT candidate.id, candidate.tenant_id, candidate.delivery_id FROM outbox AS candidate
+        WHERE candidate.dispatched_at IS NULL AND candidate.due_at <= ?
+          AND NOT EXISTS (
+            SELECT 1 FROM delivery_dependencies AS dependency
+            JOIN deliveries AS upstream ON upstream.id = dependency.depends_on_delivery_id
+            WHERE dependency.delivery_id = candidate.delivery_id
+              AND CASE upstream.state
+                WHEN 'planned' THEN 0 WHEN 'validated' THEN 1 WHEN 'blocked' THEN 2
+                WHEN 'ready' THEN 3 WHEN 'delivering' THEN 4 WHEN 'delivered' THEN 5
+                WHEN 'processing' THEN 6 WHEN 'verified' THEN 7
+                WHEN 'cleanup_pending' THEN 8 WHEN 'complete' THEN 9 ELSE -1 END
+              < CASE dependency.required_state
+                WHEN 'planned' THEN 0 WHEN 'validated' THEN 1 WHEN 'blocked' THEN 2
+                WHEN 'ready' THEN 3 WHEN 'delivering' THEN 4 WHEN 'delivered' THEN 5
+                WHEN 'processing' THEN 6 WHEN 'verified' THEN 7
+                WHEN 'cleanup_pending' THEN 8 WHEN 'complete' THEN 9 ELSE 100 END
+          )
+        ORDER BY candidate.due_at, candidate.id LIMIT ?
       `).bind(now().toISOString(), limit).all();
       return (page.results ?? []).map(toOutboxRow);
     },
