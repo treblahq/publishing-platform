@@ -17,3 +17,6 @@ npm run validate
 
 Provider credentials, producer signing secrets, production data, and raw
 provider payloads must never be committed to this repository.
+
+The isolated manual rollout procedure is documented in
+[`docs/runbooks/staging.md`](docs/runbooks/staging.md).

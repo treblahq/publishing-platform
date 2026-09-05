@@ -1,0 +1,3 @@
+PRODUCER_SECRETS={"openings-preview":"replace-with-a-long-random-signing-secret"}
+PRODUCER_SIGNING_SECRET=replace-with-the-same-long-random-signing-secret
+ADMIN_TOKEN=replace-with-a-long-random-admin-token

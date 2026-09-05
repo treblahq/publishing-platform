@@ -15,7 +15,11 @@ describe('wrangler environment isolation', () => {
     expect(serialized).toContain('publishing-artifacts-local');
     expect(serialized).toContain('publishing-artifacts-staging');
     expect(serialized).toContain('publishing-artifacts-production');
-    expect(serialized.match(/"ENABLED_ADAPTERS":""/gu)).toHaveLength(3);
+    expect(config).toHaveProperty('vars.ENABLED_ADAPTERS', '');
+    expect(config).toHaveProperty('env.staging.vars.ENABLED_ADAPTERS', 'web.pages');
+    expect(config).toHaveProperty('env.production.vars.ENABLED_ADAPTERS', '');
+    expect(config).toHaveProperty('env.staging.vars.ADAPTER_CONFIGS');
+    expect(serialized).toContain('https://cloudflare-preview.openings-dev-web.pages.dev');
     const freeBudgets = JSON.stringify({ d1Rows: 70000, queueOperations: 7000, r2Bytes: 7516192768 });
     expect(serialized.split(JSON.stringify(freeBudgets))).toHaveLength(4);
   });
