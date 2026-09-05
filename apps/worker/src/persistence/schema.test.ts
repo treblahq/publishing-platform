@@ -5,15 +5,18 @@ import { beforeEach, describe, expect, it } from 'vitest';
 
 const migrationPath = resolve('apps/worker/migrations/0001_core.sql');
 const capacityMigrationPath = resolve('apps/worker/migrations/0002_capacity.sql');
+const maintenanceMigrationPath = resolve('apps/worker/migrations/0003_maintenance.sql');
 let database: DatabaseSync;
 
 beforeEach(() => {
   expect(existsSync(migrationPath)).toBe(true);
   expect(existsSync(capacityMigrationPath)).toBe(true);
+  expect(existsSync(maintenanceMigrationPath)).toBe(true);
   database = new DatabaseSync(':memory:');
   database.exec('PRAGMA foreign_keys = ON');
   database.exec(readFileSync(migrationPath, 'utf8'));
   database.exec(readFileSync(capacityMigrationPath, 'utf8'));
+  database.exec(readFileSync(maintenanceMigrationPath, 'utf8'));
   database.prepare("INSERT INTO tenants (id, name, enabled) VALUES ('tenant-1', 'openings', 1)").run();
   database.prepare("INSERT INTO producer_clients (id, tenant_id, name, enabled, secret_hash) VALUES ('client-1', 'tenant-1', 'pipeline', 1, 'hash')").run();
 });

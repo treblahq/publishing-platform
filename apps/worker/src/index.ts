@@ -16,6 +16,7 @@ import { handleDeliveryBatch } from './delivery/queue-handler.js';
 import { createD1AttemptStore } from './delivery/d1-attempt-store.js';
 import { handleAdminRequest } from './admin/routes.js';
 import { createD1AdminDependencies } from './admin/d1-admin.js';
+import { runD1ArtifactCleanup } from './cleanup/d1-cleanup.js';
 
 type Environment = Record<string, unknown>;
 type RouteHandler = (request: Request, environment: Environment) => Promise<Response>;
@@ -107,6 +108,7 @@ async function dispatchRuntimeOutbox(environment: Environment): Promise<number> 
   const database = bindings.ledger as D1Database;
   const queue = bindings.deliveryQueue as Queue;
   await enqueueDueRetries(database, 25);
+  await runD1ArtifactCleanup(database, bindings.artifacts as R2Bucket, 25);
   return dispatchOutbox(createD1OutboxStore(database), {
     send: async (message) => { await queue.send(message); },
   }, 50);
