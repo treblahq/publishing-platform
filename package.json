@@ -16,7 +16,7 @@
     "lint": "eslint .",
     "scan:secrets": "node tooling/secret-scan.mjs",
     "pretest": "npm run build --workspace @treblahq/publishing-contracts && npm run build --workspace @treblahq/publishing-adapter-kit && npm run build --workspace @treblahq/publishing-adapter-test",
-    "prevalidate": "npm run pretest",
+    "prevalidate": "npm run pretest && npm run types:worker",
     "test": "NODE_NO_WARNINGS=1 vitest run --passWithNoTests",
     "types:worker": "wrangler types apps/worker/src/worker-configuration.d.ts --config apps/worker/wrangler.json",
     "typecheck": "tsc --noEmit",
