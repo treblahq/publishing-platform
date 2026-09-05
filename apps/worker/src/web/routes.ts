@@ -1,4 +1,4 @@
-import type { WebEntityKind } from '@treblahq/publishing-contracts';
+import type { WebEntityKind } from '@trebla/publishing-contracts';
 import type { StoredWebManifest } from './d1-entity-stores.js';
 
 interface Dependencies {

@@ -1,10 +1,10 @@
-# @treblahq/publishing-client
+# @trebla/publishing-client
 
 Fail-closed client for staging durable publishing handoffs on disk and
 uploading their artifacts to the Trebla publishing platform.
 
 ```sh
-npm install @treblahq/publishing-client@0.1.0
+npm install @trebla/publishing-client@0.1.0
 ```
 
 Local staging is network-free. Uploads require an explicit platform endpoint

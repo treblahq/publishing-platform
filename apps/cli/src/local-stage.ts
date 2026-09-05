@@ -6,7 +6,7 @@ import {
   stagePlatformHandoff,
   type FileOutboxEntry,
   type PlatformHandoff,
-} from '@treblahq/publishing-client';
+} from '@trebla/publishing-client';
 
 export interface LocalStageArguments {
   inputPath: string;

@@ -1,12 +1,12 @@
 import {
   DeliveryError,
   type DeliveryReceipt,
-} from '@treblahq/publishing-contracts';
+} from '@trebla/publishing-contracts';
 import type {
   AdapterContext,
   DeliveryAdapter,
   ReconcileContext,
-} from '@treblahq/publishing-adapter-kit';
+} from '@trebla/publishing-adapter-kit';
 
 import { FaultScript, type FakeAdapterFault } from './fault-script.js';
 

@@ -2,7 +2,7 @@ import {
   MAX_ENVELOPE_BYTES,
   validatePublicationEnvelope,
   type PublicationEnvelope,
-} from '@treblahq/publishing-contracts';
+} from '@trebla/publishing-contracts';
 
 import { acceptPublication, type AtomicIntakeStore, type IntakeCapacity } from './accept-publication.js';
 import { authenticateRequest, type ProducerClientLoader } from './authenticate.js';

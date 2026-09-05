@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createFakeAdapter } from '@treblahq/publishing-adapter-test';
+import { createFakeAdapter } from '@trebla/publishing-adapter-test';
 
 import { createAdapterRegistry } from '../registry.js';
 import { consumeDelivery } from '../delivery/consume.js';

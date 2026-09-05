@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
-import { validatePublicationEnvelope } from '@treblahq/publishing-contracts';
+import { validatePublicationEnvelope } from '@trebla/publishing-contracts';
 import { createR2CanaryEnvelope } from './r2-canary-staging.mjs';
 
 describe('R2 staging canary', () => {
@@ -12,7 +12,7 @@ describe('R2 staging canary', () => {
 
   it('builds the workspace client before executing the canary', () => {
     const workflow = readFileSync('.github/workflows/canary-r2-staging.yml', 'utf8');
-    expect(workflow.indexOf('npm run build --workspace @treblahq/publishing-contracts'))
+    expect(workflow.indexOf('npm run build --workspace @trebla/publishing-contracts'))
       .toBeLessThan(workflow.indexOf('node tooling/r2-canary-staging.mjs'));
   });
 });

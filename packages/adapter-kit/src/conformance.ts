@@ -1,4 +1,4 @@
-import { validateDeliveryReceipt, type DeliveryReceipt } from '@treblahq/publishing-contracts';
+import { validateDeliveryReceipt, type DeliveryReceipt } from '@trebla/publishing-contracts';
 
 import { assertAdapterSupports, validateAdapterManifest } from './manifest.js';
 import type { AdapterContext, DeliveryAdapter } from './types.js';

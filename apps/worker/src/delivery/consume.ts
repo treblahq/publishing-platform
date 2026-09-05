@@ -1,7 +1,7 @@
-import type { ArtifactReference, DeliveryReceipt, DeliveryState } from '@treblahq/publishing-contracts';
-import { DeliveryError, validateDeliveryReceipt } from '@treblahq/publishing-contracts';
-import { DELIVERY_PAYLOAD_TYPES } from '@treblahq/publishing-contracts';
-import { assertAdapterSupports } from '@treblahq/publishing-adapter-kit';
+import type { ArtifactReference, DeliveryReceipt, DeliveryState } from '@trebla/publishing-contracts';
+import { DeliveryError, validateDeliveryReceipt } from '@trebla/publishing-contracts';
+import { DELIVERY_PAYLOAD_TYPES } from '@trebla/publishing-contracts';
+import { assertAdapterSupports } from '@trebla/publishing-adapter-kit';
 
 import type { AdapterRegistry } from '../registry.js';
 import type { DeliveryLeaseStore } from './lease.js';

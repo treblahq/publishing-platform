@@ -8,7 +8,7 @@ import {
   DeliveryError,
   validateArtifactReference,
   type ArtifactReference,
-} from '@treblahq/publishing-contracts';
+} from '@trebla/publishing-contracts';
 
 import { buildSignedHeadersFromHash } from './headers.js';
 

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { createFakeAdapter } from '@treblahq/publishing-adapter-test';
+import { createFakeAdapter } from '@trebla/publishing-adapter-test';
 
 import * as registryModule from './registry.js';
 

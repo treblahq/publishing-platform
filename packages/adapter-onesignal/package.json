@@ -1,5 +1,5 @@
 {
-  "name": "@treblahq/publishing-adapter-onesignal",
+  "name": "@trebla/publishing-adapter-onesignal",
   "version": "0.1.0",
   "type": "module",
   "license": "MIT",
@@ -7,8 +7,8 @@
   "types": "./dist/index.d.ts",
   "files": ["dist"],
   "dependencies": {
-    "@treblahq/publishing-adapter-kit": "0.1.0",
-    "@treblahq/publishing-contracts": "0.1.0"
+    "@trebla/publishing-adapter-kit": "0.1.0",
+    "@trebla/publishing-contracts": "0.1.0"
   },
   "scripts": {
     "build": "tsc --project tsconfig.json"

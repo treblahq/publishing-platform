@@ -1,5 +1,5 @@
 {
-  "name": "@treblahq/publishing-client",
+  "name": "@trebla/publishing-client",
   "version": "0.1.0",
   "type": "module",
   "license": "MIT",
@@ -19,7 +19,7 @@
   "types": "./dist/index.d.ts",
   "files": ["dist", "!dist/**/*.test.*"],
   "dependencies": {
-    "@treblahq/publishing-contracts": "0.1.0"
+    "@trebla/publishing-contracts": "0.1.0"
   },
   "scripts": {
     "build": "tsc --project tsconfig.json"

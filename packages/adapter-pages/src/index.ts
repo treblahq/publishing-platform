@@ -1,5 +1,5 @@
-import type { DeliveryAdapter } from '@treblahq/publishing-adapter-kit';
-import { DeliveryError } from '@treblahq/publishing-contracts';
+import type { DeliveryAdapter } from '@trebla/publishing-adapter-kit';
+import { DeliveryError } from '@trebla/publishing-contracts';
 
 export interface PagesConfig { baseUrl: string }
 export interface PagesPayload extends Record<string, unknown> {

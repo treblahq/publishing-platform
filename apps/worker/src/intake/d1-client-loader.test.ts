@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { sha256Hex } from '@treblahq/publishing-client';
+import { sha256Hex } from '@trebla/publishing-client';
 
 import { createD1ProducerClientLoader } from './d1-client-loader.js';
 

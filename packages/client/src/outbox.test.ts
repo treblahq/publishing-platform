@@ -4,7 +4,7 @@ import { join } from 'node:path';
 
 import { afterEach, describe, expect, it } from 'vitest';
 
-import type { PublicationEnvelope } from '@treblahq/publishing-contracts';
+import type { PublicationEnvelope } from '@trebla/publishing-contracts';
 
 import { createFileOutbox } from './outbox.js';
 

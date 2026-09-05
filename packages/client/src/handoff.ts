@@ -2,7 +2,7 @@ import {
   validatePublicationEnvelope,
   type ArtifactReference,
   type PublicationEnvelope,
-} from '@treblahq/publishing-contracts';
+} from '@trebla/publishing-contracts';
 
 import type { FileOutboxEntry } from './outbox.js';
 import type { ArtifactUploader } from './upload.js';

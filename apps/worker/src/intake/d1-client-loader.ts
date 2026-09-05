@@ -1,4 +1,4 @@
-import { sha256Hex } from '@treblahq/publishing-client';
+import { sha256Hex } from '@trebla/publishing-client';
 
 import type { ProducerClientCredential, ProducerClientLoader } from './authenticate.js';
 

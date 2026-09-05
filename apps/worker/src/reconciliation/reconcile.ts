@@ -1,4 +1,4 @@
-import type { DeliveryState } from '@treblahq/publishing-contracts';
+import type { DeliveryState } from '@trebla/publishing-contracts';
 
 interface AmbiguousRecovery {
   providerIdempotency: boolean;

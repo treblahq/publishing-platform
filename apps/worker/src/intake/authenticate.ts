@@ -1,4 +1,4 @@
-import { sha256Hex, signCanonicalRequest } from '@treblahq/publishing-client';
+import { sha256Hex, signCanonicalRequest } from '@trebla/publishing-client';
 
 export interface ProducerClientCredential {
   id: string;

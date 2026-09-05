@@ -1,7 +1,7 @@
 import {
   validatePublicationEnvelope,
   type PublicationEnvelope,
-} from '@treblahq/publishing-contracts';
+} from '@trebla/publishing-contracts';
 
 interface Statement {
   bind(...values: unknown[]): Statement;

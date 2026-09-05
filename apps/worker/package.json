@@ -1,14 +1,14 @@
 {
-  "name": "@treblahq/publishing-worker",
+  "name": "@trebla/publishing-worker",
   "version": "0.1.0",
   "private": true,
   "type": "module",
   "dependencies": {
-    "@treblahq/publishing-adapter-kit": "0.1.0",
-    "@treblahq/publishing-adapter-onesignal": "0.1.0",
-    "@treblahq/publishing-adapter-pages": "0.1.0",
-    "@treblahq/publishing-client": "0.1.0",
-    "@treblahq/publishing-contracts": "0.1.0"
+    "@trebla/publishing-adapter-kit": "0.1.0",
+    "@trebla/publishing-adapter-onesignal": "0.1.0",
+    "@trebla/publishing-adapter-pages": "0.1.0",
+    "@trebla/publishing-client": "0.1.0",
+    "@trebla/publishing-contracts": "0.1.0"
   },
   "scripts": {
     "build": "tsc --project tsconfig.json"

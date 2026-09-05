@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import type { PublicationEnvelope } from '@treblahq/publishing-contracts';
+import type { PublicationEnvelope } from '@trebla/publishing-contracts';
 
 import { createPublishingClient } from './client.js';
 

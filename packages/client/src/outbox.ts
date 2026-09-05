@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import {
   validatePublicationEnvelope,
   type PublicationEnvelope,
-} from '@treblahq/publishing-contracts';
+} from '@trebla/publishing-contracts';
 
 import { sha256Hex } from './headers.js';
 

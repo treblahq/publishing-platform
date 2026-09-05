@@ -1,4 +1,4 @@
-import type { ArtifactReference, DeliveryReceipt, DeliveryState } from '@treblahq/publishing-contracts';
+import type { ArtifactReference, DeliveryReceipt, DeliveryState } from '@trebla/publishing-contracts';
 
 import type { DeliveryStateStore, DeliveryWork } from './consume.js';
 

@@ -14,9 +14,11 @@ describe('public package release metadata', () => {
     const contracts = await readPackage('packages/contracts/package.json');
     const client = await readPackage('packages/client/package.json');
 
+    expect(contracts.name).toBe('@trebla/publishing-contracts');
+    expect(client.name).toBe('@trebla/publishing-client');
     expect(contracts.version).toBe('0.1.0');
     expect(client.version).toBe(contracts.version);
-    expect(client.dependencies['@treblahq/publishing-contracts']).toBe(
+    expect(client.dependencies['@trebla/publishing-contracts']).toBe(
       contracts.version,
     );
   });

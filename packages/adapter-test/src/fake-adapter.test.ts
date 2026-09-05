@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { runAdapterConformance } from '@treblahq/publishing-adapter-kit';
+import { runAdapterConformance } from '@trebla/publishing-adapter-kit';
 
 import { createFakeAdapter } from './index.js';
 

@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
-import { runAdapterConformance } from '@treblahq/publishing-adapter-kit';
-import type { AdapterContext } from '@treblahq/publishing-adapter-kit';
+import { runAdapterConformance } from '@trebla/publishing-adapter-kit';
+import type { AdapterContext } from '@trebla/publishing-adapter-kit';
 
 import { createPagesAdapter, type PagesConfig, type PagesPayload } from './index.js';
 

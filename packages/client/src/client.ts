@@ -2,7 +2,7 @@ import {
   DeliveryError,
   validatePublicationEnvelope,
   type PublicationEnvelope,
-} from '@treblahq/publishing-contracts';
+} from '@trebla/publishing-contracts';
 
 import { buildSignedHeaders } from './headers.js';
 

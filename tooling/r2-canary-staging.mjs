@@ -1,7 +1,7 @@
 import { createHash, randomUUID } from 'node:crypto';
 import process from 'node:process';
 import { pathToFileURL } from 'node:url';
-import { createPublishingClient } from '@treblahq/publishing-client';
+import { createPublishingClient } from '@trebla/publishing-client';
 
 export function createR2CanaryEnvelope(jobId, jobTitle, runId) {
   const content = { title: jobTitle, canary: true };

@@ -1,4 +1,4 @@
-import type { DeliveryAdapter } from '@treblahq/publishing-adapter-kit';
+import type { DeliveryAdapter } from '@trebla/publishing-adapter-kit';
 
 export type AdapterResolution =
   | { outcome: 'unknown' }

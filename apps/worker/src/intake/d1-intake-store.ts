@@ -1,4 +1,4 @@
-import type { PublicationEnvelope } from '@treblahq/publishing-contracts';
+import type { PublicationEnvelope } from '@trebla/publishing-contracts';
 
 import type { AtomicAcceptance, AtomicIntakeStore } from './accept-publication.js';
 import { estimateCapacityRequests } from '../capacity/d1-capacity.js';

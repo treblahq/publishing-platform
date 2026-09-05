@@ -1,8 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { DeliveryError } from '@treblahq/publishing-contracts';
-import type { AdapterContext } from '@treblahq/publishing-adapter-kit';
-import { runAdapterConformance } from '@treblahq/publishing-adapter-kit';
+import { DeliveryError } from '@trebla/publishing-contracts';
+import type { AdapterContext } from '@trebla/publishing-adapter-kit';
+import { runAdapterConformance } from '@trebla/publishing-adapter-kit';
 
 import {
   createOneSignalAdapter,

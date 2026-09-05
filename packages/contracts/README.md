@@ -1,9 +1,9 @@
-# @treblahq/publishing-contracts
+# @trebla/publishing-contracts
 
 Runtime schemas and TypeScript types for immutable publishing envelopes.
 
 ```sh
-npm install @treblahq/publishing-contracts@0.1.0
+npm install @trebla/publishing-contracts@0.1.0
 ```
 
 This package performs no network calls and contains no provider credentials.
