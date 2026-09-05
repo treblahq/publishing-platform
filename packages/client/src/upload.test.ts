@@ -9,9 +9,10 @@ import { DeliveryError, type ArtifactReference } from '@treblahq/publishing-cont
 import { createArtifactUploader } from './upload.js';
 
 const directories: string[] = [];
+const mediaSha256 = '721c9525ade2ea8903d343ef25cf68b9bf4ab0aad56bb7b01fbe48d09bc7fcf4';
 const reference = {
-  id: 'video', storage: 'r2-temporary', sha256: 'a'.repeat(64), byteSize: 5,
-  mediaType: 'video/mp4', locator: `temporary/troco/campaign/${'a'.repeat(64)}.mp4`,
+  id: 'video', storage: 'r2-temporary', sha256: mediaSha256, byteSize: 5,
+  mediaType: 'video/mp4', locator: `temporary/troco/campaign/${mediaSha256}.mp4`,
 } satisfies ArtifactReference;
 
 afterEach(async () => {
@@ -63,6 +64,15 @@ describe('temporary artifact uploader', () => {
 
     await expect(uploader(fetch).upload({ tenant: 'troco', reference, filePath: path }))
       .rejects.toThrow('Artifact file size changed after preparation');
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it('rejects changed bytes of the same size before sending', async () => {
+    const fetch = vi.fn<typeof globalThis.fetch>();
+    const path = await mediaFile('other');
+
+    await expect(uploader(fetch).upload({ tenant: 'troco', reference, filePath: path }))
+      .rejects.toThrow('Artifact file content changed after preparation');
     expect(fetch).not.toHaveBeenCalled();
   });
 

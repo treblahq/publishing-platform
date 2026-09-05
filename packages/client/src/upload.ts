@@ -1,6 +1,8 @@
+import { createHash } from 'node:crypto';
 import { createReadStream } from 'node:fs';
 import { stat } from 'node:fs/promises';
 import { Readable } from 'node:stream';
+import { pipeline } from 'node:stream/promises';
 
 import {
   DeliveryError,
@@ -46,6 +48,11 @@ export function createArtifactUploader(options: ArtifactUploaderOptions): Artifa
       const file = await stat(filePath);
       if (!file.isFile() || file.size !== reference.byteSize) {
         throw new Error('Artifact file size changed after preparation');
+      }
+      const hash = createHash('sha256');
+      await pipeline(createReadStream(filePath), hash);
+      if (hash.digest('hex') !== reference.sha256) {
+        throw new Error('Artifact file content changed after preparation');
       }
 
       const query = new URLSearchParams({
