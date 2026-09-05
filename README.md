@@ -24,6 +24,8 @@ The isolated manual rollout procedure is documented in
 Producer applications can prepare publications and artifact metadata without
 network access. The adoption sequence and safety gates are documented in
 [`docs/runbooks/producer_adoption.md`](docs/runbooks/producer_adoption.md).
+The audited public-package procedure is documented in
+[`docs/runbooks/package_release.md`](docs/runbooks/package_release.md).
 
 ## DNS cutover guard
 

@@ -20,6 +20,17 @@ Preparation performs no HTTP request. It does not upload media, submit the
 envelope, run a GitHub Action, publish to a provider, or transfer delivery
 ownership.
 
+After a product writes a `{ envelope, uploads }` handoff JSON file, the shared
+CLI can validate and queue it locally without any endpoint or credential:
+
+```sh
+publishing stage ./handoff.json --outbox ./.publishing/outbox
+```
+
+The command exits before reading `PUBLISHING_ENDPOINT` or
+`PUBLISHING_ADMIN_TOKEN`. Keep both the handoff file and outbox directory out
+of Git because the handoff contains product-owned local artifact paths.
+
 ```ts
 import {
   createFileOutbox,
@@ -93,9 +104,10 @@ Submission is a separate, explicit operation. Construct a
 
 For each `r2-temporary` artifact, construct `createArtifactUploader` with the
 same environment-provided endpoint and credentials. Upload the local file
-before draining its envelope. The uploader verifies that the local size still
-matches the prepared reference, signs the already-computed hash, and streams
-the file without loading it all into memory.
+before draining its envelope. The uploader recalculates both the local size
+and SHA-256 hash before making a request, signs the verified hash, and streams
+the file without loading it all into memory. A file changed after preparation
+is rejected locally even when its replacement has exactly the same size.
 
 The required order is:
 
