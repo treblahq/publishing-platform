@@ -3,12 +3,15 @@ import { createD1CapacityChecker } from './capacity/d1-capacity.js';
 import { createD1ProducerClientLoader } from './intake/d1-client-loader.js';
 import { createD1IntakeStore } from './intake/d1-intake-store.js';
 import { handlePublicationRequest } from './intake/routes.js';
+import { createD1OutboxStore } from './coordinator/d1-outbox-store.js';
+import { dispatchOutbox } from './coordinator/dispatch-outbox.js';
 
 type Environment = Record<string, unknown>;
 type RouteHandler = (request: Request, environment: Environment) => Promise<Response>;
 
 interface WorkerOverrides {
   publicationHandler?: RouteHandler;
+  scheduledHandler?: (environment: Environment) => Promise<number>;
 }
 
 export function createWorker(overrides: WorkerOverrides = {}) {
@@ -23,7 +26,23 @@ export function createWorker(overrides: WorkerOverrides = {}) {
       }
       return Response.json({ code: 'NOT_FOUND' }, { status: 404 });
     },
+    scheduled(
+      _controller: ScheduledController,
+      environment: Environment,
+      context: ExecutionContext,
+    ): void {
+      context.waitUntil((overrides.scheduledHandler ?? dispatchRuntimeOutbox)(environment));
+    },
   };
+}
+
+async function dispatchRuntimeOutbox(environment: Environment): Promise<number> {
+  const bindings = parseWorkerBindings(environment);
+  const database = bindings.ledger as D1Database;
+  const queue = bindings.deliveryQueue as Queue;
+  return dispatchOutbox(createD1OutboxStore(database), {
+    send: async (message) => { await queue.send(message); },
+  }, 50);
 }
 
 async function handleRuntimePublication(request: Request, environment: Environment): Promise<Response> {

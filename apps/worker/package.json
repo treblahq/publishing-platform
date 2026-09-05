@@ -4,6 +4,7 @@
   "private": true,
   "type": "module",
   "dependencies": {
+    "@treblahq/publishing-adapter-kit": "0.0.0",
     "@treblahq/publishing-client": "0.0.0",
     "@treblahq/publishing-contracts": "0.0.0"
   },

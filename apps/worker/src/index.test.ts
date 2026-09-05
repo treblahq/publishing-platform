@@ -22,4 +22,13 @@ describe('worker HTTP router', () => {
     const response = await createWorker().fetch(new Request('https://worker.test/unknown'), {});
     expect(response.status).toBe(404);
   });
+
+  it('dispatches durable outbox work from the scheduled trigger', async () => {
+    const scheduledHandler = vi.fn().mockResolvedValue(2);
+    const waitUntil = vi.fn();
+    createWorker({ scheduledHandler }).scheduled({} as ScheduledController, { marker: true }, { waitUntil } as unknown as ExecutionContext);
+    expect(scheduledHandler).toHaveBeenCalledWith({ marker: true });
+    expect(waitUntil).toHaveBeenCalledOnce();
+    await expect(waitUntil.mock.calls[0]?.[0]).resolves.toBe(2);
+  });
 });
