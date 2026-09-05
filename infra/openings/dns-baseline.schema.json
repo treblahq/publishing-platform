@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://treb.la/schemas/openings-dns-baseline.schema.json",
+  "title": "Openings DNS baseline",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "domain", "capturedAt", "records"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "domain": { "type": "string", "minLength": 1 },
+    "capturedAt": { "type": "string", "format": "date-time" },
+    "records": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "type", "values"],
+        "properties": {
+          "name": { "type": "string", "minLength": 1 },
+          "type": { "enum": ["A", "AAAA", "CNAME", "MX", "TXT", "CAA"] },
+          "values": { "type": "array", "items": { "type": "string" }, "uniqueItems": true }
+        }
+      }
+    }
+  }
+}

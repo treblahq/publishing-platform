@@ -20,3 +20,23 @@ provider payloads must never be committed to this repository.
 
 The isolated manual rollout procedure is documented in
 [`docs/runbooks/staging.md`](docs/runbooks/staging.md).
+
+## DNS cutover guard
+
+Capture the public web, mail, SPF, DMARC, CAA, verification, and known DKIM
+record sets before a cutover. DKIM selectors cannot be enumerated through DNS,
+so pass every configured selector explicitly:
+
+```sh
+node scripts/capture-dns-baseline.ts openings.dev before.json \
+  selector._domainkey.openings.dev:TXT
+node scripts/capture-dns-baseline.ts openings.dev after.json \
+  selector._domainkey.openings.dev:TXT
+node scripts/compare-dns-baseline.ts before.json after.json
+```
+
+The comparison permits changes only to apex or `www` A, AAAA, and CNAME
+records. Any mutation to MX, SPF, DKIM, DMARC, CAA, verification records, or an
+unexpected hostname exits unsuccessfully and blocks the cutover. Baseline
+files contain public DNS data only; use dated operational evidence rather than
+committing ad-hoc captures to the repository.
