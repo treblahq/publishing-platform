@@ -6,20 +6,24 @@ describe('capacity measurement refresh', () => {
     const tenantStatement = statement({ all: vi.fn().mockResolvedValue({ results: [{ id: 'openings' }] }) });
     const storageStatement = statement({ first: vi.fn().mockResolvedValue({ used: 2048 }) });
     const writes = [statement({}), statement({}), statement({})];
+    let capturedBatch: Array<{ bindings: unknown[] }> = [];
     const database = {
       prepare: vi.fn().mockImplementation((sql: string) => {
         if (sql.includes('FROM tenants')) return tenantStatement;
         if (sql.includes('FROM artifacts')) return storageStatement;
         return writes.shift();
       }),
-      batch: vi.fn().mockResolvedValue([]),
+      batch: vi.fn().mockImplementation((items: Array<{ bindings: unknown[] }>) => {
+        capturedBatch = items;
+        return Promise.resolve([]);
+      }),
     };
 
     await expect(refreshD1CapacityUsage(database, 25, () => new Date('2026-09-04T15:00:00.000Z'))).resolves.toBe(1);
     expect(tenantStatement.bind).toHaveBeenCalledWith(25);
     expect(storageStatement.bind).toHaveBeenCalledWith('openings');
     expect(database.batch).toHaveBeenCalledOnce();
-    const bound = database.batch.mock.calls[0]?.[0].map((item: { bindings: unknown[] }) => item.bindings);
+    const bound = capturedBatch.map((item) => item.bindings);
     expect(bound).toContainEqual(['openings', 'r2Bytes', '2026-09-04T00:00:00.000Z', 2048, '2026-09-04T15:00:00.000Z']);
   });
 });

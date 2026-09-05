@@ -1,4 +1,5 @@
 import { readFile } from 'node:fs/promises';
+import process from 'node:process';
 import { pathToFileURL } from 'node:url';
 
 const PLACEHOLDER_ID = /^0{8}-0{4}-0{4}-0{4}-0{12}$/u;

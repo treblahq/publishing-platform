@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto';
+import process from 'node:process';
 import { pathToFileURL } from 'node:url';
 
 export function createStagingBootstrapSql(clientId, secret, now = new Date()) {
