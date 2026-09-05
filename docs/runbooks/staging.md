@@ -79,10 +79,10 @@ verifies `/health/live` externally and ends with one signed, sanitized,
 Pages-only shadow publication that is inspected through the authenticated admin
 API. The same check can be run independently through the manual `Smoke staging`
 workflow. The OneSignal app and isolated `Publishing Platform Canary` segment
-are configured, but `ENABLED_ADAPTERS` remains exactly `web.pages`; installing
-the secret and validating the public configuration cannot send a notification.
-Do not add `push.onesignal` to that allowlist until the separate test-audience
-canary is explicitly approved and verified.
+are configured. The adapter is compiled only for staging and every normal
+deployment writes a fail-closed D1 control that pauses it before the Worker is
+updated. Installing the secret and validating the public configuration cannot
+send a notification.
 
 The prepared `push.onesignal` configuration uses `audienceMode:
 "staging-segment"` and the isolated segment. The deploy readiness check rejects
@@ -90,6 +90,12 @@ any other app, audience, segment, embedded key, or stale/free-tier-invalid usage
 attestation. The adapter also rejects an absent segment instead of falling back
 to `Subscribed Users`. `audienceMode: "production-broadcast"` is the only mode
 that maps to every subscribed user, and it remains absent from staging.
+
+`Canary OneSignal staging` is a separate manual workflow. It requires the exact
+confirmation phrase, a job already visible on the Pages preview, and its title.
+It resumes the adapter only around one unique publication, waits for both the
+page and push receipts to become `verified`, and pauses the adapter in both the
+script's `finally` block and an unconditional workflow cleanup step.
 
 ## Explicit remaining gates
 
