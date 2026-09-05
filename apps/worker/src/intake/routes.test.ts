@@ -27,6 +27,7 @@ describe('publication intake route', () => {
     const response = await handlePublicationRequest(await requestFor(), {
       now: () => new Date('2026-09-04T15:00:00.000Z'), loadClient: () => Promise.resolve(client),
       capacity: () => Promise.resolve({ accepted: true }),
+      artifactsReady: () => Promise.resolve(true),
       store: { findByIdempotencyKey: () => Promise.resolve(null), acceptAtomic: () => Promise.resolve('publication-1') },
     });
     expect(response.status).toBe(202);
@@ -40,6 +41,7 @@ describe('publication intake route', () => {
     const response = await handlePublicationRequest(await requestFor(), {
       now: () => new Date('2026-09-04T15:00:00.000Z'), loadClient: () => Promise.resolve(client),
       capacity: () => Promise.resolve({ accepted: false, retryAfter: '2026-09-05T00:00:00.000Z' }),
+      artifactsReady: () => Promise.resolve(true),
       store: { findByIdempotencyKey: () => Promise.resolve(null), acceptAtomic: () => { writes += 1; return Promise.resolve('unexpected'); } },
     });
     expect(response.status).toBe(429);
@@ -56,9 +58,38 @@ describe('publication intake route', () => {
     const response = await handlePublicationRequest(request, {
       now: () => new Date('2026-09-04T15:00:00.000Z'), loadClient: () => Promise.resolve(client),
       capacity: () => { effects += 1; return Promise.resolve({ accepted: true }); },
+      artifactsReady: () => { effects += 1; return Promise.resolve(true); },
       store: { findByIdempotencyKey: () => Promise.resolve(null), acceptAtomic: () => { effects += 1; return Promise.resolve('unexpected'); } },
     });
     expect(response.status).toBe(401);
+    expect(effects).toBe(0);
+  });
+
+  it('rejects a publication before capacity or storage when temporary bytes are unavailable', async () => {
+    const handlePublicationRequest = Reflect.get(routes, 'handlePublicationRequest');
+    expect(handlePublicationRequest).toBeTypeOf('function');
+    let effects = 0;
+    const temporary = {
+      ...envelope,
+      artifacts: [{
+        id: 'video', storage: 'r2-temporary' as const, sha256: 'a'.repeat(64),
+        byteSize: 5, mediaType: 'video/mp4',
+        locator: `temporary/openings/job/${'a'.repeat(64)}.mp4`,
+      }],
+    } satisfies PublicationEnvelope;
+    const response = await handlePublicationRequest(await requestFor(temporary), {
+      now: () => new Date('2026-09-04T15:00:00.000Z'),
+      loadClient: () => Promise.resolve(client),
+      artifactsReady: () => Promise.resolve(false),
+      capacity: () => { effects += 1; return Promise.resolve({ accepted: true }); },
+      store: {
+        findByIdempotencyKey: () => Promise.resolve(null),
+        acceptAtomic: () => { effects += 1; return Promise.resolve('unexpected'); },
+      },
+    });
+
+    expect(response.status).toBe(409);
+    await expect(response.json()).resolves.toEqual({ code: 'ARTIFACT_NOT_READY' });
     expect(effects).toBe(0);
   });
 });

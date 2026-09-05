@@ -75,9 +75,16 @@ function buildStatements(
     const artifactId = requireMappedId(ids.artifactIds, artifact.id);
     statements.push(database.prepare(`INSERT INTO artifacts
       (id, tenant_id, storage, sha256, byte_size, media_type, locator, state)
-      VALUES (?, ?, ?, ?, ?, ?, ?, 'staged')`)
+      VALUES (?, ?, ?, ?, ?, ?, ?, '${artifact.storage === 'r2-temporary' ? 'available' : 'staged'}')`)
       .bind(artifactId, principal.tenant, artifact.storage, artifact.sha256, artifact.byteSize,
         artifact.mediaType, artifact.locator));
+    if (artifact.storage === 'r2-temporary') {
+      statements.push(database.prepare(`UPDATE artifact_uploads SET state = 'claimed', claimed_at = ?,
+        updated_at = ? WHERE tenant_id = ? AND locator = ? AND sha256 = ? AND byte_size = ?
+        AND media_type = ? AND state IN ('available', 'claimed')`)
+        .bind(acceptedAt, acceptedAt, principal.tenant, artifact.locator, artifact.sha256,
+          artifact.byteSize, artifact.mediaType));
+    }
   }
 
   for (const delivery of envelope.deliveries) {

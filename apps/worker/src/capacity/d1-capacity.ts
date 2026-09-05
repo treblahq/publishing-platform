@@ -61,7 +61,7 @@ export function estimateCapacityRequests(value: unknown): CapacityBudgets {
   const r2Bytes = artifacts.reduce<number>((total, artifact) => {
     if (typeof artifact !== 'object' || artifact === null) return total;
     const record = artifact as Record<string, unknown>;
-    return record.storage === 'r2-temporary' || record.storage === 'r2-live'
+    return record.storage === 'r2-live'
       ? total + (typeof record.byteSize === 'number' ? record.byteSize : Number.MAX_SAFE_INTEGER)
       : total;
   }, 0);

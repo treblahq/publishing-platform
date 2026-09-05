@@ -55,4 +55,31 @@ describe('D1 atomic intake store', () => {
     expect(sql).toContain("state = 'consumed'");
     expect(database.batches).toHaveLength(1);
   });
+
+  it('claims verified temporary uploads and stores them as available atomically', async () => {
+    const createD1IntakeStore = Reflect.get(d1Store, 'createD1IntakeStore');
+    expect(createD1IntakeStore).toBeTypeOf('function');
+    const temporaryArtifact = {
+      id: 'video-1', storage: 'r2-temporary' as const, sha256: 'b'.repeat(64),
+      byteSize: 20, mediaType: 'video/mp4',
+      locator: `temporary/openings/job/${'b'.repeat(64)}.mp4`,
+    };
+    const temporaryEnvelope = {
+      ...envelope,
+      artifacts: [temporaryArtifact],
+    } satisfies PublicationEnvelope;
+    const database = new Database();
+    const store = createD1IntakeStore(database, () => crypto.randomUUID(), () => '2026-09-04T15:00:00.000Z');
+
+    await store.acceptAtomic({
+      envelope: temporaryEnvelope,
+      principal: { tenant: 'openings', clientId: 'client-1', nonce: 'nonce-1' },
+    });
+
+    const batch = database.batches[0] ?? [];
+    expect(batch.some(({ sql, bindings }) => sql.includes('UPDATE artifact_uploads')
+      && bindings.includes(temporaryArtifact.locator))).toBe(true);
+    const artifactInsert = batch.find(({ sql }) => sql.includes('INSERT INTO artifacts'));
+    expect(artifactInsert?.sql).toContain("'available'");
+  });
 });

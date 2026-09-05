@@ -29,6 +29,7 @@ import { createD1R2EntityStores, find as findWebEntity } from './web/d1-entity-s
 import { handleWebEntityRequest } from './web/routes.js';
 import { handleArtifactUploadRequest } from './artifacts/routes.js';
 import { createD1UploadStore } from './artifacts/d1-uploads.js';
+import { verifyTemporaryArtifacts } from './artifacts/verify-uploads.js';
 
 type Environment = Record<string, unknown>;
 type RouteHandler = (request: Request, environment: Environment) => Promise<Response>;
@@ -234,6 +235,12 @@ async function handleRuntimePublication(request: Request, environment: Environme
       now: () => new Date(),
       loadClient: createD1ProducerClientLoader(database, (clientId) => secrets[clientId]),
       capacity: createD1CapacityChecker(database, bindings.capacity),
+      artifactsReady: (tenant, envelope) => verifyTemporaryArtifacts(
+        database,
+        bindings.artifacts as R2Bucket,
+        tenant,
+        envelope,
+      ),
       store: createD1IntakeStore(database),
     });
   } catch {

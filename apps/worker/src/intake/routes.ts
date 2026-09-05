@@ -1,4 +1,8 @@
-import { MAX_ENVELOPE_BYTES } from '@treblahq/publishing-contracts';
+import {
+  MAX_ENVELOPE_BYTES,
+  validatePublicationEnvelope,
+  type PublicationEnvelope,
+} from '@treblahq/publishing-contracts';
 
 import { acceptPublication, type AtomicIntakeStore, type IntakeCapacity } from './accept-publication.js';
 import { authenticateRequest, type ProducerClientLoader } from './authenticate.js';
@@ -7,6 +11,7 @@ export interface PublicationRouteDependencies {
   now(): Date;
   loadClient: ProducerClientLoader;
   capacity(tenant: string, envelope: unknown): Promise<IntakeCapacity>;
+  artifactsReady(tenant: string, envelope: PublicationEnvelope): Promise<boolean>;
   store: AtomicIntakeStore;
 }
 
@@ -36,11 +41,23 @@ export async function handlePublicationRequest(
     return Response.json({ code: 'UNAUTHORIZED' }, { status: 401 });
   }
 
-  let envelope: unknown;
+  let envelope: PublicationEnvelope;
   try {
-    envelope = JSON.parse(body);
+    envelope = validatePublicationEnvelope(JSON.parse(body));
   } catch {
     return Response.json({ code: 'INVALID_JSON' }, { status: 400 });
+  }
+
+  if (envelope.identity.tenant !== principal.tenant) {
+    return Response.json({ code: 'INVALID_PUBLICATION' }, { status: 400 });
+  }
+  const existing = await dependencies.store.findByIdempotencyKey(
+    principal.tenant,
+    envelope.identity.idempotencyKey,
+  );
+  if (existing !== null) return Response.json({ publicationId: existing }, { status: 202 });
+  if (!await dependencies.artifactsReady(principal.tenant, envelope)) {
+    return Response.json({ code: 'ARTIFACT_NOT_READY' }, { status: 409 });
   }
 
   try {

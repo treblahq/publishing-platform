@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { createD1CapacityChecker } from './d1-capacity.js';
+import { createD1CapacityChecker, estimateCapacityRequests } from './d1-capacity.js';
 
 const envelope = {
   artifacts: [],
@@ -21,6 +21,12 @@ function database(rows: Record<string, { used: number; reserved: number; measure
 }
 
 describe('D1 free-tier capacity checker', () => {
+  it('does not reserve temporary bytes again after verified upload', () => {
+    expect(estimateCapacityRequests({
+      artifacts: [{ storage: 'r2-temporary', byteSize: 500 }], deliveries: [],
+    }).r2Bytes).toBe(0);
+  });
+
   it('accepts only when every measured resource has headroom', async () => {
     const rows = Object.fromEntries(['d1Rows', 'queueOperations', 'r2Bytes'].map((resource) => [
       resource, { used: 10, reserved: 0, measured_at: '2026-09-04T11:55:00.000Z' },
