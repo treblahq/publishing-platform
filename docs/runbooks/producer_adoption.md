@@ -25,6 +25,8 @@ import {
   createFileOutbox,
   createLocalProducer,
   prepareArtifactReference,
+  stagePlatformHandoff,
+  uploadPlatformHandoff,
 } from '@treblahq/publishing-client';
 
 const artifact = await prepareArtifactReference({
@@ -61,6 +63,23 @@ await producer.prepare({
   }],
 });
 ```
+
+Product adapters should return `{ envelope, uploads }`, keeping each private
+local path beside its public artifact reference rather than inside the
+envelope. The shared coordinator then enforces the same sequence for every
+product:
+
+```ts
+await stagePlatformHandoff(handoff, producer); // local disk only
+const upload = await uploadPlatformHandoff(handoff, uploader);
+if (upload.outcome !== 'available') return; // retain bytes and outbox entry
+await producer.drain({ limit: 25 });
+```
+
+`stagePlatformHandoff` cannot perform a network request. Upload bindings must
+cover every temporary artifact exactly once. Uploads run sequentially and stop
+at the first capacity deferral, so one product cannot create an uncontrolled
+burst against the free allowance.
 
 The outbox path is product-owned runtime state. Do not place it inside Git or
 commit generated media.
