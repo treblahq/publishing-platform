@@ -3,7 +3,7 @@ import { test } from 'node:test';
 
 import { runStagingSmoke, verifyStagingFailureGuards } from './smoke-staging.mjs';
 
-test('submits a sanitized Pages-only publication and verifies its ledger record', async () => {
+test('submits a sanitized R2 publication and verifies its ledger record', async () => {
   const envelope = [];
   const result = await runStagingSmoke({
     runId: '123',
@@ -13,7 +13,7 @@ test('submits a sanitized Pages-only publication and verifies its ledger record'
     },
     inspect: async (publicationId) => ({
       publication: { id: publicationId, state: 'accepted' },
-      deliveries: [{ adapter: 'web.pages', state: 'ready' }],
+      deliveries: [{ adapter: 'web.r2', state: 'ready' }],
     }),
     capacity: async () => [
       { resource: 'd1Rows', percentOfFree: 1.05, state: 'normal' },
@@ -26,8 +26,9 @@ test('submits a sanitized Pages-only publication and verifies its ledger record'
   assert.equal(envelope[0].identity.tenant, 'openings');
   assert.equal(envelope[0].canonical.title, 'Staging smoke test');
   assert.deepEqual(envelope[0].artifacts, []);
-  assert.deepEqual(envelope[0].deliveries.map((delivery) => delivery.adapter), ['web.pages']);
-  assert.equal(envelope[0].deliveries[0].payload.route, '/');
+  assert.deepEqual(envelope[0].deliveries.map((delivery) => delivery.adapter), ['web.r2']);
+  assert.equal(envelope[0].deliveries[0].payload.route, '/jobs/staging-smoke-123');
+  assert.equal(envelope[0].deliveries[0].payload.entity.kind, 'job');
 });
 
 test('rejects a missing ledger record or an unexpected adapter', async () => {
@@ -45,7 +46,7 @@ test('rejects a missing ledger record or an unexpected adapter', async () => {
       inspect: async () => ({ publication: { id: 'publication-1' }, deliveries: [{ adapter: 'push.onesignal' }] }),
       capacity: safeCapacity,
     }),
-    /Pages-only/u,
+    /R2-only/u,
   );
 });
 
@@ -53,7 +54,7 @@ test('fails when capacity reaches the forty-percent staging gate', async () => {
   await assert.rejects(runStagingSmoke({
     runId: '123',
     submit: async () => ({ outcome: 'accepted', publicationId: 'publication-1' }),
-    inspect: async () => ({ publication: { id: 'publication-1' }, deliveries: [{ adapter: 'web.pages' }] }),
+    inspect: async () => ({ publication: { id: 'publication-1' }, deliveries: [{ adapter: 'web.r2' }] }),
     capacity: async () => [
       { resource: 'd1Rows', percentOfFree: 40, state: 'normal' },
       { resource: 'queueOperations', percentOfFree: 0, state: 'normal' },

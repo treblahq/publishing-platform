@@ -2,6 +2,7 @@ import { buildSignedHeaders, createPublishingClient } from '@treblahq/publishing
 import { randomUUID } from 'node:crypto';
 import process from 'node:process';
 import { pathToFileURL } from 'node:url';
+import { createR2CanaryEnvelope } from './r2-canary-staging.mjs';
 
 export async function runStagingSmoke({ runId, submit, inspect, capacity }) {
   if (!/^[a-zA-Z0-9._-]+$/u.test(runId)) throw new Error('Smoke run identifier is unsafe');
@@ -15,30 +16,7 @@ export async function runStagingSmoke({ runId, submit, inspect, capacity }) {
   if (capacityRows.some((row) => typeof row.percentOfFree !== 'number' || row.percentOfFree >= 40)) {
     throw new Error('Staging capacity reached the 40% free-tier gate');
   }
-  const envelope = {
-    schemaVersion: 1,
-    identity: {
-      tenant: 'openings',
-      sourceType: 'staging-smoke',
-      sourceId: `staging-smoke-${runId}`,
-      revision: '1',
-      idempotencyKey: `staging-smoke:${runId}`,
-    },
-    canonical: {
-      title: 'Staging smoke test',
-      summary: 'Sanitized Pages-only pipeline verification.',
-      canonicalUrl: 'https://cloudflare-preview.openings-dev-web.pages.dev/',
-      language: 'en',
-    },
-    artifacts: [],
-    deliveries: [{
-      id: 'verify-preview-home',
-      adapter: 'web.pages',
-      operation: 'publish',
-      required: true,
-      payload: { type: 'web.page', route: '/' },
-    }],
-  };
+  const envelope = createR2CanaryEnvelope(`staging-smoke-${runId}`, 'Staging smoke test', runId);
 
   const accepted = await submit(envelope);
   if (accepted.outcome !== 'accepted') throw new Error('Staging smoke publication was not accepted');
@@ -48,8 +26,8 @@ export async function runStagingSmoke({ runId, submit, inspect, capacity }) {
   }
   if (!Array.isArray(record.deliveries)
     || record.deliveries.length !== 1
-    || record.deliveries[0]?.adapter !== 'web.pages') {
-    throw new Error('Staging smoke publication is not Pages-only');
+    || record.deliveries[0]?.adapter !== 'web.r2') {
+    throw new Error('Staging smoke publication is not R2-only');
   }
   return { publicationId: accepted.publicationId };
 }
