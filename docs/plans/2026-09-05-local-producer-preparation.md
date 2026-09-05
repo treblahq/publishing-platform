@@ -17,12 +17,12 @@
 - Create: `packages/client/src/artifacts.test.ts`
 - Modify: `packages/client/src/index.ts`
 
-- [ ] Write a failing test that prepares an `r2-temporary` artifact from a local file and asserts its SHA-256, byte size, media type, stable ID, and caller-provided future locator.
-- [ ] Write failing tests that reject empty files, unsupported media types, and files that exceed a caller-supplied byte limit.
-- [ ] Run the focused test and confirm it fails because the preparation API is missing.
-- [ ] Implement the smallest streaming file inspector that satisfies the tests and returns a validated `ArtifactReference` without network access.
-- [ ] Run the focused test and the client tests; expect all to pass.
-- [ ] Commit as `feat(client): prepare artifact metadata locally`.
+- [x] Write a failing test that prepares an `r2-temporary` artifact from a local file and asserts its SHA-256, byte size, media type, stable ID, and caller-provided future locator.
+- [x] Write failing tests that reject empty files, unsupported media types, and files that exceed a caller-supplied byte limit.
+- [x] Run the focused test and confirm it fails because the preparation API is missing.
+- [x] Implement the smallest streaming file inspector that satisfies the tests and returns a validated `ArtifactReference` without network access.
+- [x] Run the focused test and the client tests; expect all to pass.
+- [x] Commit as `feat(client): prepare artifact metadata locally`.
 
 ### Task 2: Prepare a publication durably before submission
 
@@ -31,12 +31,12 @@
 - Create: `packages/client/src/producer.test.ts`
 - Modify: `packages/client/src/index.ts`
 
-- [ ] Write a failing test that validates and stores an envelope in the atomic file outbox without invoking `fetch`.
-- [ ] Write a failing test that drains accepted entries and retains retry-later or failed entries.
-- [ ] Run the focused test and confirm the preparation API is missing.
-- [ ] Implement `prepare` and bounded `drain` operations by composing the existing contract validator, file outbox, and publishing client interfaces.
-- [ ] Run the focused tests and the complete local validation suite.
-- [ ] Commit as `feat(client): add durable local producer flow`.
+- [x] Write a failing test that validates and stores an envelope in the atomic file outbox without invoking `fetch`.
+- [x] Write a failing test that drains accepted entries and retains retry-later or failed entries.
+- [x] Run the focused test and confirm the preparation API is missing.
+- [x] Implement `prepare` and bounded `drain` operations by composing the existing contract validator, file outbox, and publishing client interfaces.
+- [x] Run the focused tests and the complete local validation suite.
+- [x] Commit as `feat(client): add durable local producer flow`.
 
 ### Task 3: Document safe adoption by product publishers
 
@@ -44,10 +44,10 @@
 - Modify: `README.md`
 - Create: `docs/runbooks/producer-adoption.md`
 
-- [ ] Document the zero-network preparation sequence, environment-only credentials, temporary-media lifecycle, dry-run expectations, and adoption order for Openings, Troco, Trebla, Turma do Kako, and Equity.
-- [ ] Explicitly state that preparation does not upload media, submit publications, run Actions, or transfer delivery ownership.
-- [ ] Run secret scanning, formatting checks, type checks, tests, and build locally.
-- [ ] Commit as `docs(client): document zero-cost producer adoption`.
+- [x] Document the zero-network preparation sequence, environment-only credentials, temporary-media lifecycle, dry-run expectations, and adoption order for Openings, Troco, Trebla, Turma do Kako, and Equity.
+- [x] Explicitly state that preparation does not upload media, submit publications, run Actions, or transfer delivery ownership.
+- [x] Run secret scanning, formatting checks, type checks, tests, and build locally.
+- [x] Commit as `docs(client): document zero-cost producer adoption`.
 
 ## Safety gates
 
