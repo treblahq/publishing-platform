@@ -21,7 +21,9 @@ placeholders and production adapters untouched.
 Create a protected GitHub environment named `staging` with these secrets:
 
 - `CLOUDFLARE_ACCOUNT_ID`
-- `CLOUDFLARE_API_TOKEN`, scoped only to the staging Worker, D1, Queues and R2
+- `CLOUDFLARE_API_TOKEN`, a user API token (`cfut_`) scoped only to the staging
+  Worker, D1, Queues and R2. Account-owned tokens (`cfat_`) are rejected by the
+  workflow preflight because Wrangler cannot use them for this deployment path.
 - `PRODUCER_SIGNING_SECRET`, a random value of at least 24 characters
 - `ADMIN_TOKEN`, a separate random value
 
@@ -29,9 +31,37 @@ The workflow derives the D1 credential hash and the Worker's JSON secret from
 the same signing value, so they cannot drift. Raw secrets are never committed
 or written to D1.
 
+Before installing dependencies, the workflow checks every required secret and
+identifier structurally. It never prints their values. This makes a missing,
+placeholder, or incompatible credential fail in seconds instead of spending the
+rest of the validation and deployment minutes.
+
+## Free-only capacity policy
+
+The platform has no automatic upgrade or paid fallback. New work fails closed
+when usage cannot be measured recently, and two independent guards reject work
+before the configured ceiling: the Worker admission check and an atomic D1
+reservation trigger.
+
+The current effective rejection points are deliberately below half of each
+published free allowance:
+
+| Resource | Free allowance encoded in the ledger | Reject new work at |
+| --- | ---: | ---: |
+| D1 writes | 100,000/day | 49,000/day |
+| Queue operations | 10,000/day | 4,900/day |
+| R2 storage | 10 GiB | 4.9 GiB |
+
+The extra margin covers retries, maintenance, measurement lag, and activity
+outside an accepted publication. Temporary R2 artifacts are deleted after all
+references become safe to delete; abandoned staging uploads expire after 24
+hours, and terminal failures are collected after seven days. R2 objects are not
+kept as a permanent archive after successful publication.
+
 ## Safe initial deployment
 
-Run `Deploy staging`. It validates the repository, checks environment isolation,
+Only after local validation is green, manually run `Deploy staging`. It checks
+credentials first, validates the repository, checks environment isolation,
 installs secrets, applies migrations, bootstraps the Openings preview tenant and
 deploys the Worker. Only `web.pages` is enabled. Its fixed target is:
 
