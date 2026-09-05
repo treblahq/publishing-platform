@@ -1,0 +1,16 @@
+{
+  "name": "@treblahq/publishing-adapter-onesignal",
+  "version": "0.0.0",
+  "type": "module",
+  "license": "MIT",
+  "exports": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": ["dist"],
+  "dependencies": {
+    "@treblahq/publishing-adapter-kit": "0.0.0",
+    "@treblahq/publishing-contracts": "0.0.0"
+  },
+  "scripts": {
+    "build": "tsc --project tsconfig.json"
+  }
+}
