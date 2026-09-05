@@ -20,6 +20,11 @@ INSERT INTO producer_clients (id, tenant_id, name, enabled, secret_hash)
 INSERT INTO adapter_controls (tenant_id, adapter, enabled, reason)
   VALUES ('openings', 'push.onesignal', 0, 'Staging push remains paused outside an explicit canary')
   ON CONFLICT(tenant_id, adapter) DO UPDATE SET enabled = 0, reason = excluded.reason;
+UPDATE deliveries SET state = 'failed_terminal', updated_at = '${measuredAt}'
+  WHERE tenant_id = 'openings' AND adapter = 'web.pages' AND state = 'needs_attention'
+    AND publication_id IN (
+      SELECT id FROM publications WHERE tenant_id = 'openings' AND source_type = 'staging-smoke'
+    );
 ${usage}
 `;
 }

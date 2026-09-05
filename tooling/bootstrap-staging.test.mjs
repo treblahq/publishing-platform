@@ -11,6 +11,8 @@ describe('staging D1 bootstrap', () => {
     expect(sql).toContain("'openings-preview'");
     expect(sql).toContain("VALUES ('openings', 'push.onesignal', 0");
     expect(sql).toContain('enabled = 0');
+    expect(sql).toContain("adapter = 'web.pages' AND state = 'needs_attention'");
+    expect(sql).toContain("source_type = 'staging-smoke'");
     expect(sql.match(/INSERT INTO capacity_usage/gu)).toHaveLength(3);
     expect(sql).not.toMatch(/\bBEGIN\b/u);
     expect(sql).not.toMatch(/\bCOMMIT\b/u);
