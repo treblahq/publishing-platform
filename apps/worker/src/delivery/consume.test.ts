@@ -14,7 +14,10 @@ const delivery = {
 
 function states() {
   const values: string[] = [];
-  return { values, commit: (_tenant: string, _id: string, _token: number, state: string) => { values.push(state); return Promise.resolve(); } };
+  const dueDates: Array<string | undefined> = [];
+  return { values, dueDates, commit: (_tenant: string, _id: string, _token: number, state: string, _receipt?: unknown, dueAt?: string) => {
+    values.push(state); dueDates.push(dueAt); return Promise.resolve();
+  } };
 }
 
 describe('duplicate-safe delivery consumer', () => {
@@ -71,5 +74,23 @@ describe('duplicate-safe delivery consumer', () => {
       now: () => new Date('2026-09-04T15:00:00.000Z'),
     });
     expect(stateStore.values).toEqual(['retry_wait']);
+  });
+
+  it('preserves an exact provider retry time for rate limits', async () => {
+    const adapter = createFakeAdapter();
+    const rateLimited = {
+      ...adapter,
+      deliver: () => Promise.reject(new DeliveryError({
+        code: 'RATE_LIMIT', category: 'rate-limited', message: 'slow down',
+        retryAfter: '2026-09-04T15:07:00.000Z',
+      })),
+    };
+    const stateStore = states();
+    await consumer.consumeDelivery(delivery, {
+      registry: createAdapterRegistry([rateLimited], ['test.fake']),
+      leases: createMemoryLeaseStore(), states: stateStore,
+      now: () => new Date('2026-09-04T15:00:00.000Z'),
+    });
+    expect(stateStore.dueDates).toEqual(['2026-09-04T15:07:00.000Z']);
   });
 });

@@ -23,6 +23,7 @@ export interface DeliveryStateStore {
     fencingToken: number,
     state: DeliveryState,
     receipt?: DeliveryReceipt,
+    dueAt?: string,
   ): Promise<void>;
 }
 
@@ -83,27 +84,39 @@ export async function consumeDelivery(
         : { category: 'internal', code: 'UNCLASSIFIED' };
       await dependencies.attempts?.finish(delivery.tenant, attemptId, details.category, details.code);
     }
-    await commit(dependencies, delivery, lease.token, classifyFailure(error, resolution.adapter.manifest.capabilities));
+    const failure = classifyFailure(error, resolution.adapter.manifest.capabilities, dependencies.now());
+    await commit(dependencies, delivery, lease.token, failure.state, undefined, failure.dueAt);
   }
 }
 
 function classifyFailure(
   error: unknown,
   capabilities: { reconciliation: boolean; providerIdempotency: boolean },
-): DeliveryState {
-  if (!(error instanceof DeliveryError)) return 'needs_attention';
+  now: Date,
+): { state: DeliveryState; dueAt?: string } {
+  if (!(error instanceof DeliveryError)) return { state: 'needs_attention' };
   switch (error.category) {
     case 'retryable':
+      return { state: 'retry_wait' };
     case 'rate-limited':
-      return 'retry_wait';
+      return { state: 'retry_wait', ...retryDate(error.retryAfter, now) };
     case 'ambiguous':
-      if (capabilities.reconciliation) return 'reconciling';
-      return capabilities.providerIdempotency ? 'retry_wait' : 'needs_attention';
+      if (capabilities.reconciliation) return { state: 'reconciling' };
+      return { state: capabilities.providerIdempotency ? 'retry_wait' : 'needs_attention' };
     case 'credential':
-      return 'needs_attention';
+      return { state: 'needs_attention' };
     case 'terminal':
-      return 'failed_terminal';
+      return { state: 'failed_terminal' };
   }
+}
+
+function retryDate(value: string | undefined, now: Date): { dueAt?: string } {
+  if (value === undefined) return {};
+  const seconds = /^\d+$/u.test(value) ? Number(value) : undefined;
+  const timestamp = seconds === undefined ? Date.parse(value) : now.getTime() + seconds * 1_000;
+  return Number.isFinite(timestamp) && timestamp > now.getTime()
+    ? { dueAt: new Date(timestamp).toISOString() }
+    : {};
 }
 
 async function commit(
@@ -112,7 +125,8 @@ async function commit(
   token: number,
   state: DeliveryState,
   receipt?: DeliveryReceipt,
+  dueAt?: string,
 ): Promise<void> {
-  await dependencies.states.commit(delivery.tenant, delivery.id, token, state, receipt);
+  await dependencies.states.commit(delivery.tenant, delivery.id, token, state, receipt, dueAt);
   await dependencies.leases.commit(delivery.tenant, delivery.id, token);
 }

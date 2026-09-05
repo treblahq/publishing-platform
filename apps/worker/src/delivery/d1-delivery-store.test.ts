@@ -42,6 +42,22 @@ describe('D1 delivery store', () => {
     const store = createD1DeliveryStore(database, () => ({}));
     await expect(store.commit('openings', 'delivery-1', 6, 'verified')).rejects.toThrow('stale');
   });
+
+  it('binds the provider retry time while retaining a safe fallback', async () => {
+    const bound: unknown[][] = [];
+    const database = {
+      prepare: vi.fn().mockImplementation(() => {
+        const value = statement({});
+        value.bind.mockImplementation((...values: unknown[]) => { bound.push(values); return value; });
+        return value;
+      }),
+      batch: vi.fn().mockResolvedValue([{ meta: { changes: 1 } }]),
+    };
+    const store = createD1DeliveryStore(database, () => ({}));
+    await store.commit('openings', 'delivery-1', 7, 'retry_wait', undefined, '2026-09-04T15:07:00.000Z');
+    expect(bound[0]).toEqual(['retry_wait', 'retry_wait', '2026-09-04T15:07:00.000Z', 'openings', 'delivery-1', 7]);
+    expect(database.prepare.mock.calls[0]?.[0]).toContain('COALESCE(?,');
+  });
 });
 
 function statement(methods: Record<string, unknown>) {
