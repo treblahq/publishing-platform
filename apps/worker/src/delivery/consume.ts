@@ -83,18 +83,22 @@ export async function consumeDelivery(
         : { category: 'internal', code: 'UNCLASSIFIED' };
       await dependencies.attempts?.finish(delivery.tenant, attemptId, details.category, details.code);
     }
-    await commit(dependencies, delivery, lease.token, classifyFailure(error));
+    await commit(dependencies, delivery, lease.token, classifyFailure(error, resolution.adapter.manifest.capabilities));
   }
 }
 
-function classifyFailure(error: unknown): DeliveryState {
+function classifyFailure(
+  error: unknown,
+  capabilities: { reconciliation: boolean; providerIdempotency: boolean },
+): DeliveryState {
   if (!(error instanceof DeliveryError)) return 'needs_attention';
   switch (error.category) {
     case 'retryable':
     case 'rate-limited':
       return 'retry_wait';
     case 'ambiguous':
-      return 'reconciling';
+      if (capabilities.reconciliation) return 'reconciling';
+      return capabilities.providerIdempotency ? 'retry_wait' : 'needs_attention';
     case 'credential':
       return 'needs_attention';
     case 'terminal':

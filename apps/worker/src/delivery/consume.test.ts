@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { createFakeAdapter } from '@treblahq/publishing-adapter-test';
+import { DeliveryError } from '@treblahq/publishing-contracts';
 
 import { createMemoryLeaseStore } from './lease.js';
 import { createAdapterRegistry } from '../registry.js';
@@ -52,5 +53,23 @@ describe('duplicate-safe delivery consumer', () => {
     const stateStore = states();
     await consumeDelivery(delivery, { registry: createAdapterRegistry([adapter], ['test.fake']), leases: createMemoryLeaseStore(), states: stateStore, now: () => new Date('2026-09-04T15:00:00.000Z') });
     expect(stateStore.values).toEqual([expectedState]);
+  });
+
+  it('retries an ambiguous effect only when provider idempotency is enforced', async () => {
+    const adapter = createFakeAdapter();
+    const idempotentOnly = {
+      ...adapter,
+      manifest: { ...adapter.manifest, capabilities: { ...adapter.manifest.capabilities, reconciliation: false } },
+      deliver: () => Promise.reject(new DeliveryError({
+        code: 'LOST_RESPONSE', category: 'ambiguous', message: 'lost response',
+      })),
+    };
+    const stateStore = states();
+    await consumer.consumeDelivery(delivery, {
+      registry: createAdapterRegistry([idempotentOnly], ['test.fake']),
+      leases: createMemoryLeaseStore(), states: stateStore,
+      now: () => new Date('2026-09-04T15:00:00.000Z'),
+    });
+    expect(stateStore.values).toEqual(['retry_wait']);
   });
 });
