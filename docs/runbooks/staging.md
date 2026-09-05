@@ -26,6 +26,9 @@ Create a protected GitHub environment named `staging` with these secrets:
   workflow preflight because Wrangler cannot use them for this deployment path.
 - `PRODUCER_SIGNING_SECRET`, a random value of at least 24 characters
 - `ADMIN_TOKEN`, a separate random value
+- `ONESIGNAL_REST_API_KEY`, the application API key for the Openings OneSignal
+  app. It is installed as a Worker secret and must never appear in
+  `ADAPTER_CONFIGS` or repository files.
 
 The workflow derives the D1 credential hash and the Worker's JSON secret from
 the same signing value, so they cannot drift. Raw secrets are never committed
@@ -75,14 +78,18 @@ The staging Worker is available at
 verifies `/health/live` externally and ends with one signed, sanitized,
 Pages-only shadow publication that is inspected through the authenticated admin
 API. The same check can be run independently through the manual `Smoke staging`
-workflow. Do not enable OneSignal until its separate test-audience canary is
-configured and verified.
+workflow. The OneSignal app and isolated `Publishing Platform Canary` segment
+are configured, but `ENABLED_ADAPTERS` remains exactly `web.pages`; installing
+the secret and validating the public configuration cannot send a notification.
+Do not add `push.onesignal` to that allowlist until the separate test-audience
+canary is explicitly approved and verified.
 
-For that later canary, configure `push.onesignal` with
-`audienceMode: "staging-segment"` and a non-empty `testSegment` created only for
-the canary devices. The adapter rejects an absent segment instead of falling
-back to `Subscribed Users`. `audienceMode: "production-broadcast"` is the only
-mode that maps to every subscribed user, and it remains absent from staging.
+The prepared `push.onesignal` configuration uses `audienceMode:
+"staging-segment"` and the isolated segment. The deploy readiness check rejects
+any other app, audience, segment, embedded key, or stale/free-tier-invalid usage
+attestation. The adapter also rejects an absent segment instead of falling back
+to `Subscribed Users`. `audienceMode: "production-broadcast"` is the only mode
+that maps to every subscribed user, and it remains absent from staging.
 
 ## Explicit remaining gates
 
