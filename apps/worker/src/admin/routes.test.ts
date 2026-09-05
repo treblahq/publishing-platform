@@ -5,6 +5,7 @@ import { handleAdminRequest } from './routes.js';
 const dependencies = () => ({
   token: 'admin-secret',
   ready: vi.fn().mockResolvedValue({ ready: true, capacity: { state: 'normal' } }),
+  capacity: vi.fn().mockResolvedValue([{ resource: 'd1Rows', percentOfFree: 1 }]),
   inspect: vi.fn().mockResolvedValue({ id: 'publication-1', state: 'complete' }),
   listDeliveries: vi.fn().mockResolvedValue([{ id: 'delivery-1', state: 'needs_attention' }]),
   replay: vi.fn().mockResolvedValue({ accepted: true }),
@@ -33,6 +34,14 @@ describe('authenticated administration routes', () => {
     expect((await handleAdminRequest(request('/admin/health/ready'), deps)).status).toBe(200);
     expect((await handleAdminRequest(request('/admin/publications/publication-1?tenant=openings'), deps)).status).toBe(200);
     expect(deps.inspect).toHaveBeenCalledWith('openings', 'publication-1');
+  });
+
+  it('reports account-wide free-tier capacity without requiring a tenant', async () => {
+    const deps = dependencies();
+    const response = await handleAdminRequest(request('/admin/capacity'), deps);
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual([{ resource: 'd1Rows', percentOfFree: 1 }]);
+    expect(deps.capacity).toHaveBeenCalledOnce();
   });
 
   it('requires a reason and audits adapter pause through the operation store', async () => {

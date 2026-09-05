@@ -1,6 +1,7 @@
 export interface AdminDependencies {
   token: string;
   ready(): Promise<unknown>;
+  capacity(): Promise<unknown>;
   inspect(tenant: string, publicationId: string): Promise<unknown>;
   listDeliveries(tenant: string, state: string | undefined): Promise<unknown>;
   replay(tenant: string, deliveryId: string, reason: string): Promise<unknown>;
@@ -18,6 +19,10 @@ export async function handleAdminRequest(
   const url = new URL(request.url);
   if (request.method === 'GET' && url.pathname === '/admin/health/ready') {
     return json(await dependencies.ready());
+  }
+
+  if (request.method === 'GET' && url.pathname === '/admin/capacity') {
+    return json(await dependencies.capacity());
   }
 
   const publication = /^\/admin\/publications\/([^/]+)$/u.exec(url.pathname);

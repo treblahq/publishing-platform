@@ -34,6 +34,29 @@ export function createD1AdminDependencies(
           )) AS stale_capacity`).first();
       return { ready: readinessChecksClear(checks), checks };
     },
+    capacity: async () => {
+      const response = await database.prepare(`SELECT limits.resource,
+        COALESCE(usage.used, 0) AS used,
+        COALESCE(reservations.reserved, 0) AS reserved,
+        limits.free_allowance, limits.warning_limit, limits.reject_limit
+        FROM capacity_limits AS limits
+        LEFT JOIN (
+          SELECT current.resource, SUM(current.used) AS used
+          FROM capacity_usage AS current
+          WHERE current.window_start = (
+            SELECT MAX(latest.window_start) FROM capacity_usage AS latest
+            WHERE latest.tenant_id = current.tenant_id AND latest.resource = current.resource
+          )
+          GROUP BY current.resource
+        ) AS usage ON usage.resource = limits.resource
+        LEFT JOIN (
+          SELECT resource, SUM(amount) AS reserved FROM capacity_reservations
+          WHERE state = 'reserved' AND expires_at > strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
+          GROUP BY resource
+        ) AS reservations ON reservations.resource = limits.resource
+        ORDER BY limits.resource`).all();
+      return (response.results ?? []).map(capacityReport);
+    },
     inspect: async (tenant, publicationId) => {
       const publication = await database.prepare(`SELECT id, source_type, source_id, revision, state, created_at, updated_at
         FROM publications WHERE tenant_id = ? AND id = ? LIMIT 1`).bind(tenant, publicationId).first();
@@ -75,6 +98,33 @@ export function createD1AdminDependencies(
       return { changed: true };
     },
   };
+}
+
+function capacityReport(value: unknown) {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) throw new Error('Invalid capacity row');
+  const row = value as Record<string, unknown>;
+  const used = number(row.used);
+  const reserved = number(row.reserved);
+  const freeAllowance = number(row.free_allowance);
+  const warningLimit = number(row.warning_limit);
+  const rejectLimit = number(row.reject_limit);
+  const projected = used + reserved;
+  return {
+    ...row,
+    used,
+    reserved,
+    free_allowance: freeAllowance,
+    warning_limit: warningLimit,
+    reject_limit: rejectLimit,
+    projected,
+    percentOfFree: Math.round((projected / freeAllowance) * 10_000) / 100,
+    state: projected >= rejectLimit ? 'blocked' : projected >= warningLimit ? 'warning' : 'normal',
+  };
+}
+
+function number(value: unknown): number {
+  if (typeof value !== 'number' || !Number.isFinite(value)) throw new Error('Invalid capacity value');
+  return value;
 }
 
 function readinessChecksClear(value: unknown): boolean {
