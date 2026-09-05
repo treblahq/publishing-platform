@@ -14,7 +14,11 @@ describe('public web entity routes', () => {
       {
         find: () => Promise.resolve(manifest),
         getObject: () => Promise.resolve(new TextEncoder().encode('{"description":"Hello"}')),
-        getShell: () => Promise.resolve(new Response('<html><head><title>Generic</title></head><body></body></html>')),
+        getShell: () => Promise.resolve(new Response(`<html><head><title>Generic</title>
+          <link rel="canonical" href="https://openings.dev/jobs/">
+          <meta property="og:title" content="Generic">
+          <meta property="og:url" content="https://openings.dev/">
+          <meta name="description" content="Generic"></head><body></body></html>`)),
         canonicalBaseUrl: 'https://openings.dev',
       },
     );
@@ -24,6 +28,9 @@ describe('public web entity routes', () => {
     expect(html).toContain('Platform &amp; Reliability Engineer');
     expect(html).toContain('https://openings.dev/jobs/gh_123');
     expect(html).toContain('application/json');
+    expect(html).not.toContain('content="Generic"');
+    expect(html.match(/rel="canonical"/gu)).toHaveLength(1);
+    expect(html.match(/property="og:title"/gu)).toHaveLength(1);
   });
 
   it('returns 404 for an inactive manifest or missing object', async () => {

@@ -22,7 +22,11 @@ export async function handleWebEntityRequest(request: Request, dependencies: Dep
     + (manifest.summary ? `<meta name="description" content="${escapeHtml(manifest.summary)}">` : '');
   const entityJson = JSON.stringify({ revision: manifest.revision, contentSha256: manifest.contentSha256 })
     .replaceAll('<', '\\u003c');
-  const html = (await shell.text()).replace(/<title>[^<]*<\/title>/iu, metadata)
+  const cleanShell = (await shell.text())
+    .replace(/<link(?=[^>]+rel=["']canonical["'])[^>]*>/giu, '')
+    .replace(/<meta(?=[^>]+property=["']og:(?:title|url)["'])[^>]*>/giu, '')
+    .replace(/<meta(?=[^>]+name=["']description["'])[^>]*>/giu, '');
+  const html = cleanShell.replace(/<title>[^<]*<\/title>/iu, metadata)
     .replace('</body>', `<script type="application/json" id="publishing-entity">${entityJson}</script></body>`);
   return new Response(html, { headers: {
     'content-type': 'text/html; charset=utf-8',
