@@ -10,8 +10,8 @@ describe('staging D1 bootstrap', () => {
     expect(sql).toContain(createHash('sha256').update(secret).digest('hex'));
     expect(sql).toContain("'openings-preview'");
     expect(sql.match(/INSERT INTO capacity_usage/gu)).toHaveLength(3);
-    expect(sql).toContain('BEGIN IMMEDIATE');
-    expect(sql).toContain('COMMIT');
+    expect(sql).not.toMatch(/\bBEGIN\b/u);
+    expect(sql).not.toMatch(/\bCOMMIT\b/u);
   });
 
   it('rejects unsafe identifiers and weak secrets', () => {

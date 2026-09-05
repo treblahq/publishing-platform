@@ -12,14 +12,12 @@ export function createStagingBootstrapSql(clientId, secret, now = new Date()) {
   (tenant_id, resource, window_start, used, measured_at)
   VALUES ('openings', '${resource}', '${windowStart}', 0, '${measuredAt}')
   ON CONFLICT(tenant_id, resource, window_start) DO NOTHING;`).join('\n');
-  return `BEGIN IMMEDIATE;
-INSERT INTO tenants (id, name, enabled) VALUES ('openings', 'Openings', 1)
+  return `INSERT INTO tenants (id, name, enabled) VALUES ('openings', 'Openings', 1)
   ON CONFLICT(id) DO UPDATE SET name = excluded.name;
 INSERT INTO producer_clients (id, tenant_id, name, enabled, secret_hash)
   VALUES ('${clientId}', 'openings', 'Openings preview pipeline', 1, '${secretHash}')
   ON CONFLICT(id) DO UPDATE SET secret_hash = excluded.secret_hash, enabled = 1;
 ${usage}
-COMMIT;
 `;
 }
 
