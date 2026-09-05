@@ -3,6 +3,9 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "dependencies": {
+    "@treblahq/publishing-client": "0.1.0"
+  },
   "bin": { "publishing": "dist/main.js" },
   "scripts": { "build": "tsc --project tsconfig.json" }
 }
