@@ -1,0 +1,36 @@
+name: Backfill Openings web staging
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirmation:
+        description: Type BACKFILL OPENINGS WEB ENTITIES
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  backfill:
+    environment: staging
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check out preview pipeline
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          repository: openings-dev/data-pipeline
+          ref: cloudflare-preview
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38
+        with:
+          node-version: "24"
+          cache: npm
+      - run: npm ci
+      - run: npm run validate
+      - name: Backfill bounded R2 entities
+        run: npm run run:publishing-backfill
+        env:
+          CONFIRM_BACKFILL: ${{ inputs.confirmation }}
+          PUBLISHING_SHADOW_ENDPOINT: https://publishing-platform-staging.business-850.workers.dev
+          PUBLISHING_CLIENT_ID: openings-preview
+          PUBLISHING_CLIENT_SECRET: ${{ secrets.PRODUCER_SIGNING_SECRET }}
