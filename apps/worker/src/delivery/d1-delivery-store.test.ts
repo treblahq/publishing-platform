@@ -5,7 +5,7 @@ import { createD1DeliveryStore } from './d1-delivery-store.js';
 describe('D1 delivery store', () => {
   it('loads work and artifacts with tenant scope', async () => {
     const first = vi.fn().mockResolvedValue({
-      id: 'delivery-1', tenant_id: 'openings', adapter: 'push.onesignal', operation: 'publish',
+      id: 'delivery-1', tenant_id: 'openings', adapter: 'push.onesignal', operation: 'publish', state: 'ready',
       delivery_key: 'push', idempotency_key: 'publication-key', payload_json: '{"type":"push.notification"}',
     });
     const all = vi.fn().mockResolvedValue({ results: [{
@@ -17,7 +17,7 @@ describe('D1 delivery store', () => {
     const store = createD1DeliveryStore(database, (adapter) => ({ adapter }));
     await expect(store.load('openings', 'delivery-1')).resolves.toMatchObject({
       tenant: 'openings', id: 'delivery-1', idempotencyKey: 'publication-key:push',
-      config: { adapter: 'push.onesignal' }, artifacts: [{ id: 'artifact-1', byteSize: 10 }],
+      config: { adapter: 'push.onesignal' }, artifacts: [{ id: 'artifact-1', byteSize: 10 }], state: 'ready',
     });
     expect(first.mock.calls[0]).toEqual([]);
     expect(database.prepare.mock.calls[0]?.[0]).toContain('delivery.tenant_id = ?');

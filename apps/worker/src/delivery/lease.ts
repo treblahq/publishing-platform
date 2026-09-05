@@ -6,6 +6,7 @@ export interface DeliveryLeaseStore {
     deliveryId: string,
     now: Date,
     durationMs: number,
+    purpose?: 'delivery' | 'reconciliation',
   ): LeaseResult | Promise<LeaseResult>;
   commit(
     tenantId: string,

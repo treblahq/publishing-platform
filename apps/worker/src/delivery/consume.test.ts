@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import { createFakeAdapter } from '@treblahq/publishing-adapter-test';
 import { DeliveryError } from '@treblahq/publishing-contracts';
@@ -33,6 +33,17 @@ describe('duplicate-safe delivery consumer', () => {
     expect(stateStore.values).toEqual(['verified', 'verified']);
   });
 
+  it('does not call a provider again after a durable terminal success', async () => {
+    const adapter = createFakeAdapter();
+    const deliver = vi.spyOn(adapter, 'deliver');
+    await consumer.consumeDelivery({ ...delivery, state: 'verified' }, {
+      registry: createAdapterRegistry([adapter], ['test.fake']),
+      leases: createMemoryLeaseStore(), states: states(),
+      now: () => new Date('2026-09-04T15:00:00.000Z'),
+    });
+    expect(deliver).not.toHaveBeenCalled();
+  });
+
   it('moves unknown or disabled adapters to needs_attention without effects', async () => {
     const consumeDelivery = Reflect.get(consumer, 'consumeDelivery');
     expect(consumeDelivery).toBeTypeOf('function');
@@ -41,6 +52,18 @@ describe('duplicate-safe delivery consumer', () => {
     await consumeDelivery(delivery, { registry: createAdapterRegistry([adapter], []), leases: createMemoryLeaseStore(), states: stateStore, now: () => new Date('2026-09-04T15:00:00.000Z') });
     expect(adapter.effectCount()).toBe(0);
     expect(stateStore.values).toEqual(['needs_attention']);
+  });
+
+  it('rejects an undeclared adapter operation before any provider effect', async () => {
+    const adapter = createFakeAdapter();
+    const stateStore = states();
+    await consumer.consumeDelivery({ ...delivery, operation: 'delete' }, {
+      registry: createAdapterRegistry([adapter], ['test.fake']),
+      leases: createMemoryLeaseStore(), states: stateStore,
+      now: () => new Date('2026-09-04T15:00:00.000Z'),
+    });
+    expect(adapter.effectCount()).toBe(0);
+    expect(stateStore.values).toEqual(['failed_terminal']);
   });
 
   it.each([
@@ -92,5 +115,16 @@ describe('duplicate-safe delivery consumer', () => {
       now: () => new Date('2026-09-04T15:00:00.000Z'),
     });
     expect(stateStore.dueDates).toEqual(['2026-09-04T15:07:00.000Z']);
+  });
+
+  it('reports credential failures for an automatic tenant-scoped pause', async () => {
+    const adapter = createFakeAdapter({ faults: ['credential'] });
+    const record = vi.fn().mockResolvedValue(undefined);
+    await consumer.consumeDelivery(delivery, {
+      registry: createAdapterRegistry([adapter], ['test.fake']),
+      leases: createMemoryLeaseStore(), states: states(), failures: { record },
+      now: () => new Date('2026-09-04T15:00:00.000Z'),
+    });
+    expect(record).toHaveBeenCalledWith('openings', 'test.fake', 'credential', 'FAKE_CREDENTIAL');
   });
 });

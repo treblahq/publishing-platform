@@ -1,5 +1,7 @@
 import type { ArtifactReference, DeliveryReceipt, DeliveryState } from '@treblahq/publishing-contracts';
 import { DeliveryError, validateDeliveryReceipt } from '@treblahq/publishing-contracts';
+import { DELIVERY_PAYLOAD_TYPES } from '@treblahq/publishing-contracts';
+import { assertAdapterSupports } from '@treblahq/publishing-adapter-kit';
 
 import type { AdapterRegistry } from '../registry.js';
 import type { DeliveryLeaseStore } from './lease.js';
@@ -14,6 +16,7 @@ export interface DeliveryWork {
   config: unknown;
   payload: Record<string, unknown>;
   artifacts: readonly ArtifactReference[];
+  state?: DeliveryState;
 }
 
 export interface DeliveryStateStore {
@@ -34,17 +37,24 @@ export interface ConsumerDependencies {
   now(): Date;
   leaseDurationMs?: number;
   attempts?: DeliveryAttemptStore;
+  failures?: {
+    record(tenant: string, adapter: string, category: string, code: string): Promise<void>;
+  };
 }
 
 export async function consumeDelivery(
   delivery: DeliveryWork,
   dependencies: ConsumerDependencies,
 ): Promise<void> {
+  if (delivery.state !== undefined && !['planned', 'validated', 'ready', 'delivering'].includes(delivery.state)) {
+    return;
+  }
   const lease = await dependencies.leases.acquire(
     delivery.tenant,
     delivery.id,
     dependencies.now(),
     dependencies.leaseDurationMs ?? 60_000,
+    'delivery',
   );
   if (!lease.acquired) return;
 
@@ -66,6 +76,15 @@ export async function consumeDelivery(
   const attemptId = await dependencies.attempts?.start(delivery.tenant, delivery.id, lease.token);
 
   try {
+    const channel = delivery.payload.type;
+    if (typeof channel !== 'string' || !DELIVERY_PAYLOAD_TYPES.includes(channel as (typeof DELIVERY_PAYLOAD_TYPES)[number])) {
+      throw new DeliveryError({ code: 'ADAPTER_UNSUPPORTED_CHANNEL', category: 'terminal', message: 'Unsupported delivery channel' });
+    }
+    try {
+      assertAdapterSupports(resolution.adapter.manifest, channel as (typeof DELIVERY_PAYLOAD_TYPES)[number], delivery.operation);
+    } catch {
+      throw new DeliveryError({ code: 'ADAPTER_UNSUPPORTED_INTENT', category: 'terminal', message: 'Adapter does not support the requested intent' });
+    }
     const validation = await resolution.adapter.validate(context);
     if (!validation.valid) {
       await commit(dependencies, delivery, lease.token, 'failed_terminal');
@@ -83,6 +102,9 @@ export async function consumeDelivery(
         ? { category: error.category, code: error.code }
         : { category: 'internal', code: 'UNCLASSIFIED' };
       await dependencies.attempts?.finish(delivery.tenant, attemptId, details.category, details.code);
+    }
+    if (error instanceof DeliveryError && error.category === 'credential') {
+      await dependencies.failures?.record(delivery.tenant, delivery.adapter, error.category, error.code);
     }
     const failure = classifyFailure(error, resolution.adapter.manifest.capabilities, dependencies.now());
     await commit(dependencies, delivery, lease.token, failure.state, undefined, failure.dueAt);

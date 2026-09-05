@@ -25,7 +25,7 @@ export function createD1DeliveryStore(
   return {
     load: async (tenantId, deliveryId) => {
       const value = await database.prepare(`
-        SELECT delivery.id, delivery.tenant_id, delivery.adapter, delivery.operation,
+        SELECT delivery.id, delivery.tenant_id, delivery.adapter, delivery.operation, delivery.state,
                delivery.delivery_key, delivery.payload_json, publication.idempotency_key
         FROM deliveries AS delivery
         JOIN publications AS publication ON publication.id = delivery.publication_id
@@ -50,6 +50,7 @@ export function createD1DeliveryStore(
         config: resolveConfig(row.adapter, tenantId),
         payload: parsePayload(row.payload_json),
         artifacts: (artifactPage.results ?? []).map(artifactRow),
+        state: row.state as DeliveryState,
       };
     },
     commit: async (tenantId, deliveryId, fencingToken, state, receipt, dueAt) => {
@@ -88,10 +89,10 @@ function receiptStatement(
 
 function deliveryRow(value: unknown) {
   if (!record(value)) return undefined;
-  for (const key of ['id', 'tenant_id', 'adapter', 'operation', 'delivery_key', 'idempotency_key', 'payload_json']) {
+  for (const key of ['id', 'tenant_id', 'adapter', 'operation', 'state', 'delivery_key', 'idempotency_key', 'payload_json']) {
     if (typeof value[key] !== 'string') return undefined;
   }
-  return value as unknown as Record<'id' | 'tenant_id' | 'adapter' | 'operation' | 'delivery_key' | 'idempotency_key' | 'payload_json', string>;
+  return value as unknown as Record<'id' | 'tenant_id' | 'adapter' | 'operation' | 'state' | 'delivery_key' | 'idempotency_key' | 'payload_json', string>;
 }
 
 function artifactRow(value: unknown): ArtifactReference {

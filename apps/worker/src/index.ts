@@ -20,6 +20,8 @@ import { runD1ArtifactCleanup } from './cleanup/d1-cleanup.js';
 import { runD1Reconciliation } from './reconciliation/d1-reconciliation.js';
 import { reconcileDelivery } from './reconciliation/reconcile-delivery.js';
 import { refreshD1CapacityUsage } from './capacity/d1-refresh.js';
+import { isD1AdapterEnabled } from './delivery/d1-adapter-control.js';
+import { createD1FailureRecorder } from './delivery/d1-failure-recorder.js';
 
 type Environment = Record<string, unknown>;
 type RouteHandler = (request: Request, environment: Environment) => Promise<Response>;
@@ -78,19 +80,24 @@ async function consumeRuntimeBatch(batch: MessageBatch, environment: Environment
   const configs = parseAdapterConfigs(environment.ADAPTER_CONFIGS);
   const oneSignal = createOneSignalAdapter({ send: sendOneSignal, now: () => new Date() });
   const pages = createPagesAdapter({ request: (url, init) => fetch(url, init) });
-  const registry = createAdapterRegistry([oneSignal, pages], bindings.enabledAdapters);
+  const adapters = [oneSignal, pages];
+  const registry = createAdapterRegistry(adapters, bindings.enabledAdapters);
   const store = createD1DeliveryStore(database, (adapter, tenant) => configs[tenant]?.[adapter] ?? {});
   await handleDeliveryBatch(batch.messages, async ({ tenantId, deliveryId }) => {
     const delivery = await store.load(tenantId, deliveryId);
     if (delivery === null) throw new Error('Delivery not found');
+    const tenantRegistry = await isD1AdapterEnabled(database, tenantId, delivery.adapter)
+      ? registry
+      : createAdapterRegistry(adapters, bindings.enabledAdapters.filter((name) => name !== delivery.adapter));
     await consumeDelivery(delivery, {
-      registry,
+      registry: tenantRegistry,
       leases: {
-        acquire: (tenant, id, now, duration) => acquireD1Lease(database, tenant, id, now, duration),
+        acquire: (tenant, id, now, duration, purpose) => acquireD1Lease(database, tenant, id, now, duration, purpose),
         commit: () => Promise.resolve(),
       },
       states: store,
       attempts: createD1AttemptStore(database),
+      failures: createD1FailureRecorder(database),
       now: () => new Date(),
     });
   });
@@ -125,18 +132,22 @@ async function reconcileRuntimeDeliveries(
   enabledAdapters: readonly string[],
 ): Promise<number> {
   const configs = parseAdapterConfigs(environment.ADAPTER_CONFIGS);
-  const registry = createAdapterRegistry([
+  const adapters = [
     createOneSignalAdapter({ send: sendOneSignal, now: () => new Date() }),
     createPagesAdapter({ request: (url, init) => fetch(url, init) }),
-  ], enabledAdapters);
+  ];
+  const registry = createAdapterRegistry(adapters, enabledAdapters);
   const store = createD1DeliveryStore(database, (adapter, tenant) => configs[tenant]?.[adapter] ?? {});
   return runD1Reconciliation(database, 25, async ({ tenantId, deliveryId }) => {
     const delivery = await store.load(tenantId, deliveryId);
     if (delivery === null) return;
+    const tenantRegistry = await isD1AdapterEnabled(database, tenantId, delivery.adapter)
+      ? registry
+      : createAdapterRegistry(adapters, enabledAdapters.filter((name) => name !== delivery.adapter));
     await reconcileDelivery(delivery, {
-      registry,
+      registry: tenantRegistry,
       leases: {
-        acquire: (tenant, id, now, duration) => acquireD1Lease(database, tenant, id, now, duration),
+        acquire: (tenant, id, now, duration, purpose) => acquireD1Lease(database, tenant, id, now, duration, purpose),
         commit: () => Promise.resolve(),
       },
       states: store,
