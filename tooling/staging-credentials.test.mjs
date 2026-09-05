@@ -9,7 +9,6 @@ function credentials(overrides = {}) {
     CLOUDFLARE_D1_DATABASE_ID: '75c6770b-a94e-4b15-8b84-f6af7e7d2afe',
     PRODUCER_SIGNING_SECRET: 'producer-secret',
     ADMIN_TOKEN: 'admin-secret',
-    ONESIGNAL_REST_API_KEY: 'onesignal-secret',
     ...overrides,
   };
 }
@@ -31,7 +30,6 @@ describe('staging credential preflight', () => {
     ['CLOUDFLARE_D1_DATABASE_ID', '00000000-0000-0000-0000-000000000002'],
     ['PRODUCER_SIGNING_SECRET', ''],
     ['ADMIN_TOKEN', ''],
-    ['ONESIGNAL_REST_API_KEY', ''],
   ])('fails closed when %s is missing or malformed', (name, value) => {
     expect(() => assertStagingCredentials(credentials({ [name]: value }))).toThrow();
   });

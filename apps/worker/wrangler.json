@@ -63,7 +63,7 @@
       "vars": {
         "CAPACITY_BUDGETS": "{\"d1Rows\":70000,\"queueOperations\":7000,\"r2Bytes\":7516192768}",
         "ENABLED_ADAPTERS": "web.r2",
-        "ADAPTER_CONFIGS": "{\"openings\":{\"web.r2\":{\"publicBaseUrl\":\"https://cloudflare-preview.openings-dev-web.pages.dev\",\"shellBaseUrl\":\"https://cloudflare-preview.openings-dev-web.pages.dev\",\"canonicalBaseUrl\":\"https://openings.dev\"},\"push.onesignal\":{\"appId\":\"1215bd53-ffd9-4f11-b3c2-bb2999a1e500\",\"audienceMode\":\"staging-segment\",\"testSegment\":\"Publishing Platform Canary\",\"attestation\":{\"observedMobileMau\":1,\"providerCeiling\":1000,\"internalPause\":700,\"observedAt\":\"2026-09-05T17:00:00.000Z\",\"expiresAt\":\"2026-09-12T17:00:00.000Z\",\"evidenceHash\":\"47fd49db2729d0740d28ffa4c7520c72efdcff930402e7f99a28caad07a85e07\"}}}}"
+        "ADAPTER_CONFIGS": "{\"openings\":{\"web.r2\":{\"publicBaseUrl\":\"https://cloudflare-preview.openings-dev-web.pages.dev\",\"shellBaseUrl\":\"https://cloudflare-preview.openings-dev-web.pages.dev\",\"canonicalBaseUrl\":\"https://openings.dev\"}}}"
       }
     },
     "production": {

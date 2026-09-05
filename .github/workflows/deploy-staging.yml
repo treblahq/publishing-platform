@@ -27,7 +27,6 @@ jobs:
           CLOUDFLARE_D1_DATABASE_ID: ${{ secrets.CLOUDFLARE_D1_DATABASE_ID }}
           PRODUCER_SIGNING_SECRET: ${{ secrets.PRODUCER_SIGNING_SECRET }}
           ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
-          ONESIGNAL_REST_API_KEY: ${{ secrets.ONESIGNAL_REST_API_KEY }}
         run: node tooling/staging-credentials.mjs
       - run: npm ci
       - run: npm run validate
@@ -44,14 +43,11 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           PRODUCER_SIGNING_SECRET: ${{ secrets.PRODUCER_SIGNING_SECRET }}
           ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
-          ONESIGNAL_REST_API_KEY: ${{ secrets.ONESIGNAL_REST_API_KEY }}
         run: |
           test -n "$PRODUCER_SIGNING_SECRET"
           test -n "$ADMIN_TOKEN"
-          test -n "$ONESIGNAL_REST_API_KEY"
           node -e 'process.stdout.write(JSON.stringify({"openings-preview": process.env.PRODUCER_SIGNING_SECRET}))' | npx wrangler secret put PRODUCER_SECRETS --env staging --config /tmp/publishing-platform-wrangler.json
           printf '%s' "$ADMIN_TOKEN" | npx wrangler secret put ADMIN_TOKEN --env staging --config /tmp/publishing-platform-wrangler.json
-          printf '%s' "$ONESIGNAL_REST_API_KEY" | npx wrangler secret put ONESIGNAL_REST_API_KEY --env staging --config /tmp/publishing-platform-wrangler.json
       - name: Apply staging migrations
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
