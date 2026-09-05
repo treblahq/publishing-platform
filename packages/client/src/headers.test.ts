@@ -1,8 +1,21 @@
 import { describe, expect, it } from 'vitest';
 
-import { buildSignedHeaders, sha256Hex } from './headers.js';
+import { buildSignedHeaders, buildSignedHeadersFromHash, sha256Hex } from './headers.js';
 
 describe('signed producer headers', () => {
+  it('signs an already verified body hash without requiring body bytes', async () => {
+    const headers = await buildSignedHeadersFromHash({
+      clientId: 'client-1', secret: 'secret', method: 'PUT',
+      path: '/v1/artifacts?locator=temporary%2Ftroco%2Ffile&size=5&mediaType=video%2Fmp4',
+      tenant: 'troco', timestamp: '2026-09-05T12:00:00.000Z', nonce: 'nonce-1',
+      bodySha256: 'a'.repeat(64), contentType: 'video/mp4',
+    });
+
+    expect(headers['x-pub-content-sha256']).toBe('a'.repeat(64));
+    expect(headers['content-type']).toBe('video/mp4');
+    expect(headers['x-pub-signature']).toMatch(/^[a-f0-9]{64}$/u);
+  });
+
   it('hashes the exact UTF-8 request body', async () => {
     await expect(sha256Hex('{"title":"Olá"}')).resolves.toBe(
       '03e9c3e752dd891113602553f83f20aa91ea12cccaa43184e99468e1a2712476',
