@@ -20,6 +20,14 @@ jobs:
         with:
           node-version-file: .nvmrc
           cache: npm
+      - name: Preflight staging credentials
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_D1_DATABASE_ID: ${{ secrets.CLOUDFLARE_D1_DATABASE_ID }}
+          PRODUCER_SIGNING_SECRET: ${{ secrets.PRODUCER_SIGNING_SECRET }}
+          ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+        run: node tooling/staging-credentials.mjs
       - run: npm ci
       - run: npm run validate
       - name: Build ephemeral staging configuration
