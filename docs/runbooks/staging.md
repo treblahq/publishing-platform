@@ -44,6 +44,12 @@ After deployment, verify `/health/live`, send one signed sanitized shadow
 publication, and inspect it through the authenticated admin API. Do not enable
 OneSignal until its separate test-audience canary is configured and verified.
 
+For that later canary, configure `push.onesignal` with
+`audienceMode: "staging-segment"` and a non-empty `testSegment` created only for
+the canary devices. The adapter rejects an absent segment instead of falling
+back to `Subscribed Users`. `audienceMode: "production-broadcast"` is the only
+mode that maps to every subscribed user, and it remains absent from staging.
+
 ## Explicit remaining gates
 
 Production stays disabled until all of these are recorded:

@@ -13,6 +13,8 @@ export interface OneSignalUsageAttestation {
 export interface OneSignalConfig {
   appId: string;
   restApiKey: string;
+  audienceMode: 'production-broadcast' | 'staging-segment';
+  testSegment?: string;
   attestation: OneSignalUsageAttestation;
 }
 
@@ -77,7 +79,7 @@ export function createOneSignalAdapter(
           },
           body: {
             app_id: context.config.appId,
-            included_segments: ['Subscribed Users'],
+            included_segments: [resolveSegment(context.config)],
             headings: { en: context.payload.title },
             contents: { en: context.payload.body },
             ...(context.payload.url === undefined ? {} : { url: context.payload.url }),
@@ -104,6 +106,13 @@ export async function deriveOneSignalIdempotencyKey(value: string): Promise<stri
 function validateContext(config: OneSignalConfig, payload: OneSignalPushPayload, now: Date) {
   const issues: string[] = [];
   if (config.appId.length === 0 || config.restApiKey.length === 0) issues.push('OneSignal credentials are required');
+  const audienceMode: unknown = config.audienceMode;
+  if (audienceMode !== 'production-broadcast' && audienceMode !== 'staging-segment') {
+    issues.push('OneSignal audience mode is required');
+  }
+  if (config.audienceMode === 'staging-segment' && (typeof config.testSegment !== 'string' || config.testSegment.trim().length === 0)) {
+    issues.push('OneSignal staging test segment is required');
+  }
   if (payload.title.length === 0 || payload.body.length === 0) issues.push('Push title and body are required');
   const attestation = config.attestation;
   const expiry = Date.parse(attestation.expiresAt);
@@ -123,6 +132,12 @@ function validateContext(config: OneSignalConfig, payload: OneSignalPushPayload,
   return issues.length === 0
     ? { valid: true as const }
     : { valid: false as const, issues, freeTierUnproven };
+}
+
+function resolveSegment(config: OneSignalConfig): string {
+  return config.audienceMode === 'production-broadcast'
+    ? 'Subscribed Users'
+    : config.testSegment as string;
 }
 
 function parseResponse(response: OneSignalResponse, now: Date): DeliveryReceipt {

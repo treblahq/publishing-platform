@@ -15,6 +15,7 @@ const now = new Date('2026-09-04T12:00:00.000Z');
 const config = {
   appId: 'app-id',
   restApiKey: 'private-value',
+  audienceMode: 'production-broadcast' as const,
   attestation: {
     observedMobileMau: 699,
     providerCeiling: 1_000,
@@ -60,6 +61,27 @@ describe('OneSignal adapter', () => {
     expect(firstRequest.body.idempotency_key).toBe(secondRequest.body.idempotency_key);
     expect(firstRequest.body.idempotency_key).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-8[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/u);
     expect(first).toMatchObject({ provider: 'push.onesignal', remoteId: 'notification-1' });
+  });
+
+  it('maps the same contract audience to an isolated staging segment', async () => {
+    const send = vi.fn().mockResolvedValue({ status: 200, body: { id: 'notification-1' } });
+    const adapter = createOneSignalAdapter({ send, now: () => now });
+    await adapter.deliver({
+      ...context,
+      config: { ...config, audienceMode: 'staging-segment', testSegment: 'Publishing Platform Canary' },
+    });
+    expect((send.mock.calls[0]?.[0] as { body: Record<string, unknown> }).body.included_segments)
+      .toEqual(['Publishing Platform Canary']);
+  });
+
+  it('never falls back from staging to the subscriber broadcast segment', async () => {
+    const send = vi.fn();
+    const adapter = createOneSignalAdapter({ send, now: () => now });
+    await expect(adapter.deliver({
+      ...context,
+      config: { ...config, audienceMode: 'staging-segment', testSegment: '' },
+    })).rejects.toMatchObject({ code: 'ONESIGNAL_INVALID_PAYLOAD' });
+    expect(send).not.toHaveBeenCalled();
   });
 
   it('derives different stable keys for different deliveries', async () => {
