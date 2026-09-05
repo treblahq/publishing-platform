@@ -12,6 +12,8 @@ export function hydrateStagingConfig(config, environment = process.env, configDi
   }
 
   const hydrated = JSON.parse(JSON.stringify(config));
+  if (typeof hydrated.main !== 'string' || hydrated.main.length === 0) throw new Error('Worker entry point is missing');
+  hydrated.main = resolve(configDirectory, hydrated.main);
   const database = hydrated?.env?.staging?.d1_databases?.[0];
   if (!database) throw new Error('Staging D1 binding is missing');
   database.database_id = databaseId;

@@ -35,6 +35,8 @@ jobs:
           CLOUDFLARE_D1_DATABASE_ID: ${{ secrets.CLOUDFLARE_D1_DATABASE_ID }}
         run: node tooling/hydrate-staging-config.mjs apps/worker/wrangler.json /tmp/publishing-platform-wrangler.json
       - run: node tooling/staging-readiness.mjs /tmp/publishing-platform-wrangler.json
+      - name: Verify deploy bundle locally
+        run: npx wrangler deploy --dry-run --env staging --config /tmp/publishing-platform-wrangler.json --outdir /tmp/publishing-platform-bundle
       - name: Install staging secrets
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
