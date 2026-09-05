@@ -16,8 +16,8 @@ export function assertStagingReady(config, now = new Date()) {
     throw new Error('Staging D1 database_id is still a placeholder');
   }
   const enabled = staging.vars?.ENABLED_ADAPTERS;
-  if (enabled !== 'web.r2,push.onesignal') {
-    throw new Error('Staging must enable only web.r2 and the isolated push.onesignal canary adapter');
+  if (enabled !== 'web.r2') {
+    throw new Error('Staging must enable only web.r2 while mobile push is deferred');
   }
   let adapters;
   try { adapters = JSON.parse(staging.vars?.ADAPTER_CONFIGS ?? ''); } catch { throw new Error('Staging adapter configuration is invalid'); }

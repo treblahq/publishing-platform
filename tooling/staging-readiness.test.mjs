@@ -23,7 +23,7 @@ function config(databaseId = '11111111-2222-4333-8444-555555555555') {
         d1_databases: [{ database_id: databaseId, database_name: 'publishing-platform-staging' }],
         r2_buckets: [{ bucket_name: 'publishing-artifacts-staging' }],
         vars: {
-          ENABLED_ADAPTERS: 'web.r2,push.onesignal',
+          ENABLED_ADAPTERS: 'web.r2',
           ADAPTER_CONFIGS: JSON.stringify({
             openings: {
               'web.r2': {
@@ -53,9 +53,9 @@ describe('staging deploy readiness', () => {
 
   it('prevents unknown adapters or production activation in staging', () => {
     const unsafe = config();
-    unsafe.env.staging.vars.ENABLED_ADAPTERS = 'web.r2,push.onesignal,social.unknown';
+    unsafe.env.staging.vars.ENABLED_ADAPTERS = 'web.r2,social.unknown';
     expect(() => assertStagingReady(unsafe, now)).toThrow('only');
-    unsafe.env.staging.vars.ENABLED_ADAPTERS = 'web.r2,push.onesignal';
+    unsafe.env.staging.vars.ENABLED_ADAPTERS = 'web.r2';
     unsafe.env.production.vars.ENABLED_ADAPTERS = 'web.pages';
     expect(() => assertStagingReady(unsafe, now)).toThrow('Production');
   });
