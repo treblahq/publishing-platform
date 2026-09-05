@@ -95,3 +95,21 @@ Production stays disabled until all of these are recorded:
 
 There is no automatic paid-plan path and no production deploy in the staging
 workflow.
+
+## Recorded staging validation
+
+On 2026-09-05, `Deploy staging` run `33979210075` completed every deployment
+step and published Worker version `6ec2f039-2acb-4d9f-bebc-c11e02a705df`.
+The final smoke check recorded publication
+`e5890927-98a1-47ce-8d6e-da83df2f2054` after verifying all of the following:
+
+- unauthenticated intake is rejected;
+- an authenticated but invalid envelope is rejected without creating work;
+- invalid admin authentication is rejected;
+- account-wide projected D1, Queue and R2 usage is below 40% of each free
+  allowance;
+- the sanitized publication contains only the `web.pages` delivery; and
+- the accepted publication is visible in the tenant-scoped ledger.
+
+These checks now run after every staging deployment. The remaining external
+gates are the OneSignal test-segment canary and the pre-cutover DNS comparison.
