@@ -13,6 +13,7 @@ import { acquireD1Lease } from './delivery/d1-lease.js';
 import { createD1DeliveryStore } from './delivery/d1-delivery-store.js';
 import { consumeDelivery } from './delivery/consume.js';
 import { handleDeliveryBatch } from './delivery/queue-handler.js';
+import { createD1AttemptStore } from './delivery/d1-attempt-store.js';
 import { handleAdminRequest } from './admin/routes.js';
 import { createD1AdminDependencies } from './admin/d1-admin.js';
 
@@ -85,6 +86,7 @@ async function consumeRuntimeBatch(batch: MessageBatch, environment: Environment
         commit: () => Promise.resolve(),
       },
       states: store,
+      attempts: createD1AttemptStore(database),
       now: () => new Date(),
     });
   });
