@@ -23,6 +23,7 @@ import { refreshD1CapacityUsage } from './capacity/d1-refresh.js';
 import { isD1AdapterEnabled } from './delivery/d1-adapter-control.js';
 import { createD1FailureRecorder } from './delivery/d1-failure-recorder.js';
 import { handleD1DeadLetterBatch } from './delivery/d1-dead-letter.js';
+import { parseAdapterConfigs } from './adapter-configs.js';
 
 type Environment = Record<string, unknown>;
 type RouteHandler = (request: Request, environment: Environment) => Promise<Response>;
@@ -82,7 +83,7 @@ async function consumeRuntimeBatch(batch: MessageBatch, environment: Environment
     await handleD1DeadLetterBatch(database, batch.messages);
     return;
   }
-  const configs = parseAdapterConfigs(environment.ADAPTER_CONFIGS);
+  const configs = parseAdapterConfigs(environment.ADAPTER_CONFIGS, environment.ONESIGNAL_REST_API_KEY);
   const oneSignal = createOneSignalAdapter({ send: sendOneSignal, now: () => new Date() });
   const pages = createPagesAdapter({ request: (url, init) => fetch(url, init) });
   const adapters = [oneSignal, pages];
@@ -136,7 +137,7 @@ async function reconcileRuntimeDeliveries(
   database: D1Database,
   enabledAdapters: readonly string[],
 ): Promise<number> {
-  const configs = parseAdapterConfigs(environment.ADAPTER_CONFIGS);
+  const configs = parseAdapterConfigs(environment.ADAPTER_CONFIGS, environment.ONESIGNAL_REST_API_KEY);
   const adapters = [
     createOneSignalAdapter({ send: sendOneSignal, now: () => new Date() }),
     createPagesAdapter({ request: (url, init) => fetch(url, init) }),
@@ -186,13 +187,6 @@ function parseProducerSecrets(value: unknown): Readonly<Record<string, string>> 
     throw new Error('Invalid producer secret');
   }
   return Object.fromEntries(entries) as Record<string, string>;
-}
-
-function parseAdapterConfigs(value: unknown): Record<string, Record<string, unknown>> {
-  if (typeof value !== 'string' || value.length === 0) return {};
-  const parsed: unknown = JSON.parse(value);
-  if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) throw new Error('Invalid adapter configs');
-  return parsed as Record<string, Record<string, unknown>>;
 }
 
 export default createWorker();
