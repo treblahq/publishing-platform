@@ -40,13 +40,17 @@ interface WorkerOverrides {
 
 export function createWorker(overrides: WorkerOverrides = {}) {
   return {
-    async fetch(request: Request, environment: Environment): Promise<Response> {
+    async fetch(request: Request, environment: Environment, context?: ExecutionContext): Promise<Response> {
       const pathname = new URL(request.url).pathname;
       if (request.method === 'GET' && pathname === '/health/live') {
         return Response.json({ status: 'live' });
       }
       if (pathname === '/v1/publications') {
-        return (overrides.publicationHandler ?? handleRuntimePublication)(request, environment);
+        const response = await (overrides.publicationHandler ?? handleRuntimePublication)(request, environment);
+        if (response.status === 202 && context) {
+          context.waitUntil((overrides.scheduledHandler ?? dispatchRuntimeOutbox)(environment));
+        }
+        return response;
       }
       if (request.method === 'GET' && pathname.startsWith('/web/')) {
         return handleRuntimeWebEntity(request, environment);

@@ -18,6 +18,31 @@ describe('worker HTTP router', () => {
     expect(handler).toHaveBeenCalledWith(request, { marker: true });
   });
 
+  it('wakes the durable outbox immediately after accepted intake', async () => {
+    const publicationHandler = vi.fn().mockResolvedValue(new Response('accepted', { status: 202 }));
+    const scheduledHandler = vi.fn().mockResolvedValue(1);
+    const waitUntil = vi.fn();
+    const worker = createWorker({ publicationHandler, scheduledHandler });
+    await worker.fetch(
+      new Request('https://worker.test/v1/publications', { method: 'POST' }),
+      { marker: true },
+      { waitUntil } as unknown as ExecutionContext,
+    );
+    expect(scheduledHandler).toHaveBeenCalledWith({ marker: true });
+    expect(waitUntil).toHaveBeenCalledOnce();
+  });
+
+  it('does not wake delivery work for rejected intake', async () => {
+    const scheduledHandler = vi.fn();
+    const waitUntil = vi.fn();
+    const worker = createWorker({
+      publicationHandler: () => Promise.resolve(new Response('invalid', { status: 400 })),
+      scheduledHandler,
+    });
+    await worker.fetch(new Request('https://worker.test/v1/publications'), {}, { waitUntil } as unknown as ExecutionContext);
+    expect(waitUntil).not.toHaveBeenCalled();
+  });
+
   it('does not expose an accidental catch-all route', async () => {
     const response = await createWorker().fetch(new Request('https://worker.test/unknown'), {});
     expect(response.status).toBe(404);
