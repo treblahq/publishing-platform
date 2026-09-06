@@ -26,7 +26,7 @@ export function assertProductionCredentials(environment) {
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
   try {
     assertProductionCredentials(process.env);
-    process.stdout.write('Production candidate credentials passed structural checks.\n');
+    process.stdout.write('Production credentials passed structural checks.\n');
   } catch (error) {
     process.stderr.write(`${error instanceof Error ? error.message : 'Production credential preflight failed'}\n`);
     process.exitCode = 1;

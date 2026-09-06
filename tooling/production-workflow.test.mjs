@@ -9,6 +9,8 @@ describe('production deployment workflow', () => {
     expect(workflow).toContain('workflow_dispatch:');
     expect(workflow).not.toMatch(/^\s+(push|schedule):/mu);
     expect(workflow).toContain('environment: production');
+    expect(workflow).toContain("if: github.ref == 'refs/heads/main'");
+    expect(workflow).toContain('timeout-minutes: 15');
     expect(workflow).toContain('cancel-in-progress: false');
     expect(workflow).toContain('npm ci');
     expect(workflow).toContain('npm run validate');
