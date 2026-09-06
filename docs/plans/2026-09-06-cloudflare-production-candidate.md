@@ -173,9 +173,8 @@ Run `git diff --check`, confirm the worktree is clean, push `[skip ci]` commits,
 
 - [ ] **Step 3: Prepare the protected GitHub production environment**
 
-Create or verify the `production` environment secrets using the existing Cloudflare account/token, promoted D1 UUID, producer signing secret, and admin token. Never print secret values. This creates configuration only and does not deploy.
+Create or verify the `production` environment secrets using the existing Cloudflare account/token, promoted D1 UUID, and a production admin token. Do not install a producer signing secret while the candidate is read-only. Never print secret values. This creates configuration only and does not deploy.
 
 - [ ] **Step 4: Stop at the Cloudflare deployment boundary when quota is unsafe**
 
 If the free daily allowance has not reset or preflight cannot prove a successful first deployment, leave the manual workflow undispatched. Otherwise dispatch it once, wait for completion, run read-dominant verification, and continue parity in bounded batches. Never retry blindly.
-

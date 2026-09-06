@@ -27,10 +27,11 @@ Create a protected environment named `production` containing:
 - `CLOUDFLARE_API_TOKEN`
 - `CLOUDFLARE_ACCOUNT_ID`
 - `CLOUDFLARE_D1_DATABASE_ID`, using the promoted D1 UUID
-- `PRODUCER_SIGNING_SECRET`
 - `ADMIN_TOKEN`
 
-Never put values in repository files or logs. A configured OneSignal secret is
+Never put values in repository files or logs. Do not configure
+`PRODUCER_SIGNING_SECRET` or the Worker `PRODUCER_SECRETS` during candidate
+validation; intake must remain uncredentialed. A configured OneSignal secret is
 not sufficient to enable push: `push.onesignal` must remain absent from both
 `ENABLED_ADAPTERS` and `ADAPTER_CONFIGS`.
 
@@ -55,7 +56,7 @@ first. Cloudflare resource creation and usage must remain within the free plan.
 
 ## Deployment
 
-Manually dispatch `Deploy production candidate` once. It installs Worker secrets,
+Manually dispatch `Deploy production candidate` once. It installs only the admin Worker secret,
 applies only already-versioned idempotent D1 migrations, deploys with
 `--env production`, and performs a GET-only live check. It does not bootstrap,
 backfill, submit a publication, deploy Pages, call OneSignal, publish to a social
