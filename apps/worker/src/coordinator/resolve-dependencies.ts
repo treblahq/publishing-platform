@@ -1,4 +1,4 @@
-import type { DeliveryState } from '@trebla/publishing-contracts';
+import type { DeliveryState } from '@trebla/publishing';
 
 export interface ResolvedDependency {
   required: DeliveryState;

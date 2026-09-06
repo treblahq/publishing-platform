@@ -1,4 +1,4 @@
-import { DELIVERY_PAYLOAD_TYPES } from '@trebla/publishing-contracts';
+import { DELIVERY_PAYLOAD_TYPES } from '@trebla/publishing';
 
 export interface AdapterManifest {
   readonly contractVersion: 1;

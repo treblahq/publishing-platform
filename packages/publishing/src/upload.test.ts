@@ -4,7 +4,7 @@ import { join } from 'node:path';
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { DeliveryError, type ArtifactReference } from '@trebla/publishing-contracts';
+import { DeliveryError, type ArtifactReference } from './index.js';
 
 import { createArtifactUploader } from './upload.js';
 

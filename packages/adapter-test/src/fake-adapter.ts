@@ -1,7 +1,7 @@
 import {
   DeliveryError,
   type DeliveryReceipt,
-} from '@trebla/publishing-contracts';
+} from '@trebla/publishing';
 import type {
   AdapterContext,
   DeliveryAdapter,

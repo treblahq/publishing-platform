@@ -1,7 +1,7 @@
 import type {
   ActiveManifest, ActiveManifestStore, EntityObjectStore, EntityStores,
 } from '@trebla/publishing-adapter-r2';
-import type { WebEntityKind, WebEntityRevision } from '@trebla/publishing-contracts';
+import type { WebEntityKind, WebEntityRevision } from '@trebla/publishing';
 
 interface Statement {
   bind(...values: unknown[]): Statement;

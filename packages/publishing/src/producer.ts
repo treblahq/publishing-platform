@@ -1,4 +1,4 @@
-import type { PublicationEnvelope } from '@trebla/publishing-contracts';
+import type { PublicationEnvelope } from './publication-envelope.js';
 
 import type { PublishingClient } from './client.js';
 import type { FileOutbox, FileOutboxEntry } from './outbox.js';

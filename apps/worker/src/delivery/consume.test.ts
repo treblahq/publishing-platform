@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 
 import { createFakeAdapter } from '@trebla/publishing-adapter-test';
-import { DeliveryError } from '@trebla/publishing-contracts';
+import { DeliveryError } from '@trebla/publishing';
 
 import { createMemoryLeaseStore } from './lease.js';
 import { createAdapterRegistry } from '../registry.js';

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { buildSignedHeaders } from '@trebla/publishing-client';
+import { buildSignedHeaders } from '@trebla/publishing';
 
 import * as authentication from './authenticate.js';
 

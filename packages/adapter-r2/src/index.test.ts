@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto';
 import { describe, expect, it, vi } from 'vitest';
 
 import type { AdapterContext } from '@trebla/publishing-adapter-kit';
-import type { WebEntityRevision } from '@trebla/publishing-contracts';
+import type { WebEntityRevision } from '@trebla/publishing';
 
 import { createR2WebAdapter, type R2WebConfig, type R2WebPayload } from './index.js';
 import type { ActiveManifest, ActiveManifestStore, EntityObjectStore } from './activate.js';

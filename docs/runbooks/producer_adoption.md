@@ -38,7 +38,7 @@ import {
   prepareArtifactReference,
   stagePlatformHandoff,
   uploadPlatformHandoff,
-} from '@treblahq/publishing-client';
+} from '@trebla/publishing';
 
 const artifact = await prepareArtifactReference({
   id: 'social-video',
@@ -120,7 +120,7 @@ The required order is:
    accepted record is durable.
 
 ```ts
-import { createArtifactUploader } from '@treblahq/publishing-client';
+import { createArtifactUploader } from '@trebla/publishing';
 
 const uploader = createArtifactUploader({
   baseUrl: process.env.PUBLISHING_BASE_URL!,

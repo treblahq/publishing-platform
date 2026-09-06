@@ -4,11 +4,8 @@ import { stat } from 'node:fs/promises';
 import { Readable } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
 
-import {
-  DeliveryError,
-  validateArtifactReference,
-  type ArtifactReference,
-} from '@trebla/publishing-contracts';
+import { validateArtifactReference, type ArtifactReference } from './artifact.js';
+import { DeliveryError } from './errors.js';
 
 import { buildSignedHeadersFromHash } from './headers.js';
 

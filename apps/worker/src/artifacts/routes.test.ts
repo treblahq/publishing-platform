@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { buildSignedHeadersFromHash } from '@trebla/publishing-client';
+import { buildSignedHeadersFromHash } from '@trebla/publishing';
 
 import { handleArtifactUploadRequest } from './routes.js';
 

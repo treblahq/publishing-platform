@@ -1,7 +1,7 @@
 import {
   validatePublicationEnvelope,
   type PublicationEnvelope,
-} from '@trebla/publishing-contracts';
+} from '@trebla/publishing';
 
 export interface IntakePrincipal {
   tenant: string;

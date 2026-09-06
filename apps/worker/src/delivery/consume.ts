@@ -1,6 +1,6 @@
-import type { ArtifactReference, DeliveryReceipt, DeliveryState } from '@trebla/publishing-contracts';
-import { DeliveryError, validateDeliveryReceipt } from '@trebla/publishing-contracts';
-import { DELIVERY_PAYLOAD_TYPES } from '@trebla/publishing-contracts';
+import type { ArtifactReference, DeliveryReceipt, DeliveryState } from '@trebla/publishing';
+import { DeliveryError, validateDeliveryReceipt } from '@trebla/publishing';
+import { DELIVERY_PAYLOAD_TYPES } from '@trebla/publishing';
 import { assertAdapterSupports } from '@trebla/publishing-adapter-kit';
 
 import type { AdapterRegistry } from '../registry.js';

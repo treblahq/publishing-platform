@@ -1,4 +1,4 @@
-import type { DeliveryState } from '@trebla/publishing-contracts';
+import type { DeliveryState } from '@trebla/publishing';
 
 interface D1StateStatement {
   bind(...values: unknown[]): D1StateStatement;

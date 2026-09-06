@@ -12,11 +12,11 @@
     "apps/*"
   ],
   "scripts": {
-    "build": "npm run build --workspace @trebla/publishing-contracts && npm run build --workspace @trebla/publishing-adapter-kit && npm run build --workspaces --if-present",
+    "build": "npm run build --workspace @trebla/publishing && npm run build --workspace @trebla/publishing-adapter-kit && npm run build --workspaces --if-present",
     "lint": "eslint .",
     "rehearse:local": "node tooling/rehearse-local.mjs",
     "scan:secrets": "node tooling/secret-scan.mjs",
-    "pretest": "npm run build --workspace @trebla/publishing-contracts && npm run build --workspace @trebla/publishing-adapter-kit && npm run build --workspace @trebla/publishing-adapter-test",
+    "pretest": "npm run build --workspace @trebla/publishing && npm run build --workspace @trebla/publishing-adapter-kit && npm run build --workspace @trebla/publishing-adapter-test",
     "test": "NODE_NO_WARNINGS=1 vitest run --passWithNoTests",
     "test:prepared": "NODE_NO_WARNINGS=1 vitest run --passWithNoTests",
     "types:worker": "wrangler types apps/worker/src/worker-configuration.d.ts --config apps/worker/wrangler.json",

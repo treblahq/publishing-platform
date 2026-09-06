@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { DeliveryError } from '@trebla/publishing-contracts';
+import { DeliveryError } from '@trebla/publishing';
 import type { AdapterContext } from '@trebla/publishing-adapter-kit';
 import { runAdapterConformance } from '@trebla/publishing-adapter-kit';
 

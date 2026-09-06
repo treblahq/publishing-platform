@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { buildSignedHeaders } from '@trebla/publishing-client';
-import type { PublicationEnvelope } from '@trebla/publishing-contracts';
+import { buildSignedHeaders } from '@trebla/publishing';
+import type { PublicationEnvelope } from '@trebla/publishing';
 
 import * as routes from './routes.js';
 

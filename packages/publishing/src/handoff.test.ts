@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import type { ArtifactReference, PublicationEnvelope } from '@trebla/publishing-contracts';
+import type { ArtifactReference, PublicationEnvelope } from './index.js';
 import type { ArtifactUploader } from './upload.js';
 import { stagePlatformHandoff, uploadPlatformHandoff } from './handoff.js';
 

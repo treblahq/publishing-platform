@@ -2,7 +2,7 @@ import { createHash, randomUUID } from 'node:crypto';
 import process from 'node:process';
 import { pathToFileURL } from 'node:url';
 
-import { createPublishingClient } from '@trebla/publishing-client';
+import { createPublishingClient } from '@trebla/publishing';
 
 const CONFIRMATION = 'SEND ONE OPENINGS CANARY';
 

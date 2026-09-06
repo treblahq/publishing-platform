@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import type { PublicationEnvelope } from '@trebla/publishing-contracts';
+import type { PublicationEnvelope } from '@trebla/publishing';
 
 import * as intake from './accept-publication.js';
 

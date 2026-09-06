@@ -1,4 +1,4 @@
-import type { ArtifactReference, DeliveryReceipt } from '@trebla/publishing-contracts';
+import type { ArtifactReference, DeliveryReceipt } from '@trebla/publishing';
 
 import type { AdapterManifest } from './manifest.js';
 

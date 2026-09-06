@@ -1,8 +1,8 @@
+import type { ArtifactReference } from './artifact.js';
 import {
   validatePublicationEnvelope,
-  type ArtifactReference,
   type PublicationEnvelope,
-} from '@trebla/publishing-contracts';
+} from './publication-envelope.js';
 
 import type { FileOutboxEntry } from './outbox.js';
 import type { ArtifactUploader } from './upload.js';

@@ -1,8 +1,8 @@
+import { DeliveryError } from './errors.js';
 import {
-  DeliveryError,
   validatePublicationEnvelope,
   type PublicationEnvelope,
-} from '@trebla/publishing-contracts';
+} from './publication-envelope.js';
 
 import { buildSignedHeaders } from './headers.js';
 

@@ -1,5 +1,5 @@
 import type { DeliveryAdapter } from '@trebla/publishing-adapter-kit';
-import { DeliveryError, type DeliveryReceipt } from '@trebla/publishing-contracts';
+import { DeliveryError, type DeliveryReceipt } from '@trebla/publishing';
 
 export interface OneSignalUsageAttestation {
   observedMobileMau: number;

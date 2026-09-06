@@ -7,7 +7,7 @@ import {
   validateArtifactReference,
   type ArtifactReference,
   type ArtifactStorage,
-} from '@trebla/publishing-contracts';
+} from './artifact.js';
 
 export interface PrepareArtifactReferenceInput {
   id: string;

@@ -1,4 +1,4 @@
-import { readFile } from 'node:fs/promises';
+import { readFile, readdir } from 'node:fs/promises';
 import { resolve } from 'node:path';
 
 import { describe, expect, it } from 'vitest';
@@ -10,25 +10,16 @@ async function readPackage(relativePath) {
 }
 
 describe('public package release metadata', () => {
-  it('keeps the public packages on the same explicit release', async () => {
-    const contracts = await readPackage('packages/contracts/package.json');
-    const client = await readPackage('packages/client/package.json');
+  it('exposes one public package with the unified name', async () => {
+    const publishing = await readPackage('packages/publishing/package.json');
 
-    expect(contracts.name).toBe('@trebla/publishing-contracts');
-    expect(client.name).toBe('@trebla/publishing-client');
-    expect(contracts.version).toBe('0.1.1');
-    expect(client.version).toBe(contracts.version);
-    expect(client.dependencies['@trebla/publishing-contracts']).toBe(
-      contracts.version,
-    );
+    expect(publishing.name).toBe('@trebla/publishing');
+    expect(publishing.version).toBe('0.1.0');
+    expect(publishing.private).not.toBe(true);
   });
 
-  it.each(['contracts', 'client'])(
-    'publishes %s publicly without compiled tests',
-    async (packageName) => {
-      const packageJson = await readPackage(
-        `packages/${packageName}/package.json`,
-      );
+  it('publishes the unified package publicly without compiled tests', async () => {
+      const packageJson = await readPackage('packages/publishing/package.json');
 
       expect(packageJson.private).not.toBe(true);
       expect(packageJson.license).toBe('MIT');
@@ -41,6 +32,19 @@ describe('public package release metadata', () => {
       expect(packageJson.repository.url).toBe(
         'git+https://github.com/treblahq/publishing-platform.git',
       );
-    },
-  );
+  });
+
+  it('keeps every other workspace private', async () => {
+    const manifests = [];
+    for (const parent of ['apps', 'packages']) {
+      for (const directory of await readdir(resolve(root, parent))) {
+        const relativePath = `${parent}/${directory}/package.json`;
+        const packageJson = await readPackage(relativePath);
+        if (packageJson.name !== '@trebla/publishing') manifests.push(packageJson);
+      }
+    }
+
+    expect(manifests.length).toBeGreaterThan(0);
+    expect(manifests.every(({ private: isPrivate }) => isPrivate === true)).toBe(true);
+  });
 });

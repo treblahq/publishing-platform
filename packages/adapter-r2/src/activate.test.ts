@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 
-import type { WebEntityRevision } from '@trebla/publishing-contracts';
+import type { WebEntityRevision } from '@trebla/publishing';
 
 import {
   stageAndActivateEntity,

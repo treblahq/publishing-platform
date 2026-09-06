@@ -3,7 +3,7 @@ import {
   type WebEntityKind,
   type WebEntityRevision,
   type WebEntityStatus,
-} from '@trebla/publishing-contracts';
+} from '@trebla/publishing';
 
 export interface EntityObjectStore {
   put(key: string, bytes: Uint8Array, metadata: Record<string, string>): Promise<void>;

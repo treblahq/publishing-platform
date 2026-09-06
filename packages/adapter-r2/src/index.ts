@@ -1,5 +1,5 @@
 import type { DeliveryAdapter } from '@trebla/publishing-adapter-kit';
-import { DeliveryError, validateWebEntityRevision, type WebEntityRevision } from '@trebla/publishing-contracts';
+import { DeliveryError, validateWebEntityRevision, type WebEntityRevision } from '@trebla/publishing';
 
 import { stageAndActivateEntity, type EntityStores } from './activate.js';
 

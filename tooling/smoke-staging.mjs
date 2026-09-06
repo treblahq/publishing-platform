@@ -1,4 +1,4 @@
-import { buildSignedHeaders, createPublishingClient } from '@trebla/publishing-client';
+import { buildSignedHeaders, createPublishingClient } from '@trebla/publishing';
 import { randomUUID } from 'node:crypto';
 import process from 'node:process';
 import { pathToFileURL } from 'node:url';
