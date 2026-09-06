@@ -9,8 +9,8 @@ const OPENINGS_PREVIEW = 'https://cloudflare-preview.openings-dev-web.pages.dev'
 
 export function assertProductionReady(config) {
   const production = config?.env?.production;
-  const staging = config?.env?.staging;
-  if (!production || !staging) throw new Error('Production and staging environments are required');
+  if (!production) throw new Error('Production environment is required');
+  if (config?.env?.staging) throw new Error('Staging environment must be retired');
   if (production.name !== 'publishing-platform-production') throw new Error('Production Worker name is invalid');
 
   const database = production.d1_databases?.[0];
@@ -49,15 +49,13 @@ export function assertProductionReady(config) {
     || productionQueues.some((queue) => queue.includes('staging'))) {
     throw new Error('Production messaging must use only dedicated production queues');
   }
-  if ((staging.queues?.consumers?.length ?? 0) > 0) throw new Error('Staging queue consumers must be retired');
-  if ((staging.triggers?.crons?.length ?? 0) > 0) throw new Error('Staging scheduled triggers must be retired');
   return true;
 }
 
 async function main() {
   const path = process.argv[2] ?? 'apps/worker/wrangler.json';
   assertProductionReady(JSON.parse(await readFile(path, 'utf8')));
-  process.stdout.write('Production candidate configuration is safe to deploy.\n');
+  process.stdout.write('Production configuration is safe to deploy.\n');
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {

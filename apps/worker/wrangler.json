@@ -33,31 +33,6 @@
     "ENABLED_ADAPTERS": ""
   },
   "env": {
-    "staging": {
-      "name": "publishing-platform-staging",
-      "d1_databases": [
-        {
-          "binding": "LEDGER",
-          "database_name": "publishing-platform-staging",
-          "database_id": "00000000-0000-0000-0000-000000000002"
-        }
-      ],
-      "queues": {
-        "producers": [
-          { "binding": "DELIVERY_QUEUE", "queue": "publishing-delivery-staging" },
-          { "binding": "DELIVERY_DLQ", "queue": "publishing-delivery-dlq-staging" }
-        ]
-      },
-      "r2_buckets": [
-        { "binding": "ARTIFACTS", "bucket_name": "publishing-artifacts-staging" }
-      ],
-      "triggers": { "crons": [] },
-      "vars": {
-        "CAPACITY_BUDGETS": "{\"d1Rows\":55000,\"queueOperations\":5500,\"r2Bytes\":5500000000}",
-        "ENABLED_ADAPTERS": "web.r2",
-        "ADAPTER_CONFIGS": "{\"openings\":{\"web.r2\":{\"publicBaseUrl\":\"https://cloudflare-preview.openings-dev-web.pages.dev\",\"shellBaseUrl\":\"https://cloudflare-preview.openings-dev-web.pages.dev\",\"canonicalBaseUrl\":\"https://openings.dev\"}}}"
-      }
-    },
     "production": {
       "name": "publishing-platform-production",
       "d1_databases": [

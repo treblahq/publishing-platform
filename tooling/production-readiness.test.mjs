@@ -6,15 +6,6 @@ const preview = 'https://cloudflare-preview.openings-dev-web.pages.dev';
 function config() {
   return {
     env: {
-      staging: {
-        d1_databases: [{ database_name: 'publishing-platform-staging' }],
-        r2_buckets: [{ bucket_name: 'publishing-artifacts-staging' }],
-        queues: { producers: [
-          { binding: 'DELIVERY_QUEUE', queue: 'publishing-delivery-staging' },
-          { binding: 'DELIVERY_DLQ', queue: 'publishing-delivery-dlq-staging' },
-        ] },
-        triggers: { crons: [] },
-      },
       production: {
         name: 'publishing-platform-production',
         d1_databases: [{
@@ -43,7 +34,7 @@ function config() {
   };
 }
 
-describe('production candidate readiness', () => {
+describe('production readiness', () => {
   it('accepts promoted data with isolated production messaging', () => {
     expect(assertProductionReady(config())).toBe(true);
   });
@@ -56,8 +47,7 @@ describe('production candidate readiness', () => {
     ['OneSignal config', (value) => { const adapters = JSON.parse(value.env.production.vars.ADAPTER_CONFIGS); adapters.openings['push.onesignal'] = {}; value.env.production.vars.ADAPTER_CONFIGS = JSON.stringify(adapters); }],
     ['wrong Pages origin', (value) => { const adapters = JSON.parse(value.env.production.vars.ADAPTER_CONFIGS); adapters.openings['web.r2'].publicBaseUrl = 'https://openings.dev'; value.env.production.vars.ADAPTER_CONFIGS = JSON.stringify(adapters); }],
     ['shared queue', (value) => { value.env.production.queues.producers[0].queue = 'publishing-delivery-staging'; }],
-    ['active staging consumer', (value) => { value.env.staging.queues.consumers = [{ queue: 'publishing-delivery-staging' }]; }],
-    ['active staging cron', (value) => { value.env.staging.triggers.crons = ['*/15 * * * *']; }],
+    ['staging environment', (value) => { value.env.staging = { triggers: { crons: [] } }; }],
   ])('rejects %s', (_name, mutate) => {
     const unsafe = config();
     mutate(unsafe);
