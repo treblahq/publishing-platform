@@ -1,5 +1,9 @@
 # Staging rollout
 
+> The populated D1 and R2 resources described here were promoted in place to the
+> Cloudflare production candidate on 2026-09-06. Do not repeat the backfill. New
+> deployment and cutover operations follow `docs/runbooks/production_candidate.md`.
+
 Staging is isolated from production and is deployed only by manually running
 the `Deploy staging` GitHub workflow. The workflow cannot deploy while the D1
 identifier is a placeholder, production adapters are enabled, or staging is
