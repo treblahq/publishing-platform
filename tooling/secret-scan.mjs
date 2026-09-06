@@ -17,6 +17,18 @@ export function scanText(path, text) {
   );
 }
 
+export function readScannableText(path, read = readFileSync) {
+  try {
+    const bytes = read(path);
+    return bytes.includes(0) ? undefined : bytes.toString('utf8');
+  } catch (error) {
+    if (error && typeof error === 'object' && Reflect.get(error, 'code') === 'ENOENT') {
+      return undefined;
+    }
+    throw error;
+  }
+}
+
 export function scanRepository() {
   const paths = execFileSync(
     'git',
@@ -24,8 +36,8 @@ export function scanRepository() {
     { encoding: 'utf8' },
   ).trim().split('\n').filter(Boolean);
   return paths.flatMap((path) => {
-    const bytes = readFileSync(path);
-    return bytes.includes(0) ? [] : scanText(path, bytes.toString('utf8'));
+    const text = readScannableText(path);
+    return text === undefined ? [] : scanText(path, text);
   });
 }
 

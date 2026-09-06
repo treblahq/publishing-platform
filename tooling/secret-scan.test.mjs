@@ -3,6 +3,16 @@ import { describe, expect, it } from 'vitest';
 import * as secretScan from './secret-scan.mjs';
 
 describe('repository secret scan', () => {
+  it('ignores a tracked path removed by the current change', () => {
+    const readScannableText = Reflect.get(secretScan, 'readScannableText');
+    expect(readScannableText).toBeTypeOf('function');
+    expect(readScannableText('removed.txt', () => {
+      const error = new Error('missing');
+      error.code = 'ENOENT';
+      throw error;
+    })).toBeUndefined();
+  });
+
   it('rejects a seeded fake provider token', () => {
     const scanText = Reflect.get(secretScan, 'scanText');
     expect(scanText).toBeTypeOf('function');
