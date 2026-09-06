@@ -6,6 +6,14 @@ on:
       confirmation:
         description: Type BACKFILL OPENINGS WEB ENTITIES
         required: true
+      offset:
+        description: Deterministic zero-based batch offset
+        required: true
+        default: "0"
+      limit:
+        description: Batch size (maximum 500)
+        required: true
+        default: "500"
 
 permissions:
   contents: read
@@ -32,6 +40,10 @@ jobs:
         env:
           PUBLISHING_SHADOW_ENDPOINT: https://publishing-platform-staging.business-850.workers.dev
           PUBLISHING_ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          CLOUDFLARE_ANALYTICS_TOKEN: ${{ secrets.CLOUDFLARE_ANALYTICS_TOKEN }}
+          BACKFILL_OFFSET: ${{ inputs.offset }}
+          BACKFILL_LIMIT: ${{ inputs.limit }}
       - name: Backfill bounded R2 entities
         run: npm run run:publishing-backfill
         env:
@@ -39,3 +51,5 @@ jobs:
           PUBLISHING_SHADOW_ENDPOINT: https://publishing-platform-staging.business-850.workers.dev
           PUBLISHING_CLIENT_ID: openings-preview
           PUBLISHING_CLIENT_SECRET: ${{ secrets.PRODUCER_SIGNING_SECRET }}
+          BACKFILL_OFFSET: ${{ inputs.offset }}
+          BACKFILL_LIMIT: ${{ inputs.limit }}
