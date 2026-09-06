@@ -1,11 +1,11 @@
-# Cloudflare production candidate
+# Cloudflare production
 
-This environment is the final Cloudflare production stack before public DNS is
-changed. Hostinger remains the active public production and rollback target.
+This is the primary Cloudflare production environment. Until public DNS is
+changed, Hostinger remains the active public host and rollback target.
 
 ## Promoted resources
 
-The production candidate deliberately reuses the populated resources created
+Cloudflare production deliberately reuses the populated resources created
 during staging:
 
 - D1 physical name: `publishing-platform-staging`
@@ -16,8 +16,9 @@ during staging:
 - Pages origin: `https://cloudflare-preview.openings-dev-web.pages.dev`
 - Worker origin: `https://publishing-platform-production.business-850.workers.dev`
 
-The staging names on D1 and R2 are historical physical names. They now identify
-promoted production-candidate data and must not be copied or backfilled again.
+The staging names on D1 and R2 are historical physical names. Wrangler provides
+no in-place rename for them, so they now identify production data and must not
+be copied or backfilled again.
 Production messaging remains separate so no message has two consumers.
 
 ## Protected GitHub environment
@@ -30,7 +31,7 @@ Create a protected environment named `production` containing:
 - `ADMIN_TOKEN`
 
 Never put values in repository files or logs. Do not configure
-`PRODUCER_SIGNING_SECRET` or the Worker `PRODUCER_SECRETS` during candidate
+`PRODUCER_SIGNING_SECRET` or the Worker `PRODUCER_SECRETS` during pre-cutover
 validation; intake must remain uncredentialed. A configured OneSignal secret is
 not sufficient to enable push: `push.onesignal` must remain absent from both
 `ENABLED_ADAPTERS` and `ADAPTER_CONFIGS`.
@@ -43,8 +44,8 @@ Before the one manual deployment:
    have no unexpected dead letters.
 2. Confirm daily D1 reads and writes have reset and remain below the internal 40%
    safety gate.
-3. Confirm production queues exist and staging has no consumers or scheduled
-   triggers in the hydrated configuration.
+3. Confirm production queues exist and the repository contains no deployable
+   staging environment or workflow.
 4. Run `npm run validate` with Node.js 24.
 5. Run `node tooling/production-readiness.mjs` against the hydrated production
    file and then a Wrangler dry run.
@@ -56,7 +57,7 @@ first. Cloudflare resource creation and usage must remain within the free plan.
 
 ## Deployment
 
-Manually dispatch `Deploy production candidate` once. It installs only the admin Worker secret,
+Manually dispatch `Deploy Cloudflare production` once. It installs only the admin Worker secret,
 applies only already-versioned idempotent D1 migrations, deploys with
 `--env production`, and performs a GET-only live check. It does not bootstrap,
 backfill, submit a publication, deploy Pages, call OneSignal, publish to a social
@@ -73,10 +74,11 @@ Never run the historical backfill again.
 
 ## Staging retirement
 
-Staging keeps its diagnostic URL temporarily but has no queue consumers and no
-scheduled triggers. No producer may submit new work to it. After production
-parity succeeds, verify in the Cloudflare dashboard that staging has no active
-consumer or schedule before treating it as retired.
+There is no staging environment or staging workflow in the repository. The old
+Cloudflare Worker may keep its diagnostic URL temporarily, but no producer may
+submit work to it. Verify in the Cloudflare dashboard that it has no active
+consumer or schedule. Removing the old Worker and old queues is a separate,
+destructive cleanup after production parity succeeds.
 
 ## DNS cutover boundary
 
