@@ -16,9 +16,9 @@
 - Modify: `tooling/package-release.test.mjs`
 - Test: `tooling/package-release.test.mjs`
 
-- [ ] Assert that `@trebla/publishing` is the only non-private publishable workspace.
-- [ ] Run the release metadata test and confirm it fails before consolidation.
-- [ ] Mark every app and adapter workspace private.
+- [x] Assert that `@trebla/publishing` is the only non-private publishable workspace.
+- [x] Run the release metadata test and confirm it fails before consolidation.
+- [x] Mark every app and adapter workspace private.
 
 ### Task 2: Consolidate contracts and client
 
@@ -29,10 +29,10 @@
 - Modify: `packages/publishing/src/index.ts`
 - Test: `packages/publishing/src/**/*.test.ts`
 
-- [ ] Move existing tests with their implementations.
-- [ ] Export the complete contract and client API from one root entry point.
-- [ ] Replace internal cross-package imports with relative imports.
-- [ ] Build and test the new package.
+- [x] Move existing tests with their implementations.
+- [x] Export the complete contract and client API from one root entry point.
+- [x] Replace internal cross-package imports with relative imports.
+- [x] Build and test the new package.
 
 ### Task 3: Migrate internal consumers and documentation
 
@@ -40,23 +40,22 @@
 - Modify: `apps/worker/**`, `apps/cli/**`, `packages/adapter-*/**`
 - Modify: `README.md`, `docs/runbooks/package_release.md`, `docs/runbooks/producer_adoption.md`
 
-- [ ] Replace both former package imports with `@trebla/publishing`.
-- [ ] Regenerate the npm lockfile.
-- [ ] Run the complete monorepo validation and inspect the packed tarball.
-- [ ] Commit and publish `@trebla/publishing@0.1.0` publicly.
+- [x] Replace both former package imports with `@trebla/publishing`.
+- [x] Regenerate the npm lockfile.
+- [x] Run the complete monorepo validation and inspect the packed tarball.
+- [x] Commit and publish `@trebla/publishing@0.1.0` publicly.
 
 ### Task 4: Migrate product repositories
 
 **Files:**
 - Modify: each product `package.json`, lockfile, and platform-envelope test.
 
-- [ ] Replace `@trebla/publishing-client` with exact `@trebla/publishing@0.1.0`.
-- [ ] Verify Openings, Turma do Kako, Equity, Trebla, and Troco locally.
-- [ ] Commit to the agreed branches with `[skip ci]`, push, and confirm no workflow was triggered.
+- [x] Replace `@trebla/publishing-client` with exact `@trebla/publishing@0.1.0`.
+- [x] Verify Openings, Turma do Kako, Equity, Trebla, and Troco locally.
+- [x] Commit to the agreed branches with `[skip ci]`, push, and confirm no workflow was triggered.
 
 ### Task 5: Retire the former public entry points
 
-- [ ] Mark `@trebla/publishing-contracts@0.1.1` and `@trebla/publishing-client@0.1.1` deprecated with a migration message.
-- [ ] Verify the unified package from the anonymous public registry.
-- [ ] Confirm every local repository is clean and synchronized.
-
+- [x] Mark `@trebla/publishing-contracts@0.1.1` and `@trebla/publishing-client@0.1.1` deprecated with a migration message.
+- [x] Verify the unified package from the anonymous public registry.
+- [x] Confirm every local repository is clean and synchronized.
