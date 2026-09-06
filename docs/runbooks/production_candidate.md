@@ -63,6 +63,13 @@ applies only already-versioned idempotent D1 migrations, deploys with
 backfill, submit a publication, deploy Pages, call OneSignal, publish to a social
 network, or modify DNS.
 
+Migration `0008_promote_incomplete_web_deliveries.sql` creates one deterministic
+production outbox event for each unfinished `web.r2` delivery left behind by the
+retired queue and moves only those deliveries back to `ready`. Historical outbox
+records, verified deliveries, and every non-R2 adapter remain untouched. Before
+deployment this recovery set contained 38 deliveries; processing must be allowed
+to drain naturally through the production queue before parity verification.
+
 After deployment, run `tooling/verify-production-candidate.mjs` with one already
 verified entity. It makes three bounded GET requests: live health, authenticated
 capacity, and the entity route. It requires exact title, canonical URL, and
