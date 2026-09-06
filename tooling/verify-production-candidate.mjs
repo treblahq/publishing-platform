@@ -8,7 +8,7 @@ export async function verifyProductionCandidate({
 }) {
   const origin = baseUrl.replace(/\/+$/u, '');
   const get = (path, headers = {}) => fetch(`${origin}${path}`, {
-    method: 'GET', headers, signal: AbortSignal.timeout(Math.min(timeoutMs, 10_000)),
+    method: 'GET', headers, signal: globalThis.AbortSignal.timeout(Math.min(timeoutMs, 10_000)),
   });
 
   const health = await get('/health/live');
