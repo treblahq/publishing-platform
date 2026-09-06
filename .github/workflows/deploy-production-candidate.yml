@@ -25,9 +25,8 @@ jobs:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
           CLOUDFLARE_D1_DATABASE_ID: ${{ secrets.CLOUDFLARE_D1_DATABASE_ID }}
-          PRODUCER_SIGNING_SECRET: ${{ secrets.PRODUCER_SIGNING_SECRET }}
           ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
-        run: node tooling/staging-credentials.mjs
+        run: node tooling/production-credentials.mjs
       - run: npm ci
       - run: npm run validate
       - name: Build ephemeral production configuration
@@ -41,12 +40,9 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          PRODUCER_SIGNING_SECRET: ${{ secrets.PRODUCER_SIGNING_SECRET }}
           ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
         run: |
-          test -n "$PRODUCER_SIGNING_SECRET"
           test -n "$ADMIN_TOKEN"
-          node -e 'process.stdout.write(JSON.stringify({"openings-preview": process.env.PRODUCER_SIGNING_SECRET}))' | npx wrangler secret put PRODUCER_SECRETS --env production --config /tmp/publishing-platform-production.json
           printf '%s' "$ADMIN_TOKEN" | npx wrangler secret put ADMIN_TOKEN --env production --config /tmp/publishing-platform-production.json
       - name: Apply existing schema migrations
         env:

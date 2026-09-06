@@ -21,6 +21,7 @@ describe('production candidate deployment workflow', () => {
     expect(workflow).toContain('/health/live');
     expect(workflow).not.toMatch(/backfill|onesignal|social\.|bootstrap-staging|dns|pages deploy/iu);
     expect(workflow).not.toContain('/v1/publications');
+    expect(workflow).not.toMatch(/PRODUCER_SIGNING_SECRET|PRODUCER_SECRETS/u);
   });
 
   it('pins third-party actions to immutable revisions', () => {
