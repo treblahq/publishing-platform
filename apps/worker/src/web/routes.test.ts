@@ -9,11 +9,15 @@ const manifest = {
 
 describe('public web entity routes', () => {
   it('renders exact metadata into the bounded shell', async () => {
+    let checkedObjectKey: string | undefined;
     const response = await handleWebEntityRequest(
       new Request('https://worker.test/web/openings/jobs/gh_123'),
       {
         find: () => Promise.resolve(manifest),
-        getObject: () => Promise.resolve(new TextEncoder().encode('{"description":"Hello"}')),
+        objectExists: (key) => {
+          checkedObjectKey = key;
+          return Promise.resolve(true);
+        },
         getShell: () => Promise.resolve(new Response(`<html><head><title>Generic</title>
           <link rel="canonical" href="https://openings.dev/jobs/">
           <meta property="og:title" content="Generic">
@@ -23,6 +27,7 @@ describe('public web entity routes', () => {
       },
     );
     expect(response.status).toBe(200);
+    expect(checkedObjectKey).toBe(manifest.objectKey);
     expect(response.headers.get('x-robots-tag')).toBe('noindex, follow');
     const html = await response.text();
     expect(html).toContain('Platform &amp; Reliability Engineer');
@@ -35,7 +40,7 @@ describe('public web entity routes', () => {
 
   it('returns 404 for an inactive manifest or missing object', async () => {
     const dependencies = {
-      find: () => Promise.resolve(null), getObject: () => Promise.resolve(null),
+      find: () => Promise.resolve(null), objectExists: () => Promise.resolve(false),
       getShell: () => Promise.resolve(new Response('shell')), canonicalBaseUrl: 'https://openings.dev',
     };
     await expect(handleWebEntityRequest(

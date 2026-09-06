@@ -218,7 +218,7 @@ async function handleRuntimeWebEntity(request: Request, environment: Environment
     const stores = createD1R2EntityStores(database, bindings.artifacts as R2Bucket, tenant);
     return await handleWebEntityRequest(request, {
       find: (kind, id) => findWebEntity(database, tenant, kind, id),
-      getObject: (key) => stores.objects.get(key),
+      objectExists: async (key) => Boolean(await stores.objects.head(key)),
       getShell: (kind) => fetch(new URL(kind === 'job' ? '/jobs/' : kind === 'author' ? '/route-indexes/authors/' : '/route-indexes/communities/', config.shellBaseUrl as string)),
       canonicalBaseUrl: config.canonicalBaseUrl,
     });

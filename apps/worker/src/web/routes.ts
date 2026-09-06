@@ -3,7 +3,7 @@ import type { StoredWebManifest } from './d1-entity-stores.js';
 
 interface Dependencies {
   find(kind: WebEntityKind, id: string): Promise<StoredWebManifest | null>;
-  getObject(key: string): Promise<Uint8Array | null>;
+  objectExists(key: string): Promise<boolean>;
   getShell(kind: WebEntityKind): Promise<Response>;
   canonicalBaseUrl: string;
 }
@@ -12,7 +12,7 @@ export async function handleWebEntityRequest(request: Request, dependencies: Dep
   const route = parseRoute(new URL(request.url).pathname);
   if (!route) return new Response('Not found', { status: 404 });
   const manifest = await dependencies.find(route.kind, route.id);
-  if (!manifest || !await dependencies.getObject(manifest.objectKey)) return new Response('Not found', { status: 404 });
+  if (!manifest || !await dependencies.objectExists(manifest.objectKey)) return new Response('Not found', { status: 404 });
   const shell = await dependencies.getShell(route.kind);
   if (!shell.ok) return new Response('Web shell unavailable', { status: 503 });
   const canonicalUrl = new URL(manifest.canonicalPath, dependencies.canonicalBaseUrl).toString();
