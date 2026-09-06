@@ -38,13 +38,25 @@ describe('public web entity routes', () => {
     expect(html.match(/property="og:title"/gu)).toHaveLength(1);
   });
 
-  it('returns 404 for an inactive manifest or missing object', async () => {
+  it('returns 404 for an inactive manifest', async () => {
     const dependencies = {
       find: () => Promise.resolve(null), objectExists: () => Promise.resolve(false),
       getShell: () => Promise.resolve(new Response('shell')), canonicalBaseUrl: 'https://openings.dev',
     };
     await expect(handleWebEntityRequest(
       new Request('https://worker.test/web/openings/jobs/missing'), dependencies,
+    ).then((response) => response.status)).resolves.toBe(404);
+  });
+
+  it('returns 404 when the active manifest object is missing', async () => {
+    await expect(handleWebEntityRequest(
+      new Request('https://worker.test/web/openings/jobs/gh_123'),
+      {
+        find: () => Promise.resolve(manifest),
+        objectExists: () => Promise.resolve(false),
+        getShell: () => Promise.resolve(new Response('shell')),
+        canonicalBaseUrl: 'https://openings.dev',
+      },
     ).then((response) => response.status)).resolves.toBe(404);
   });
 });
