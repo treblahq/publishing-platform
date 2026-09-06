@@ -48,9 +48,9 @@ published free allowance:
 
 | Resource | Free allowance encoded in the ledger | Reject new work at |
 | --- | ---: | ---: |
-| D1 writes | 100,000/day | 49,000/day |
-| Queue operations | 10,000/day | 4,900/day |
-| R2 storage | 10 GiB | 4.9 GiB |
+| D1 writes | 100,000/day | 38,500/day |
+| Queue operations | 10,000/day | 3,850/day |
+| R2 storage | 10 GiB | 3.85 GB |
 
 The extra margin covers retries, maintenance, measurement lag, and activity
 outside an accepted publication. Temporary R2 artifacts are deleted after all
@@ -97,7 +97,9 @@ outbox claims rows atomically before sending them to Queue, so concurrent intake
 requests cannot waste Queue operations by dispatching the same row.
 
 After the outbox drains, run `npm run verify:publishing-web-parity` in the
-Openings data pipeline. The verifier checks every expected job, author and
+Openings data pipeline in deterministic batches. `PARITY_OFFSET` identifies
+where to resume and `PARITY_LIMIT` is bounded to at most 500. The verifier
+reports `nextOffset` and `complete`, and checks every selected job, author and
 community route for the exact title, canonical URL and publishing revision. A
 generic Pages fallback with HTTP 200 is treated as a failure.
 
@@ -132,5 +134,10 @@ The final smoke check recorded publication
 
 These checks now run after every staging deployment. A later deployment run,
 `33984918252`, applied atomic outbox claims and passed the full workflow. The
-remaining external gates are complete entity parity, the deferred OneSignal
-test-segment canary, and the pre-cutover DNS comparison.
+bounded backfill run `34001417266` then accepted all 1,320 Openings entities
+with zero submission failures. Complete live entity parity remains pending
+because the account-wide D1 read counter crossed the strict 40% ceiling during
+that one-time drain; repeating the backfill is forbidden. Resume only the
+bounded parity checks after the daily allowance resets. The other deferred
+external gates are the OneSignal test-segment canary and the pre-cutover DNS
+comparison.
