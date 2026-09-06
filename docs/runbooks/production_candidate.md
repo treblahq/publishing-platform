@@ -80,6 +80,12 @@ submit work to it. Verify in the Cloudflare dashboard that it has no active
 consumer or schedule. Removing the old Worker and old queues is a separate,
 destructive cleanup after production parity succeeds.
 
+On 2026-09-06, both staging queue consumers and all three staging cron triggers
+were removed, and the staging `workers.dev` subdomain was disabled. The old
+queues still report the preserved Worker bindings as producers, but they have
+zero consumers and the Worker has no public URL or scheduled invocation. The
+resources remain recoverable and must not receive new work.
+
 ## DNS cutover boundary
 
 DNS is not part of production-candidate deployment. Cutover requires separate
