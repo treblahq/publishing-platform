@@ -63,7 +63,7 @@
       "d1_databases": [
         {
           "binding": "LEDGER",
-          "database_name": "publishing-platform-production",
+          "database_name": "publishing-platform-staging",
           "database_id": "00000000-0000-0000-0000-000000000003"
         }
       ],

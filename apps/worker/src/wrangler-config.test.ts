@@ -15,6 +15,7 @@ describe('wrangler environment isolation', () => {
     expect(config).not.toHaveProperty('env.staging.queues.consumers');
     expect(config).toHaveProperty('env.staging.triggers.crons', []);
     expect(config).toHaveProperty('env.production.queues.consumers.1.queue', 'publishing-delivery-dlq-production');
+    expect(config).toHaveProperty('env.production.d1_databases.0.database_name', 'publishing-platform-staging');
     expect(serialized).toContain('ENABLED_ADAPTERS');
     expect(serialized).toContain('publishing-artifacts-local');
     expect(serialized).toContain('publishing-artifacts-staging');
