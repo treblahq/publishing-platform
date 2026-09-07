@@ -396,12 +396,15 @@ inspected scheduled run stopped at a retryable bridge
 stage before Mastodon; a matching shadow publication is already verified, but
 that does not by itself identify the bridge error or prove a live Mastodon post.
 
-The new Kako runtime bridge remains unmerged in its isolated worktree. Its
-private-state persistence and independent pending replay have focused tests.
+The new Kako runtime bridge merged as `cf9e91d`. Its private-state persistence
+and independent pending replay have focused tests.
 Review found that invalid new media could prevent older pending work from
 replaying; three failing regressions drove a fix that isolates new capture
-errors. Public 0.1.2 is pinned in the worktree and reproducible full verification
-is in progress. Do not enable the bridge before that verification and integration.
+errors. Public 0.1.2 is pinned and reproducible full verification passed 1,427
+tests, type checking, lint, and diff checks before integration. The three
+existing publishing workflows now preserve shadow proofs and handoffs on the
+private state branch. Their step-level credential bindings are still pending;
+the shadow gate remains false, so this does not activate cloud publication.
 
 After explicit user authorization, the three producer credentials were installed
 and their names verified in GitHub Actions Secrets for
@@ -410,8 +413,9 @@ and their names verified in GitHub Actions Secrets for
 variable remains `false`. No workflow was dispatched by this setup and no
 credential was added to public code. Equity's credentials remain local.
 
-Remaining rollout gates include updating consumers to the reviewed recovery
-release, verifying product-level restart behavior, adding Kako's runtime bridge,
+All five product main branches now pin the reviewed public recovery release.
+Remaining rollout gates include durable cross-run state for Trebla and Troco,
+Kako workflow credential bindings, verifying product-level restart behavior,
 and implementing Equity's durable local executor. Equity's YouTube OAuth and
 large video files must remain local; a generic temporary-upload bridge is not
 a replacement for that executor. Live provider ownership for Trebla, Troco,
