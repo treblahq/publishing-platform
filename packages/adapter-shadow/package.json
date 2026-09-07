@@ -1,0 +1,17 @@
+{
+  "name": "@trebla/publishing-adapter-shadow",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "license": "MIT",
+  "exports": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": ["dist"],
+  "dependencies": {
+    "@trebla/publishing": "0.1.0",
+    "@trebla/publishing-adapter-kit": "0.1.0"
+  },
+  "scripts": {
+    "build": "tsc --project tsconfig.json"
+  }
+}
