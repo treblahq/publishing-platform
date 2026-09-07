@@ -20,7 +20,7 @@ describe('production deployment workflow', () => {
     expect(workflow).toContain('wrangler deploy --env production');
     expect(workflow.indexOf('wrangler deploy --dry-run --env production'))
       .toBeLessThan(workflow.lastIndexOf('wrangler deploy --env production'));
-    expect(workflow).toContain('/health/live');
+    expect(workflow).toContain('verify-live-health.mjs');
     expect(workflow).not.toMatch(/backfill|onesignal|social\.|bootstrap-staging|dns|pages deploy/iu);
     expect(workflow).not.toContain('/v1/publications');
     expect(workflow).not.toMatch(/PRODUCER_SIGNING_SECRET|PRODUCER_SECRETS/u);

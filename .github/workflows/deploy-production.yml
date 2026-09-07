@@ -57,7 +57,4 @@ jobs:
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
         run: npx wrangler deploy --env production --config /tmp/publishing-platform-production.json
       - name: Verify live endpoint without writes
-        run: >-
-          node --input-type=module -e "const response = await fetch('https://publishing-platform-production.business-850.workers.dev/health/live');
-          const body = await response.json();
-          if (!response.ok || body.status !== 'live') throw new Error('Production Worker is not live');"
+        run: node tooling/verify-live-health.mjs
