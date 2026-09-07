@@ -1,7 +1,8 @@
 # Cloudflare production
 
-This is the primary Cloudflare production environment. Until public DNS is
-changed, Hostinger remains the active public host and rollback target.
+This is the primary Cloudflare production environment. Public DNS was cut over
+on 2026-09-06. Hostinger remains deployed as the rollback target during the
+observation window.
 
 ## Promoted resources
 
@@ -109,3 +110,23 @@ At cutover, change only the intended product records. Keep Hostinger deployed
 during the observation window. Rollback restores the captured records; it does
 not require a code revert or data migration. Hostinger may be retired only after
 the observation window is explicitly accepted.
+
+## Openings cutover record
+
+The Openings production cutover completed on 2026-09-06 (2026-09-07 UTC):
+
+- all 1,320 planned job, author, and community routes passed the bounded parity
+  verifier with exact title, canonical URL, and revision metadata;
+- two historical job publications without an R2 delivery were repaired with
+  bounded, idempotent delivery and outbox inserts; both reached `verified`;
+- `web_entity_manifests` reached 1,320, every `web.r2` delivery was verified,
+  and both due retries and pending outbox rows were zero;
+- OneSignal remained disabled and no social delivery was enabled;
+- the apex DNS baseline was `A @ 212.1.209.199`; it was replaced by
+  `CNAME @ openings-dev-web-dfy.pages.dev`;
+- the `www` baseline was `CNAME www openings.dev`; it was replaced by
+  `CNAME www openings-dev-web-dfy.pages.dev`;
+- both `https://openings.dev` and `https://www.openings.dev` returned HTTP 200
+  from Cloudflare after cutover, including a repaired dynamic job route;
+- no GitHub Actions deployment was run for the cutover, and Hostinger was not
+  deleted so rollback remains available.
