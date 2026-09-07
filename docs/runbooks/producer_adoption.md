@@ -214,6 +214,28 @@ explicit transfer of delivery ownership from the existing publisher.
 
 ## Repository and secret boundaries
 
+### Openings rollout status (2026-09-07)
+
+The Openings social publisher submits `social.shadow` from its production
+bridge, using the separate `openings-social-publisher` credential. A bounded
+11,652-byte image smoke test reached `verified` in the production queue and its
+artifact reference was marked safe to delete. Repeating the same local handoff
+returned `already-accepted` without another network request.
+
+The Worker source now includes a text/link `social.mastodon` adapter, but it is
+not enabled in production. Its access token must come from the
+`MASTODON_ACCESS_TOKENS` Worker secret (JSON mapping tenant IDs to tokens), never
+from `ADAPTER_CONFIGS`. The adapter confirms the authenticated account, checks
+recent posts for the exact canonical URL, and records a sanitized receipt.
+Mastodon's [idempotency keys expire after at most one hour](https://docs.joinmastodon.org/methods/statuses/#create),
+so lost POST responses enter reconciliation instead of blind retry. A bounded
+search that finds nothing returns `unknown`, not proof that publication failed.
+
+Before enabling Mastodon, connect receipt retrieval to the producer and switch
+that channel's legacy executor to the Worker in one coordinated change. Do not
+enable both owners for the same scheduled post. Media attachments and the other
+social providers remain separate rollout work.
+
 - Keep signing secrets and provider credentials in environment variables or
   the product's existing secret store.
 - Commit only variable names and placeholder examples.
