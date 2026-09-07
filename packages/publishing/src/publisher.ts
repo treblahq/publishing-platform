@@ -4,6 +4,7 @@ import { createPublishingClient, type PublishingClientOptions, type SubmissionRe
 import { createArtifactUploader } from './upload.js';
 import { createFileOutbox } from './outbox.js';
 import { sha256Hex } from './headers.js';
+import { DeliveryError } from './errors.js';
 import { stagePlatformHandoff, uploadPlatformHandoff, type PlatformHandoff, type PlatformUploadOutcome } from './handoff.js';
 
 export interface PlatformPublisherOptions {
@@ -69,9 +70,17 @@ export function createPlatformPublisher(options: PlatformPublisherOptions): Plat
       const boundedTransport = { ...transport, fetch: ((url, init) => (transport.fetch ?? globalThis.fetch)(url, {
         ...init, redirect: 'error', signal: AbortSignal.timeout(60_000),
       })) as typeof fetch };
-      const upload = await uploadPlatformHandoff(handoff, createArtifactUploader(boundedTransport));
-      if (upload.outcome !== 'available') return upload;
-      const result = await createPublishingClient(boundedTransport).submit(prepared.envelope);
+      const client = createPublishingClient(boundedTransport);
+      let result: SubmissionResult;
+      try {
+        // Recover remote acceptance before reading media that may already be cleaned up.
+        result = await client.submit(prepared.envelope);
+      } catch (error) {
+        if (!(error instanceof DeliveryError) || error.code !== 'ARTIFACT_NOT_READY') throw error;
+        const upload = await uploadPlatformHandoff(handoff, createArtifactUploader(boundedTransport));
+        if (upload.outcome !== 'available') return upload;
+        result = await client.submit(prepared.envelope);
+      }
       if (result.outcome === 'accepted') {
         await createFileOutbox(prepared.directory).acknowledge(prepared.id, result.publicationId);
       }

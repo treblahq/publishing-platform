@@ -1,6 +1,6 @@
 import type { PublicationEnvelope } from '@trebla/publishing';
 
-import type { AtomicAcceptance, AtomicIntakeStore } from './accept-publication.js';
+import { PublicationConflictError, type AtomicAcceptance, type AtomicIntakeStore } from './accept-publication.js';
 import { estimateCapacityRequests } from '../capacity/d1-capacity.js';
 
 export interface D1IntakeStatement {
@@ -19,10 +19,15 @@ export function createD1IntakeStore(
   now: () => string = () => new Date().toISOString(),
 ): AtomicIntakeStore {
   return {
-    findByIdempotencyKey: async (tenantId, idempotencyKey) => {
+    findByIdempotencyKey: async ({ principal, envelope }) => {
       const row = await database.prepare(`
-        SELECT id FROM publications WHERE tenant_id = ? AND idempotency_key = ? LIMIT 1
-      `).bind(tenantId, idempotencyKey).first<{ id: string }>();
+        SELECT id, producer_client_id, envelope_json FROM publications
+        WHERE tenant_id = ? AND idempotency_key = ? LIMIT 1
+      `).bind(principal.tenant, envelope.identity.idempotencyKey)
+        .first<{ id: string; producer_client_id: string; envelope_json: string }>();
+      // Match the immutable serialized envelope contract used by the durable producer outbox.
+      if (row && (row.producer_client_id !== principal.clientId
+        || row.envelope_json !== JSON.stringify(envelope))) throw new PublicationConflictError();
       return row?.id ?? null;
     },
     acceptAtomic: async (acceptance) => {

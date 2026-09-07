@@ -25,17 +25,23 @@ async function fixture() {
     }, uploads: [{ reference: artifact, filePath }],
   };
   const requests: string[] = [];
+  const submissions: string[] = [];
+  let uploaded = false;
   const transport = { baseUrl: 'https://publisher.example', clientId: 'trebla-producer', secret: 'local-test-only',
     fetch: (async (_url, init) => {
       requests.push(init?.method ?? 'GET');
       if (init?.method === 'PUT') {
         await new Response(init.body).text();
+        uploaded = true;
         return Response.json({ status: 'stored' });
       }
+      if (typeof init?.body !== 'string') throw new Error('Expected a serialized envelope');
+      submissions.push(init.body);
+      if (!uploaded) return Response.json({ code: 'ARTIFACT_NOT_READY' }, { status: 409 });
       return Response.json({ publicationId: 'publication-one' });
     }) as typeof fetch,
   };
-  return { directory, handoff, requests, transport };
+  return { directory, handoff, requests, submissions, transport };
 }
 
 describe('complete product handoff', () => {
@@ -43,7 +49,7 @@ describe('complete product handoff', () => {
     expect(api.createPlatformPublisher).toBeTypeOf('function');
   });
 
-  it('prepares durably offline, sends uploads before intake, and reuses acceptance offline', async () => {
+  it('prepares durably offline, probes then uploads and submits, and reuses acceptance offline', async () => {
     const f = await fixture();
     const publisher = api.createPlatformPublisher({ outboxDirectory: join(f.directory, 'outbox'), transport: f.transport });
     const prepared = await publisher.prepare(f.handoff);
@@ -52,11 +58,13 @@ describe('complete product handoff', () => {
     await expect(publisher.submit(f.handoff)).resolves.toEqual({ outcome: 'accepted', publicationId: 'publication-one' });
     await rm(join(f.directory, 'image.png'));
     await expect(publisher.submit(f.handoff)).resolves.toEqual({ outcome: 'already-accepted', publicationId: 'publication-one' });
-    expect(f.requests).toEqual(['PUT', 'POST']);
+    expect(f.requests).toEqual(['POST', 'PUT', 'POST']);
+    expect(f.submissions).toEqual([JSON.stringify(f.handoff.envelope), JSON.stringify(f.handoff.envelope)]);
   });
 
-  it('keeps pending work and never submits after an upload capacity rejection', async () => {
+  it('keeps pending work and never reads media after intake capacity rejection', async () => {
     const f = await fixture();
+    await rm(join(f.directory, 'image.png'));
     f.transport.fetch = async (_url, init) => {
       f.requests.push(init?.method ?? 'GET');
       await new Response(init?.body).text();
@@ -65,8 +73,60 @@ describe('complete product handoff', () => {
     const publisher = api.createPlatformPublisher({ outboxDirectory: join(f.directory, 'outbox'), transport: f.transport });
     const staged = await publisher.prepare(f.handoff);
     await expect(publisher.submit(f.handoff)).resolves.toMatchObject({ outcome: 'retry-later', code: 'FREE_TIER_BUDGET_EXHAUSTED' });
-    expect(f.requests).toEqual(['PUT']);
+    expect(f.requests).toEqual(['POST']);
     expect(await readdir(join(staged.path, '..'))).toContain(`${staged.id}.json`);
+  });
+
+  it('recovers remote acceptance with a fresh outbox and deleted media', async () => {
+    const f = await fixture();
+    const publisher = api.createPlatformPublisher({ outboxDirectory: join(f.directory, 'outbox'), transport: f.transport });
+    await publisher.submit(f.handoff);
+    await rm(join(f.directory, 'image.png'));
+    f.requests.length = 0;
+    const fresh = api.createPlatformPublisher({ outboxDirectory: join(f.directory, 'fresh-outbox'), transport: f.transport });
+    await expect(fresh.submit(f.handoff)).resolves.toEqual({ outcome: 'accepted', publicationId: 'publication-one' });
+    await expect(fresh.submit(f.handoff)).resolves.toEqual({ outcome: 'already-accepted', publicationId: 'publication-one' });
+    expect(f.requests).toEqual(['POST']);
+  });
+
+  it.each([
+    [409, { code: 'PUBLICATION_CONFLICT' }],
+    [409, { code: 'artifact_not_ready' }],
+    [409, null],
+    [500, { code: 'ARTIFACT_NOT_READY' }],
+    [202, {}],
+  ])('never uploads after unrecognized intake response %s %j', async (status, payload) => {
+    const f = await fixture();
+    f.transport.fetch = (_url, init) => {
+      f.requests.push(init?.method ?? 'GET');
+      return Promise.resolve(Response.json(payload, { status }));
+    };
+    const publisher = api.createPlatformPublisher({ outboxDirectory: join(f.directory, 'outbox'), transport: f.transport });
+    await expect(publisher.submit(f.handoff)).rejects.toThrow();
+    expect(f.requests).toEqual(['POST']);
+  });
+
+  it('preserves pending work without resubmitting when upload capacity is rejected', async () => {
+    const f = await fixture();
+    f.transport.fetch = (_url, init) => {
+      f.requests.push(init?.method ?? 'GET');
+      return Promise.resolve(init?.method === 'POST'
+        ? Response.json({ code: 'ARTIFACT_NOT_READY' }, { status: 409 })
+        : Response.json({ code: 'FREE_TIER_BUDGET_EXHAUSTED' }, { status: 429 }));
+    };
+    const publisher = api.createPlatformPublisher({ outboxDirectory: join(f.directory, 'outbox'), transport: f.transport });
+    const staged = await publisher.prepare(f.handoff);
+    await expect(publisher.submit(f.handoff)).resolves.toMatchObject({ outcome: 'retry-later', uploaded: 0 });
+    expect(f.requests).toEqual(['POST', 'PUT']);
+    expect(await readdir(join(staged.path, '..'))).toContain(`${staged.id}.json`);
+  });
+
+  it('rejects changed local bytes after the probe without uploading or accepting them', async () => {
+    const f = await fixture();
+    await writeFile(join(f.directory, 'image.png'), 'changed-image!');
+    const publisher = api.createPlatformPublisher({ outboxDirectory: join(f.directory, 'outbox'), transport: f.transport });
+    await expect(publisher.submit(f.handoff)).rejects.toThrow();
+    expect(f.requests).toEqual(['POST']);
   });
 
   it('retains a lost intake response for an idempotent retry', async () => {

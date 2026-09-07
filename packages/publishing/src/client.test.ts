@@ -25,6 +25,15 @@ const envelope = {
 } satisfies PublicationEnvelope;
 
 describe('publishing client', () => {
+  it('classifies the explicit missing artifact response without accepting or retrying', async () => {
+    const fetch = vi.fn<typeof globalThis.fetch>().mockResolvedValue(Response.json({ code: 'ARTIFACT_NOT_READY', message: 'untrusted' }, { status: 409 }));
+    const client = createPublishingClient({ baseUrl: 'https://publish.example', clientId: 'client', secret: 'test', fetch });
+    await expect(client.submit(envelope)).rejects.toMatchObject({
+      name: 'DeliveryError', code: 'ARTIFACT_NOT_READY', category: 'retryable',
+      message: 'Publishing artifacts are not ready',
+    });
+    expect(fetch).toHaveBeenCalledOnce();
+  });
   it('submits a validated signed envelope once', async () => {
     const fetch = vi.fn<typeof globalThis.fetch>().mockResolvedValue(new Response(
       JSON.stringify({ publicationId: 'pub-123' }),

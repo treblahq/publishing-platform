@@ -19,8 +19,12 @@ export interface AtomicAcceptance {
 }
 
 export interface AtomicIntakeStore {
-  findByIdempotencyKey(tenantId: string, idempotencyKey: string): Promise<string | null>;
+  findByIdempotencyKey(acceptance: AtomicAcceptance): Promise<string | null>;
   acceptAtomic(acceptance: AtomicAcceptance): Promise<string>;
+}
+
+export class PublicationConflictError extends Error {
+  constructor() { super('Publication identity conflicts with accepted work'); }
 }
 
 export type IntakeResult =
@@ -43,10 +47,7 @@ export async function acceptPublication(input: {
     throw new Error('Publication tenant does not match authenticated tenant');
   }
 
-  const existing = await input.store.findByIdempotencyKey(
-    input.principal.tenant,
-    envelope.identity.idempotencyKey,
-  );
+  const existing = await input.store.findByIdempotencyKey({ principal: input.principal, envelope });
   if (existing) return { outcome: 'accepted', publicationId: existing };
 
   if (!input.capacity.accepted) {

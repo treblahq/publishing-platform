@@ -4,7 +4,7 @@ import {
   type PublicationEnvelope,
 } from '@trebla/publishing';
 
-import { acceptPublication, type AtomicIntakeStore, type IntakeCapacity } from './accept-publication.js';
+import { acceptPublication, PublicationConflictError, type AtomicIntakeStore, type IntakeCapacity } from './accept-publication.js';
 import { authenticateRequest, type ProducerClientLoader } from './authenticate.js';
 
 export interface PublicationRouteDependencies {
@@ -51,16 +51,12 @@ export async function handlePublicationRequest(
   if (envelope.identity.tenant !== principal.tenant) {
     return Response.json({ code: 'INVALID_PUBLICATION' }, { status: 400 });
   }
-  const existing = await dependencies.store.findByIdempotencyKey(
-    principal.tenant,
-    envelope.identity.idempotencyKey,
-  );
-  if (existing !== null) return Response.json({ publicationId: existing }, { status: 202 });
-  if (!await dependencies.artifactsReady(principal.tenant, envelope)) {
-    return Response.json({ code: 'ARTIFACT_NOT_READY' }, { status: 409 });
-  }
-
   try {
+    const existing = await dependencies.store.findByIdempotencyKey({ principal, envelope });
+    if (existing !== null) return Response.json({ publicationId: existing }, { status: 202 });
+    if (!await dependencies.artifactsReady(principal.tenant, envelope)) {
+      return Response.json({ code: 'ARTIFACT_NOT_READY' }, { status: 409 });
+    }
     const result = await acceptPublication({
       envelope,
       principal,
@@ -74,7 +70,10 @@ export async function handlePublicationRequest(
       });
     }
     return Response.json({ publicationId: result.publicationId }, { status: 202 });
-  } catch {
+  } catch (error) {
+    if (error instanceof PublicationConflictError) {
+      return Response.json({ code: 'PUBLICATION_CONFLICT' }, { status: 409 });
+    }
     return Response.json({ code: 'INVALID_PUBLICATION' }, { status: 400 });
   }
 }

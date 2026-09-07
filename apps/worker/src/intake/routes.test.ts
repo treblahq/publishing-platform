@@ -1,9 +1,12 @@
 import { describe, expect, it } from 'vitest';
+import { DatabaseSync, type SQLInputValue } from 'node:sqlite';
 
 import { buildSignedHeaders } from '@trebla/publishing';
 import type { PublicationEnvelope } from '@trebla/publishing';
 
 import * as routes from './routes.js';
+import { createD1IntakeStore } from './d1-intake-store.js';
+import { acceptPublication } from './accept-publication.js';
 
 const envelope = {
   schemaVersion: 1,
@@ -21,6 +24,52 @@ async function requestFor(value: unknown = envelope) {
 const client = { id: 'client-1', tenant: 'openings', enabled: true, secret: 'test-secret' };
 
 describe('publication intake route', () => {
+  it.each(['same', 'content', 'producer'] as const)('checks durable acceptance ownership and immutable content: %s', async (variant) => {
+    const database = new DatabaseSync(':memory:');
+    const temporaryEnvelope: PublicationEnvelope = { ...envelope, artifacts: [{
+      id: 'video', storage: 'r2-temporary', sha256: 'a'.repeat(64), byteSize: 5,
+      mediaType: 'video/mp4', locator: `temporary/openings/job/${'a'.repeat(64)}.mp4`,
+    }] };
+    database.exec('CREATE TABLE publications (id TEXT, tenant_id TEXT, idempotency_key TEXT, producer_client_id TEXT, envelope_json TEXT)');
+    database.prepare('INSERT INTO publications VALUES (?, ?, ?, ?, ?)').run(
+      'private-publication-id', 'openings', 'idem-1', variant === 'producer' ? 'another-producer' : client.id,
+      JSON.stringify(variant === 'content' ? { ...temporaryEnvelope, canonical: { ...envelope.canonical, title: 'Different' } } : temporaryEnvelope),
+    );
+    let effects = 0;
+    const store = createD1IntakeStore({
+      prepare(sql) {
+        let bindings: SQLInputValue[] = [];
+        return {
+          bind(...values: unknown[]) { bindings = values as SQLInputValue[]; return this; },
+          first<T>() { return Promise.resolve(database.prepare(sql).get(...bindings) as T | undefined ?? null); },
+        };
+      },
+      batch() { effects += 1; return Promise.resolve([]); },
+    });
+    try {
+      const response = await routes.handlePublicationRequest(await requestFor(temporaryEnvelope), {
+        now: () => new Date('2026-09-04T15:00:00.000Z'), loadClient: () => Promise.resolve(client),
+        capacity: () => { effects += 1; return Promise.resolve({ accepted: false, retryAfter: 'tomorrow' }); },
+        artifactsReady: () => { effects += 1; return Promise.resolve(false); },
+        store,
+      });
+      expect(response.status).toBe(variant === 'same' ? 202 : 409);
+      await expect(response.json()).resolves.toEqual(variant === 'same'
+        ? { publicationId: 'private-publication-id' } : { code: 'PUBLICATION_CONFLICT' });
+      const direct = acceptPublication({
+        envelope: temporaryEnvelope, principal: { tenant: client.tenant, clientId: client.id, nonce: 'fresh-nonce' },
+        store, capacity: { accepted: false, retryAfter: 'tomorrow' },
+      });
+      if (variant === 'same') {
+        await expect(direct).resolves.toEqual({ outcome: 'accepted', publicationId: 'private-publication-id' });
+      } else {
+        await expect(direct).rejects.toThrow('Publication identity conflicts with accepted work');
+      }
+      expect(effects).toBe(0);
+    } finally {
+      database.close();
+    }
+  });
   it('returns 202 with the durable publication id', async () => {
     const handlePublicationRequest = Reflect.get(routes, 'handlePublicationRequest');
     expect(handlePublicationRequest).toBeTypeOf('function');

@@ -58,6 +58,15 @@ export function createPublishingClient(options: PublishingClientOptions): Publis
       }
 
       if (!response.ok) {
+        if (response.status === 409) {
+          const payload = await readRecord(response);
+          if (payload.code === 'ARTIFACT_NOT_READY') {
+            throw new DeliveryError({
+              code: 'ARTIFACT_NOT_READY', category: 'retryable',
+              message: 'Publishing artifacts are not ready',
+            });
+          }
+        }
         throw new DeliveryError({
           code: 'INTAKE_REQUEST_FAILED',
           category: response.status >= 500 ? 'retryable' : 'terminal',
