@@ -403,8 +403,10 @@ replaying; three failing regressions drove a fix that isolates new capture
 errors. Public 0.1.2 is pinned and reproducible full verification passed 1,427
 tests, type checking, lint, and diff checks before integration. The three
 existing publishing workflows now preserve shadow proofs and handoffs on the
-private state branch. Their step-level credential bindings are still pending;
-the shadow gate remains false, so this does not activate cloud publication.
+private state branch. Commit `8a0e74a` subsequently integrated all three
+step-level credential bindings, with exact opt-in and otherwise empty secret
+values. Full verification passed 1,430 tests, types and lint before merging.
+The shadow gate remains false, so this does not activate cloud publication.
 
 After explicit user authorization, the three producer credentials were installed
 and their names verified in GitHub Actions Secrets for
@@ -414,8 +416,18 @@ variable remains `false`. No workflow was dispatched by this setup and no
 credential was added to public code. Equity's credentials remain local.
 
 All five product main branches now pin the reviewed public recovery release.
-Remaining rollout gates include durable cross-run state for Trebla and Troco,
-Kako workflow credential bindings, verifying product-level restart behavior,
+Troco commits `da9fe7e` and `0b5e8a6` now preserve verified public artifact
+metadata in the existing campaign intent commit. The workflow recovers shadow
+acceptance before media restoration, then performs another bounded pass after
+planning for requests that still need bytes. Each pass attempts at most three
+pending campaigns, rotates missing-media candidates, and commits partial progress
+before a blocking exit. Only an exact envelope digest acknowledgement is saved;
+no remote publication IDs, private envelopes, media or credentials enter campaign
+state. Full checks passed 179 tests plus formatting, types, 18 campaign records
+and three provider contracts. Both commits are on main; the gate remains false.
+
+Remaining rollout gates include durable cross-run state for Trebla,
+verifying product-level restart behavior,
 and implementing Equity's durable local executor. Equity's YouTube OAuth and
 large video files must remain local; a generic temporary-upload bridge is not
 a replacement for that executor. Live provider ownership for Trebla, Troco,
