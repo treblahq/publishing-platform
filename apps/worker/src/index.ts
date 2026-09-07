@@ -10,6 +10,7 @@ import { createOneSignalAdapter } from '@trebla/publishing-adapter-onesignal';
 import { createPagesAdapter } from '@trebla/publishing-adapter-pages';
 import { createR2WebAdapter } from '@trebla/publishing-adapter-r2';
 import { createSocialShadowAdapter } from '@trebla/publishing-adapter-shadow';
+import { loadProducerSecrets } from './intake/producer-secrets.js';
 import { createAdapterRegistry } from './registry.js';
 import { acquireD1Lease } from './delivery/d1-lease.js';
 import { createD1DeliveryStore } from './delivery/d1-delivery-store.js';
@@ -86,7 +87,7 @@ async function handleRuntimeArtifactUpload(request: Request, environment: Enviro
   try {
     const bindings = parseWorkerBindings(environment);
     const database = bindings.ledger as D1Database;
-    const secrets = parseProducerSecrets(environment.PRODUCER_SECRETS);
+    const secrets = loadProducerSecrets(environment.PRODUCER_SECRETS, environment.SOCIAL_PRODUCER_SECRETS);
     return await handleArtifactUploadRequest(request, {
       now: () => new Date(),
       loadClient: createD1ProducerClientLoader(database, (clientId) => secrets[clientId]),
@@ -234,7 +235,7 @@ async function handleRuntimePublication(request: Request, environment: Environme
   try {
     const bindings = parseWorkerBindings(environment);
     const database = bindings.ledger as D1Database;
-    const secrets = parseProducerSecrets(environment.PRODUCER_SECRETS);
+    const secrets = loadProducerSecrets(environment.PRODUCER_SECRETS, environment.SOCIAL_PRODUCER_SECRETS);
     return await handlePublicationRequest(request, {
       now: () => new Date(),
       loadClient: createD1ProducerClientLoader(database, (clientId) => secrets[clientId]),
@@ -250,17 +251,6 @@ async function handleRuntimePublication(request: Request, environment: Environme
   } catch {
     return Response.json({ code: 'SERVICE_UNAVAILABLE' }, { status: 503 });
   }
-}
-
-function parseProducerSecrets(value: unknown): Readonly<Record<string, string>> {
-  if (typeof value !== 'string' || value.length === 0) throw new Error('Producer secrets are required');
-  const parsed: unknown = JSON.parse(value);
-  if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) throw new Error('Invalid producer secrets');
-  const entries = Object.entries(parsed as Record<string, unknown>);
-  if (entries.some(([, secret]) => typeof secret !== 'string' || secret.length === 0)) {
-    throw new Error('Invalid producer secret');
-  }
-  return Object.fromEntries(entries) as Record<string, string>;
 }
 
 export default createWorker();
