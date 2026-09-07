@@ -512,6 +512,15 @@ completion; transient pre-publication media reads remain retryable. Registration
 does not enable the adapter. Product ownership transfer, credentials and runtime
 free-tier performance verification are still required before live activation.
 
+Trebla `436724a` is on main after 1,536 tests, lint, build and three safety
+checks. An optional media snapshot now pins an entire ordered carousel to one
+verified Git commit; all hashes and bytes are checked before any pinned result
+is returned. Existing native media methods and mutable URLs are unchanged.
+The six-image local `the-stack-behind-troco` fixture produced 689,667 JPEG bytes
+with the current native conversion settings. This is a local size check, not a
+Cloudflare CPU benchmark or a live Buffer delivery. The production HTTP client's
+default 2 MiB per response must be accounted for when integrating larger images.
+
 Remaining rollout gates include verifying product-level restart behavior
 under controlled activation, migrating Openings bridge media,
 and implementing Equity's durable local executor. Equity's YouTube OAuth and
