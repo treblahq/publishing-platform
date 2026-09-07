@@ -26,6 +26,7 @@ import { createD1FailureRecorder } from './delivery/d1-failure-recorder.js';
 import { handleD1DeadLetterBatch } from './delivery/d1-dead-letter.js';
 import { parseAdapterConfigs } from './adapter-configs.js';
 import { createD1R2EntityStores, find as findWebEntity } from './web/d1-entity-stores.js';
+import { fetchWebShell } from './web/shell.js';
 import { handleWebEntityRequest } from './web/routes.js';
 import { handleArtifactUploadRequest } from './artifacts/routes.js';
 import { createD1UploadStore } from './artifacts/d1-uploads.js';
@@ -219,7 +220,7 @@ async function handleRuntimeWebEntity(request: Request, environment: Environment
     return await handleWebEntityRequest(request, {
       find: (kind, id) => findWebEntity(database, tenant, kind, id),
       objectExists: async (key) => Boolean(await stores.objects.head(key)),
-      getShell: (kind) => fetch(new URL(kind === 'job' ? '/jobs/' : kind === 'author' ? '/route-indexes/authors/' : '/route-indexes/communities/', config.shellBaseUrl as string)),
+      getShell: (kind) => fetchWebShell(kind, config.shellBaseUrl as string),
       canonicalBaseUrl: config.canonicalBaseUrl,
     });
   } catch {
