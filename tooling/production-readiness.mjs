@@ -21,8 +21,8 @@ export function assertProductionReady(config) {
   if (production.r2_buckets?.[0]?.bucket_name !== PROMOTED_BUCKET) {
     throw new Error('Production must bind the promoted R2 bucket');
   }
-  if (production.vars?.ENABLED_ADAPTERS !== 'web.r2') {
-    throw new Error('Production candidate must enable only web.r2');
+  if (!['web.r2', 'web.r2,social.shadow'].includes(production.vars?.ENABLED_ADAPTERS)) {
+    throw new Error('Production candidate may enable only web.r2 and provider-free social.shadow');
   }
 
   let adapters;

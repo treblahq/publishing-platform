@@ -19,8 +19,7 @@ describe('wrangler environment isolation', () => {
     expect(serialized).toContain('publishing-artifacts-staging');
     expect(config).toHaveProperty('env.production.r2_buckets.0.bucket_name', 'publishing-artifacts-staging');
     expect(config).toHaveProperty('vars.ENABLED_ADAPTERS', '');
-    expect(config).toHaveProperty('env.production.vars.ENABLED_ADAPTERS', 'web.r2');
-    expect(config).not.toHaveProperty('env.production.vars.ENABLED_ADAPTERS', 'web.r2,social.shadow');
+    expect(config).toHaveProperty('env.production.vars.ENABLED_ADAPTERS', 'web.r2,social.shadow');
     expect(config).toHaveProperty('env.production.vars.ADAPTER_CONFIGS');
     expect(serialized).toContain('https://openings-dev-web-dfy.pages.dev');
     expect(serialized).not.toContain('cloudflare-preview.openings-dev-web.pages.dev');

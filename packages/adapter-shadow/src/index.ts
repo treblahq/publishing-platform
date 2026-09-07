@@ -40,10 +40,9 @@ export function createSocialShadowAdapter(
     reconcile: (context) => Promise.resolve(isShadowReceipt(context.receipt)
       ? { status: 'found', receipt: context.receipt }
       : { status: 'unknown' }),
-    artifactRetention: () => Promise.resolve({
-      safeToDelete: false,
-      reason: 'shadow-has-no-provider-ingestion',
-    }),
+    artifactRetention: ({ receipt }) => Promise.resolve(isShadowReceipt(receipt)
+      ? { safeToDelete: true, reason: 'shadow-comparison-complete' }
+      : { safeToDelete: false, reason: 'shadow-comparison-unconfirmed' }),
   };
 }
 

@@ -38,6 +38,11 @@ describe('production readiness', () => {
   it('accepts promoted data with isolated production messaging', () => {
     expect(assertProductionReady(config())).toBe(true);
   });
+  it('accepts the provider-free social shadow rollout beside web delivery', () => {
+    const value = config();
+    value.env.production.vars.ENABLED_ADAPTERS = 'web.r2,social.shadow';
+    expect(assertProductionReady(value)).toBe(true);
+  });
 
   it.each([
     ['placeholder D1', (value) => { value.env.production.d1_databases[0].database_id = '00000000-0000-0000-0000-000000000003'; }],

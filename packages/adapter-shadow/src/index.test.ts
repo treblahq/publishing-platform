@@ -39,7 +39,7 @@ describe('social shadow adapter', () => {
         mediaType: 'image/png', locator: 'temporary/openings/job/media.png',
       },
       receipt: first,
-    })).resolves.toEqual({ safeToDelete: false, reason: 'shadow-has-no-provider-ingestion' });
+    })).resolves.toEqual({ safeToDelete: true, reason: 'shadow-comparison-complete' });
   });
 
   it.each([
@@ -59,5 +59,13 @@ describe('social shadow adapter', () => {
     const adapter = createSocialShadowAdapter();
     await expect(adapter.deliver({ ...context, operation: 'publish' }))
       .rejects.toMatchObject({ category: 'terminal', code: 'SOCIAL_SHADOW_INVALID_PAYLOAD' });
+  });
+  it('retains artifacts when comparison has no valid receipt', async () => {
+    const adapter = createSocialShadowAdapter();
+    await expect(adapter.artifactRetention?.({
+      tenant: 'openings', deliveryId: 'delivery-social', receipt: undefined,
+      artifact: { id: 'media-a', storage: 'r2-temporary', sha256: 'a'.repeat(64), byteSize: 1,
+        mediaType: 'image/png', locator: 'temporary/openings/job/media.png' },
+    })).resolves.toEqual({ safeToDelete: false, reason: 'shadow-comparison-unconfirmed' });
   });
 });

@@ -189,10 +189,16 @@ Each product must pass local validation and a zero-network dry run before any
 staging submission. Live ownership remains with the legacy publisher until a
 separate cutover explicitly pauses the old owner and reconciles in-flight work.
 
-`social.shadow` is compiled into the Worker but is not enabled by compilation.
+The production configuration enables `web.r2,social.shadow`. Other providers
+remain disabled. Social producer signing keys are installed separately in
+`SOCIAL_PRODUCER_SECRETS`; duplicate client IDs across the primary and social
+maps fail closed instead of replacing an existing producer credential.
 It has no provider transport, credential, or write capability. It validates the
-final provider-neutral post, records a deterministic shadow receipt, and keeps
-temporary artifacts protected because no provider has ingested them.
+final provider-neutral post and records a deterministic shadow receipt.
+Once that receipt is durable, its artifact reference is safe to delete: the
+comparison has finished and no provider downloads the bytes. Other delivery
+references can still keep the same object protected. Unconfirmed comparisons
+retain their files.
 
 For each product, use this rollout order:
 
