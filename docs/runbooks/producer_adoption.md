@@ -205,11 +205,11 @@ Each product must pass local validation and a zero-network dry run before any
 staging submission. Live ownership remains with the legacy publisher until a
 separate cutover explicitly pauses the old owner and reconciles in-flight work.
 
-The production configuration enables `web.r2,social.shadow`. Other providers
-remain disabled. Social producer signing keys are installed separately in
+The production configuration enables `web.r2,social.shadow,social.mastodon` for
+the approved Openings rollout. Other providers remain disabled. Social producer signing keys are installed separately in
 `SOCIAL_PRODUCER_SECRETS`; duplicate client IDs across the primary and social
 maps fail closed instead of replacing an existing producer credential.
-It has no provider transport, credential, or write capability. It validates the
+The shadow adapter has no provider transport, credential, or write capability. It validates the
 final provider-neutral post and records a deterministic shadow receipt.
 Once that receipt is durable, its artifact reference is safe to delete: the
 comparison has finished and no provider downloads the bytes. Other delivery
@@ -238,8 +238,8 @@ bridge, using the separate `openings-social-publisher` credential. A bounded
 artifact reference was marked safe to delete. Repeating the same local handoff
 returned `already-accepted` without another network request.
 
-The Worker source now includes a text/link `social.mastodon` adapter, but it is
-not enabled in production. Its access token must come from the
+The text/link `social.mastodon` adapter is enabled in production for Openings.
+Its access token must come from the
 `MASTODON_ACCESS_TOKENS` Worker secret (JSON mapping tenant IDs to tokens), never
 from `ADAPTER_CONFIGS`. The adapter confirms the authenticated account, checks
 recent posts for the exact canonical URL, and records a sanitized receipt.
@@ -260,7 +260,8 @@ The Openings integration branch now includes that exclusive executor switch,
 `PUBLISHING_MASTODON_ENABLED`, defaulting to false. When enabled it removes the
 legacy token requirement, submits one text/link publication, and waits for a
 verified receipt. Pending or ambiguous results never fall back to a native
-provider POST. This switch has not been enabled in production.
+provider POST. The switch is now enabled in production after the reviewed
+executor was merged into `main`.
 
 Before submission, the workflow commits and pushes a per-job Cloudflare owner
 marker in the tracked queue. Only never-attempted, never-reset jobs are claimed;
@@ -269,9 +270,24 @@ Pending acceptance IDs are retained in that queue, survive manual retry resets,
 and resume through status reads on a fresh runner. Disabling the global switch
 does not authorize the legacy executor to take a cloud-owned job.
 
-The attempted encrypted Mastodon credential-transfer dispatch was rejected by
-automatic security review before execution. No credential was exported. Its
-explicit authorization and installation remain prerequisites for live cutover.
+After explicit authorization, the existing Mastodon credential was transferred
+through an encrypted temporary artifact and verified against account
+`openingshq`. The Worker secret was installed; the temporary GitHub artifact,
+downloaded ciphertext, and ephemeral private key were deleted. The original
+GitHub secret remains preserved for legacy work and recovery.
+
+Worker version `a65f1634-71b4-4839-8c06-d5f62f39ad76` deployed successfully
+from platform commit `a1d1e95`, without GitHub Actions. Openings executor commit
+`3d866bb` is on `main`, and `PUBLISHING_MASTODON_ENABLED=true` was read back
+after activation. The site, Worker health, and one existing job, author and
+community passed post-deploy checks with exact entity revisions. Local platform
+validation passed 348 tests. The web runtime now passes the Mastodon secret to
+configuration parsing, preventing social activation from breaking web routes.
+
+No extra scheduled run or test post was dispatched. The first eligible live
+Mastodon delivery and its provider receipt are still pending confirmation;
+activation is not evidence of a completed provider post. Existing legacy
+attempts are not automatically transferred. OneSignal remains disabled.
 
 Focused local adoption checks also pass for Trebla (17 request, qualification
 and handoff tests), Troco (4), Turma do Kako (4), and Equity (4). These checks
