@@ -327,11 +327,19 @@ above the Worker upload limit. This prevents accidental cache uploads; it does
 not implement or enable Equity's required local YouTube executor.
 
 Trebla and Troco now have real, opt-in shadow bridges in their publication
-executors. Their latest complete local checks passed 1,461 and 169 tests,
+executors. Their latest complete local checks passed 1,462 and 170 tests,
 respectively, plus their existing static and publication-safety checks.
 `PUBLISHING_SHADOW_ENABLED` remains false in their private local configuration;
-the new credentials have not been wired into scheduled workflows. Legacy
-executors remain the only live provider owners for these products.
+the repository variable also remains false. Trebla `4305d7e` and Troco `c60d558`
+wire the four platform variables only into their publishing step. The exact
+`true` opt-in is required; otherwise credential values are empty. Their
+temporary runner outboxes still need durable cross-run persistence before
+activation. Legacy executors remain the only live provider owners.
+
+Public SDK 0.1.2 adoption is verified on remote main for Openings `8369ea2`,
+Trebla `965bc7c`, Troco `ee62ad2`, and Equity `d4ee37b`. Equity's complete local
+check passed 368 tests and type checking. These package updates do not replace
+its missing durable local executor or transfer any provider ownership.
 
 Four tenant-scoped producers were registered and tested in the existing
 production Worker. Each test used one 68-byte technical PNG and the
