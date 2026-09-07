@@ -201,7 +201,7 @@ async function dispatchRuntimeOutbox(environment: Environment): Promise<number> 
   }, 50);
 }
 
-async function reconcileRuntimeDeliveries(
+export async function reconcileRuntimeDeliveries(
   environment: Environment,
   database: D1Database,
   enabledAdapters: readonly string[],
@@ -220,7 +220,16 @@ async function reconcileRuntimeDeliveries(
   const registry = createAdapterRegistry(adapters, enabledAdapters);
   const store = createD1DeliveryStore(database, (adapter, tenant) => configs[tenant]?.[adapter] ?? {});
   return runD1Reconciliation(database, 25, async ({ tenantId, deliveryId }) => {
-    const delivery = await store.load(tenantId, deliveryId);
+    let delivery;
+    try {
+      delivery = await store.load(tenantId, deliveryId);
+    } catch {
+      const lease = await acquireD1Lease(database, tenantId, deliveryId, new Date(), 60_000, 'reconciliation');
+      if (!lease.acquired) throw new Error('Cannot quarantine delivery without a current lease');
+      // Keep the original receipt and artifacts for review; quarantine only under the current tenant-scoped lease.
+      await store.commit(tenantId, deliveryId, lease.token, 'needs_attention');
+      return;
+    }
     if (delivery === null) return;
     const tenantRegistry = await isD1AdapterEnabled(database, tenantId, delivery.adapter)
       ? registry

@@ -8,6 +8,7 @@ import { consumeDelivery } from '../delivery/consume.js';
 import { createAdapterRegistry } from '../registry.js';
 import { reconcileDelivery } from './reconcile-delivery.js';
 import { runD1Reconciliation } from './d1-reconciliation.js';
+import { reconcileRuntimeDeliveries } from '../index.js';
 
 function required<T>(value: T | null | undefined): T {
   if (value === undefined || value === null) throw new Error('Missing fixture value');
@@ -58,6 +59,65 @@ function fixture() {
 }
 
 describe('durable asynchronous delivery recovery', () => {
+  it.each(['quarantine', 'stale', 'lease-error'] as const)('runtime isolates poisoned receipt across tenants: %s', async (variant) => {
+    const f = fixture();
+    try {
+      await consumeDelivery(required(await f.store().load('troco', 'delivery')), f.dependencies);
+      f.sqlite.exec(`UPDATE receipts SET receipt_json = '{}';
+        UPDATE deliveries SET updated_at = '2000-01-01';
+        INSERT INTO producer_clients (id, tenant_id, name, enabled, secret_hash) VALUES ('other-client', 'other', 'publisher', 1, 'hash');`);
+      const payload = { type: 'social.post', text: 'Healthy', artifactIds: [] };
+      const envelope = { schemaVersion: 1, identity: { tenant: 'other', sourceType: 'campaign', sourceId: 'other', revision: '1', idempotencyKey: 'other-key' }, canonical: { title: 'Healthy', language: 'pt-BR' }, artifacts: [], deliveries: [{ id: 'social', adapter: 'social.shadow', operation: 'compare', required: false, payload }] };
+      f.sqlite.prepare(`INSERT INTO publications (id, tenant_id, producer_client_id, source_type, source_id, revision, idempotency_key, envelope_json, state) VALUES ('other-publication', 'other', 'other-client', 'campaign', 'other', '1', 'other-key', ?, 'accepted')`).run(JSON.stringify(envelope));
+      f.sqlite.prepare(`INSERT INTO deliveries (id, tenant_id, publication_id, delivery_key, adapter, operation, required, payload_json, state) VALUES ('healthy', 'other', 'other-publication', 'social', 'social.shadow', 'compare', 0, ?, 'processing')`).run(JSON.stringify(payload));
+      const receipt = { provider: 'social.shadow', remoteId: `shadow:${'a'.repeat(64)}`, acceptedAt: '2026-09-07T12:00:00.000Z' };
+      f.sqlite.prepare(`INSERT INTO receipts (id, tenant_id, delivery_id, provider, remote_id, receipt_json) VALUES ('healthy-receipt', 'other', 'healthy', ?, ?, ?)`).run(receipt.provider, receipt.remoteId, JSON.stringify(receipt));
+      if (variant === 'stale') {
+        const batch = f.database.batch.bind(f.database);
+        vi.spyOn(f.database, 'batch').mockImplementationOnce((statements) => {
+          f.sqlite.exec("UPDATE deliveries SET lease_token = lease_token + 1 WHERE id = 'delivery'");
+          return batch(statements);
+        });
+      }
+      if (variant === 'lease-error') {
+        const prepare = f.database.prepare.bind(f.database);
+        vi.spyOn(f.database, 'prepare').mockImplementation((sql) => {
+          if (sql.includes('RETURNING lease_token')) {
+            const statement = prepare(sql);
+            const bind = statement.bind.bind(statement);
+            statement.bind = (...values) => {
+              if (values.includes('delivery')) throw new Error('Lease unavailable');
+              return bind(...values);
+            };
+            return statement;
+          }
+          return prepare(sql);
+        });
+      }
+      await expect(reconcileRuntimeDeliveries({ ADAPTER_CONFIGS: '{}' }, f.database as unknown as D1Database, ['social.shadow'])).resolves.toBe(variant === 'quarantine' ? 2 : 1);
+      expect(f.sqlite.prepare("SELECT state FROM deliveries WHERE id = 'healthy'").get()).toMatchObject({ state: 'verified' });
+      expect(f.sqlite.prepare("SELECT state FROM deliveries WHERE id = 'delivery'").get()).toMatchObject({ state: variant === 'quarantine' ? 'needs_attention' : 'processing' });
+      expect(f.sqlite.prepare("SELECT receipt_json FROM receipts WHERE delivery_id = 'delivery'").get()).toMatchObject({ receipt_json: '{}' });
+      expect(f.sqlite.prepare('SELECT safe_to_delete FROM artifact_references').get()).toMatchObject({ safe_to_delete: 0 });
+    } finally { f.sqlite.close(); }
+  });
+  it('continues the bounded page after an invalid stored receipt', async () => {
+    const f = fixture();
+    try {
+      await consumeDelivery(required(await f.store().load('troco', 'delivery')), f.dependencies);
+      f.sqlite.exec(`UPDATE receipts SET receipt_json = '{}';
+        UPDATE deliveries SET updated_at = '2000-01-01';
+        INSERT INTO deliveries (id, tenant_id, publication_id, delivery_key, adapter, operation, required, payload_json, state)
+        SELECT 'healthy', 'other', publication_id, 'healthy', adapter, operation, required, payload_json, 'reconciling' FROM deliveries;`);
+      const processed: string[] = [];
+      const count = await runD1Reconciliation(f.database, 2, async ({ tenantId, deliveryId }) => {
+        if (deliveryId === 'delivery') await f.store().load(tenantId, deliveryId);
+        processed.push(deliveryId);
+      });
+      expect(processed).toEqual(['healthy']);
+      expect(count).toBe(1);
+    } finally { f.sqlite.close(); }
+  });
   it.each(['found', 'unknown', 'absent', 'retention-error', 'malformed', 'provider', 'remote-id', 'stale'] as const)('fresh worker reconciles %s without a second effect', async (variant) => {
     const f = fixture();
     try {
@@ -75,7 +135,7 @@ describe('durable asynchronous delivery recovery', () => {
       if (variant === 'retention-error') retention.mockRejectedValue(new Error('Unavailable'));
       else f.adapter.confirmArtifactIngestion('logical');
       const run = runD1Reconciliation(f.database, 10, async () => { await reconcileDelivery(loaded, f.dependencies); });
-      if (variant === 'stale') await expect(run).rejects.toThrow('stale');
+      if (variant === 'stale') await expect(run).resolves.toBe(0);
       else await expect(run).resolves.toBe(1);
       expect(reconcile).toHaveBeenCalledOnce();
       expect(reconcile).toHaveBeenCalledWith(expect.objectContaining({ receipt: saved }));

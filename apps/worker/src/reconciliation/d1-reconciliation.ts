@@ -23,8 +23,16 @@ export async function runD1Reconciliation(
   const page = await database.prepare(`SELECT id, tenant_id FROM deliveries
     WHERE state IN ('reconciling', 'processing') ORDER BY updated_at, id LIMIT ?`).bind(limit).all();
   const rows = (page.results ?? []).map(candidateRow);
-  for (const candidate of rows) await process(candidate);
-  return rows.length;
+  let processed = 0;
+  for (const candidate of rows) {
+    try {
+      await process(candidate);
+      processed++;
+    } catch {
+      // One failed candidate must not block another tenant. Failed work remains eligible for a later pass.
+    }
+  }
+  return processed;
 }
 
 function candidateRow(value: unknown): ReconciliationCandidate {
