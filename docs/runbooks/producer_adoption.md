@@ -528,6 +528,16 @@ request and blocks native runtime construction or reconciliation for an owned
 item. Both race orders were tested with no duplicate provider call. No production
 caller claims ownership yet; durable live handoff is the next integration step.
 
+Trebla `37e36d1` subsequently adds the resumable live LinkedIn operation, still
+without a production CLI caller. Validation passed 1,613 tests plus lint, build
+and safety checks. It saves the exact prepared envelope in the private ledger
+before claiming ownership and intake. A lost acceptance response replays that
+same envelope; a saved acceptance uses only authenticated status recovery.
+Only an exact verified Buffer receipt advances the product ledger to published.
+Approved JPEG order, alt text, content hashes and a single immutable media commit
+are bound to the checkpoint. Callback-provided source preparation and status
+authentication must be connected by the guarded CLI integration before use.
+
 Platform `c5a98b1` prepares one message per queue consumer invocation. A full
 Buffer carousel can require twenty public media reads plus two provider calls;
 batching several such deliveries would exceed the Free external subrequest
