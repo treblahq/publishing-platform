@@ -521,6 +521,21 @@ with the current native conversion settings. This is a local size check, not a
 Cloudflare CPU benchmark or a live Buffer delivery. The production HTTP client's
 default 2 MiB per response must be accounted for when integrating larger images.
 
+Trebla `d82c82e` is on main after 1,575 tests, lint, build and the same safety
+checks. A strict optional owner marker now competes with the native publisher
+through the same private ledger compare-and-swap. It binds the complete approved
+request and blocks native runtime construction or reconciliation for an owned
+item. Both race orders were tested with no duplicate provider call. No production
+caller claims ownership yet; durable live handoff is the next integration step.
+
+Platform `c5a98b1` prepares one message per queue consumer invocation. A full
+Buffer carousel can require twenty public media reads plus two provider calls;
+batching several such deliveries would exceed the Free external subrequest
+budget. Validation passed 451 tests. This configuration change is committed but
+not included in deployed version `76c2fb69-22db-4f48-987b-037c7258b1e0`; it will
+join the next reviewed deployment, before Buffer activation. See
+[Workers limits](https://developers.cloudflare.com/workers/platform/limits/).
+
 Remaining rollout gates include verifying product-level restart behavior
 under controlled activation, migrating Openings bridge media,
 and implementing Equity's durable local executor. Equity's YouTube OAuth and
