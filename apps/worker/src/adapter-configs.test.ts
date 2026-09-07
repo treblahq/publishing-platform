@@ -15,6 +15,14 @@ const config = JSON.stringify({
 });
 
 describe('runtime adapter configuration', () => {
+  it('injects a tenant-scoped Mastodon credential without placing it in public vars', () => {
+    const value = '{"openings":{"social.mastodon":{"baseUrl":"https://mastodon.social"}}}';
+    expect(parseAdapterConfigs(value, undefined, '{"openings":"private-test-key"}').openings?.['social.mastodon']?.accessToken)
+      .toBe('private-test-key');
+    expect(() => parseAdapterConfigs(value, undefined, '{"trebla":"wrong-tenant"}')).toThrow('Mastodon Worker secret');
+    expect(() => parseAdapterConfigs('{"openings":{"social.mastodon":{"accessToken":"public"}}}', undefined, '{}'))
+      .toThrow('public configuration');
+  });
   it('injects the OneSignal key from a Worker secret', () => {
     expect(parseAdapterConfigs(config, 'secret-value').openings?.['push.onesignal']?.restApiKey)
       .toBe('secret-value');
