@@ -292,8 +292,24 @@ attempts are not automatically transferred. OneSignal remains disabled.
 Focused local adoption checks also pass for Trebla (17 request, qualification
 and handoff tests), Troco (4), Turma do Kako (4), and Equity (4). These checks
 do not establish live delivery: version 0.1.1 is now published and the isolated
-product branches are undergoing dependency-upgrade validation. Those four
+product branches passed dependency-upgrade validation. Those four
 products have not been moved to a new provider owner by the package upgrade.
+
+The verified dependency-upgrade checkpoints are:
+
+| Product | Integration commit | Local verification |
+| --- | --- | --- |
+| Openings | `2a5ef20` | 19 platform tests, 29 artwork/state tests, 165 contracts; 4 existing skipped tests |
+| Trebla | `fb08fff` | 1,442 tests, lint, build, three publication safety checks |
+| Troco | `fe2cd32` | 189 tests, formatting, types, catalog/provider validation |
+| Turma do Kako | `83088d1` | 1,231 tests, types, lint |
+| Equity | `8e595c1` | 363 tests and types |
+
+These commits are on isolated integration branches, not a claim that all
+product main branches or live executors have adopted 0.1.1. Troco's isolated
+checks use `BRAND_ROOT` pointing to its existing canonical frontend assets and
+the installed, pinned `ffmpeg-static` binary. No provider or deployment workflow
+was dispatched for these dependency upgrades.
 
 - Keep signing secrets and provider credentials in environment variables or
   the product's existing secret store.
