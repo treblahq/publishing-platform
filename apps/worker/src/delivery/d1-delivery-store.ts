@@ -150,12 +150,17 @@ function receiptStatement(
   receipt: DeliveryReceipt,
   id: string,
 ) {
-  return database.prepare(`INSERT OR IGNORE INTO receipts
+  return database.prepare(`INSERT INTO receipts
     (id, tenant_id, delivery_id, provider, remote_id, receipt_json)
     SELECT ?, ?, ?, ?, ?, ? WHERE EXISTS (
       SELECT 1 FROM deliveries WHERE tenant_id = ? AND id = ? AND lease_token = ?
-    )`)
-    .bind(id, tenant, delivery, receipt.provider, receipt.remoteId, JSON.stringify(receipt), tenant, delivery, token);
+    )
+    ON CONFLICT(delivery_id, provider, remote_id) DO UPDATE SET
+      receipt_json = json_set(excluded.receipt_json, '$.acceptedAt', json_extract(receipts.receipt_json, '$.acceptedAt'))
+    WHERE receipts.tenant_id = excluded.tenant_id
+      AND EXISTS (SELECT 1 FROM deliveries WHERE tenant_id = ? AND id = ? AND lease_token = ?)`)
+    .bind(id, tenant, delivery, receipt.provider, receipt.remoteId, JSON.stringify(receipt), tenant, delivery, token,
+      tenant, delivery, token);
 }
 
 function deliveryRow(value: unknown) {

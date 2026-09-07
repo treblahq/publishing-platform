@@ -61,6 +61,24 @@ function fixture() {
 }
 
 describe('durable asynchronous delivery recovery', () => {
+  it.each(['current', 'stale', 'other-tenant'] as const)('updates a confirmed receipt only under its current tenant lease: %s', async (variant) => {
+    const f = fixture();
+    try {
+      const initial = { provider: 'test.fake', remoteId: 'accepted', acceptedAt: '2026-09-07T12:00:00.000Z', metadata: { status: 'sending' } };
+      await acquireD1Lease(f.database, 'troco', 'delivery', f.dependencies.now(), 60_000);
+      await f.store().commit('troco', 'delivery', 1, 'processing', initial);
+      await acquireD1Lease(f.database, 'troco', 'delivery', f.dependencies.now(), 60_000, 'reconciliation');
+      const final = { ...initial, acceptedAt: '2026-09-07T12:01:00.000Z', remoteUrl: 'https://www.linkedin.com/feed/update/example', metadata: { status: 'sent' } };
+      const result = f.store().commit(variant === 'other-tenant' ? 'other' : 'troco', 'delivery', variant === 'stale' ? 1 : 2, 'verified', final);
+      if (variant === 'current') await result;
+      else await expect(result).rejects.toThrow('stale');
+      const restored = required(await f.store().load('troco', 'delivery'));
+      expect(restored.receipt).toEqual(variant === 'current' ? { ...final, acceptedAt: initial.acceptedAt } : initial);
+      expect(f.sqlite.prepare('SELECT COUNT(*) AS count FROM receipts').get()).toMatchObject({ count: 1 });
+      expect(restored.state).toBe(variant === 'current' ? 'verified' : 'processing');
+    } finally { f.sqlite.close(); }
+  });
+
   it('runtime refuses a stale delivering snapshot when the owner stores a receipt before the claim', async () => {
     const f = fixture();
     try {
