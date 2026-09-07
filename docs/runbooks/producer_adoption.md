@@ -444,8 +444,43 @@ dry run, with no database migration or GitHub Action. Read-only post-deploy
 checks confirmed all four existing technical receipts and HTTP 200 for Worker
 health and the public Openings root. No new provider post was created.
 
+### Subsequent activation and remaining migration boundaries
+
+After the persistence reviews, `PUBLISHING_SHADOW_ENABLED=true` was set and read
+back in Trebla, Troco and Kako. No workflow was dispatched and no existing
+publication trigger was changed. The next eligible existing routine can run its
+bounded shadow bridge; activation is not evidence of a completed product run.
+The preceding `false` values describe pre-activation checkpoints. Private local
+development environments remain independently gated.
+
+Before activation, D1 information reported 1,113,046 rows read and 5,271 rows
+written over its rolling 24-hour window, below the configured safety margin.
+These are not calendar-day reset counters. Runtime admission limits remain in
+force; no paid fallback is configured.
+
+Equity `0c6c8f8` is on main after 381 tests, type checking and review. A durable
+local SQLite upload intent now precedes YouTube insertion and binds the
+QA-approved final video's hash, size and exact request metadata. An ambiguous
+response cannot trigger an automatic reupload, including after restart. This is
+a local safety prerequisite, not the missing Cloudflare executor protocol.
+
+Worker `1a803bcf-d04e-4a25-9efc-d3bc9aac9d03` deployed from `87990de` after 373
+tests and review. Shared entity shells no longer leak another entity's social
+metadata or structured data. Only current textual metadata is emitted until an
+approved entity-specific image is available. Post-deploy reads confirmed the
+correct title/description on the affected job, four existing technical receipts,
+and healthy public site and Worker responses.
+
+Read-only investigation also established that Openings' social bridge still
+dispatches the Hostinger deployment workflow. The Cloudflare entity page does
+not yet expose the matching bridge metadata and media. A cache-bypassed image
+request returned HTML, while the unversioned cached image retained old Hostinger
+headers. Cached historical media therefore does not prove migration. This media
+path must be implemented and verified before confirming the first live Mastodon
+delivery or retiring Hostinger; changing DNS alone did not migrate that path.
+
 Remaining rollout gates include verifying product-level restart behavior
-under controlled activation,
+under controlled activation, migrating Openings bridge media,
 and implementing Equity's durable local executor. Equity's YouTube OAuth and
 large video files must remain local; a generic temporary-upload bridge is not
 a replacement for that executor. Live provider ownership for Trebla, Troco,
