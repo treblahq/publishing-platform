@@ -1,8 +1,19 @@
 #!/usr/bin/env node
 import { parseCommand } from './command.js';
 import { parseLocalStageArguments, stageHandoffFile } from './local-stage.js';
+import { parseProducerSubmitArguments, submitProducerHandoff } from './producer-submit.js';
 
 const arguments_ = process.argv.slice(2);
+if (arguments_[0] === 'submit') {
+  try {
+    const result = await submitProducerHandoff(parseProducerSubmitArguments(arguments_.slice(1)), process.env);
+    process.stdout.write(`${JSON.stringify(result)}\n`);
+    process.exit(result.outcome === 'retry-later' ? 75 : 0);
+  } catch {
+    process.stderr.write('Publication submission failed; retain the handoff and source files for recovery.\n');
+    process.exit(1);
+  }
+}
 if (arguments_[0] === 'stage') {
   const entry = await stageHandoffFile(parseLocalStageArguments(arguments_.slice(1)));
   process.stdout.write(`${JSON.stringify({ id: entry.id, path: entry.path }, undefined, 2)}\n`);

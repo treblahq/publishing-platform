@@ -58,6 +58,8 @@ export { prepareArtifactReference } from './artifacts.js';
 export { createLocalProducer } from './producer.js';
 export { createArtifactUploader } from './upload.js';
 export { stagePlatformHandoff, uploadPlatformHandoff } from './handoff.js';
+export { createPlatformPublisher } from './publisher.js';
+export type { PlatformPublisher, PlatformPublisherOptions, PreparedPlatformHandoff, PlatformSubmissionOutcome } from './publisher.js';
 
 export type { CanonicalRequestInput } from './sign.js';
 export type { SignedHeadersInput, PreHashedSignedHeadersInput } from './headers.js';
