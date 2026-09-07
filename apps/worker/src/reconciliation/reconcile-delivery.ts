@@ -18,6 +18,7 @@ export async function reconcileDelivery(
     const result = await resolution.adapter.reconcile({
       tenant: delivery.tenant, deliveryId: delivery.id, idempotencyKey: delivery.idempotencyKey,
       operation: delivery.operation, config: delivery.config, payload: delivery.payload,
+      ...(delivery.providerOptions === undefined ? {} : { providerOptions: delivery.providerOptions }),
       artifacts: delivery.artifacts, receipt: undefined,
     });
     if (result.status === 'found') await finish('verified', result.receipt);

@@ -1,4 +1,5 @@
 import type { ArtifactReference, DeliveryReceipt, DeliveryState } from '@trebla/publishing';
+import { validatePublicationEnvelope } from '@trebla/publishing';
 
 import type { DeliveryStateStore, DeliveryWork } from './consume.js';
 
@@ -26,13 +27,18 @@ export function createD1DeliveryStore(
     load: async (tenantId, deliveryId) => {
       const value = await database.prepare(`
         SELECT delivery.id, delivery.tenant_id, delivery.adapter, delivery.operation, delivery.state,
-               delivery.delivery_key, delivery.payload_json, publication.idempotency_key
+               delivery.delivery_key, delivery.payload_json, publication.idempotency_key, publication.envelope_json
         FROM deliveries AS delivery
         JOIN publications AS publication ON publication.id = delivery.publication_id
         WHERE delivery.tenant_id = ? AND delivery.id = ? LIMIT 1
       `).bind(tenantId, deliveryId).first();
       const row = deliveryRow(value);
       if (row === undefined) return null;
+      const envelope = validatePublicationEnvelope(JSON.parse(row.envelope_json));
+      const intent = envelope.deliveries.find((entry) => entry.id === row.delivery_key);
+      if (row.tenant_id !== tenantId || envelope.identity.tenant !== tenantId || envelope.identity.idempotencyKey !== row.idempotency_key
+        || intent?.adapter !== row.adapter || intent.operation !== row.operation
+        || JSON.stringify(intent.payload) !== row.payload_json) throw new Error('Stored delivery does not match approved envelope');
       const artifactPage = await database.prepare(`
         SELECT artifact.id, artifact.storage, artifact.sha256, artifact.byte_size,
                artifact.media_type, artifact.locator
@@ -41,6 +47,20 @@ export function createD1DeliveryStore(
         WHERE reference.tenant_id = ? AND reference.delivery_id = ?
         ORDER BY artifact.id
       `).bind(tenantId, deliveryId).all();
+      const storedArtifacts = (artifactPage.results ?? []).map(artifactRow);
+      const artifactStorageIds: Record<string, string> = Object.create(null) as Record<string, string>;
+      const usedStorageIds = new Set<string>();
+      for (const artifact of envelope.artifacts) {
+        const matches = storedArtifacts.filter((stored) => stored.storage === artifact.storage && stored.sha256 === artifact.sha256
+          && stored.byteSize === artifact.byteSize && stored.mediaType === artifact.mediaType && stored.locator === artifact.locator);
+        const matched = matches[0];
+        if (matches.length !== 1 || matched === undefined || Object.hasOwn(artifactStorageIds, artifact.id) || usedStorageIds.has(matched.id)) {
+          throw new Error('Stored artifacts do not match approved envelope');
+        }
+        artifactStorageIds[artifact.id] = matched.id;
+        usedStorageIds.add(matched.id);
+      }
+      if (usedStorageIds.size !== storedArtifacts.length) throw new Error('Unexpected stored delivery artifact');
       return {
         tenant: row.tenant_id,
         id: row.id,
@@ -49,7 +69,9 @@ export function createD1DeliveryStore(
         idempotencyKey: `${row.idempotency_key}:${row.delivery_key}`,
         config: resolveConfig(row.adapter, tenantId),
         payload: parsePayload(row.payload_json),
-        artifacts: (artifactPage.results ?? []).map(artifactRow),
+        ...(intent.providerOptions === undefined ? {} : { providerOptions: intent.providerOptions }),
+        artifacts: envelope.artifacts,
+        artifactStorageIds,
         state: row.state as DeliveryState,
       };
     },
@@ -100,10 +122,10 @@ function receiptStatement(
 
 function deliveryRow(value: unknown) {
   if (!record(value)) return undefined;
-  for (const key of ['id', 'tenant_id', 'adapter', 'operation', 'state', 'delivery_key', 'idempotency_key', 'payload_json']) {
+  for (const key of ['id', 'tenant_id', 'adapter', 'operation', 'state', 'delivery_key', 'idempotency_key', 'payload_json', 'envelope_json']) {
     if (typeof value[key] !== 'string') return undefined;
   }
-  return value as unknown as Record<'id' | 'tenant_id' | 'adapter' | 'operation' | 'state' | 'delivery_key' | 'idempotency_key' | 'payload_json', string>;
+  return value as unknown as Record<'id' | 'tenant_id' | 'adapter' | 'operation' | 'state' | 'delivery_key' | 'idempotency_key' | 'payload_json' | 'envelope_json', string>;
 }
 
 function artifactRow(value: unknown): ArtifactReference {

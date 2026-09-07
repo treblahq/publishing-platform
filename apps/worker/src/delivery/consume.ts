@@ -15,7 +15,9 @@ export interface DeliveryWork {
   idempotencyKey: string;
   config: unknown;
   payload: Record<string, unknown>;
+  providerOptions?: Record<string, unknown>;
   artifacts: readonly ArtifactReference[];
+  artifactStorageIds?: Readonly<Record<string, string>>;
   state?: DeliveryState;
 }
 
@@ -72,6 +74,7 @@ export async function consumeDelivery(
     operation: delivery.operation,
     config: delivery.config,
     payload: delivery.payload,
+    ...(delivery.providerOptions === undefined ? {} : { providerOptions: delivery.providerOptions }),
     artifacts: delivery.artifacts,
   };
   const attemptId = await dependencies.attempts?.start(delivery.tenant, delivery.id, lease.token);
@@ -103,7 +106,10 @@ export async function consumeDelivery(
           const decision = await resolution.adapter.artifactRetention({
             tenant: delivery.tenant, deliveryId: delivery.id, artifact, receipt,
           });
-          if (decision.safeToDelete) safeArtifactIds.push(artifact.id);
+          if (decision.safeToDelete) {
+            const storageId = delivery.artifactStorageIds === undefined ? artifact.id : delivery.artifactStorageIds[artifact.id];
+            if (storageId !== undefined) safeArtifactIds.push(storageId);
+          }
         } catch {
           // A failed retention check keeps bytes safely retained without undoing a verified provider effect.
         }

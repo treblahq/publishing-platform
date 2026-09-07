@@ -9,6 +9,7 @@ export interface AdapterContext<TConfig = unknown, TPayload = Record<string, unk
   operation: string;
   config: TConfig;
   payload: TPayload;
+  providerOptions?: Record<string, unknown>;
   artifacts: readonly ArtifactReference[];
 }
 

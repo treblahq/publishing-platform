@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { createFakeAdapter } from '@trebla/publishing-adapter-test';
 
 import { createAdapterRegistry } from '../registry.js';
@@ -12,6 +12,16 @@ const work = {
 };
 
 describe('delivery reconciler', () => {
+  it('retains provider options during reconciliation after a lost response', async () => {
+    const adapter = createFakeAdapter();
+    const reconcile = vi.spyOn(adapter, 'reconcile');
+    const providerOptions = { channel: 'instagram', targetAt: '2026-09-08T15:00:00.000Z' };
+    await reconcileDelivery({ ...work, providerOptions }, {
+      registry: createAdapterRegistry([adapter], ['test.fake']), leases: createMemoryLeaseStore(),
+      states: { commit: () => Promise.resolve() }, now: () => new Date('2026-09-07T12:00:00.000Z'),
+    });
+    expect(reconcile).toHaveBeenCalledWith(expect.objectContaining({ providerOptions }));
+  });
   it('finds a lost provider response without creating a second effect', async () => {
     const adapter = createFakeAdapter({ faults: ['after-effect-before-response'] });
     const states: string[] = [];

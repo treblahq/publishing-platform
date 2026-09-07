@@ -22,6 +22,23 @@ function states() {
 }
 
 describe('duplicate-safe delivery consumer', () => {
+  it('passes producer options and logical media to adapters but releases storage IDs', async () => {
+    const adapter = createFakeAdapter();
+    const validate = vi.spyOn(adapter, 'validate');
+    const deliver = vi.spyOn(adapter, 'deliver');
+    const artifact = { id: 'logical-image', storage: 'r2-temporary' as const, sha256: 'a'.repeat(64), byteSize: 10, mediaType: 'image/png', locator: 'temporary/openings/image' };
+    const retention = vi.fn().mockResolvedValue({ safeToDelete: true, reason: 'consumed' });
+    const stateStore = states();
+    const providerOptions = { channel: 'instagram', targetAt: '2026-09-08T15:00:00.000Z' };
+    await consumer.consumeDelivery({ ...delivery, providerOptions, artifacts: [artifact], artifactStorageIds: { 'logical-image': 'database-image' } }, {
+      registry: createAdapterRegistry([{ ...adapter, artifactRetention: retention }], ['test.fake']),
+      leases: createMemoryLeaseStore(), states: stateStore, now: () => new Date('2026-09-07T12:00:00.000Z'),
+    });
+    expect(validate).toHaveBeenCalledWith(expect.objectContaining({ providerOptions, artifacts: [artifact] }));
+    expect(deliver).toHaveBeenCalledWith(expect.objectContaining({ providerOptions, artifacts: [artifact] }));
+    expect(retention).toHaveBeenCalledWith(expect.objectContaining({ artifact }));
+    expect(stateStore.safeArtifacts).toEqual([['database-image']]);
+  });
   it('creates one provider effect for duplicate queue messages', async () => {
     const consumeDelivery = Reflect.get(consumer, 'consumeDelivery');
     expect(consumeDelivery).toBeTypeOf('function');
