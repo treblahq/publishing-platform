@@ -63,7 +63,7 @@ Product integration branches may now adopt this exact version. Installing the
 package alone does not transfer live provider ownership or complete a product's
 Cloudflare migration; the local verification and rollout gates still apply.
 
-## Version 0.1.2 release candidate
+## Version 0.1.2 release record
 
 Version 0.1.2 adds acceptance-first recovery: a fresh executor can recover an
 existing publication without reading or uploading deleted media. The matching
@@ -75,9 +75,9 @@ coordinator were verified under Node 20. Full platform validation now passes
 361 tests, including a release guard that rejects internal consumers pinned to
 a different public-package version.
 
-This version is **not yet published**. The authenticated npm account requested
-a separate publication confirmation, and the Mac was locked when opening the
-authenticated browser was attempted. Do not treat the prepared archive or
-local temporary installations as registry availability. Complete authentication,
-publish the audited archive once, verify its registry checksum, and only then
-update each product's exact dependency and lockfile.
+Version 0.1.2 was published on 2026-09-07 after the owner completed npm's
+separate security-key confirmation. The public registry checksum matches the
+audited archive above. A clean registry installation under Node 20 verified
+the `createPlatformPublisher` export. Product branches may adopt the exact
+version and regenerate their lockfiles; each product still requires its full
+local verification and a separate live-ownership rollout.
