@@ -231,8 +231,12 @@ Mastodon's [idempotency keys expire after at most one hour](https://docs.joinmas
 so lost POST responses enter reconciliation instead of blind retry. A bounded
 search that finds nothing returns `unknown`, not proof that publication failed.
 
-Before enabling Mastodon, connect receipt retrieval to the producer and switch
-that channel's legacy executor to the Worker in one coordinated change. Do not
+The authenticated `GET /v1/publications/:id` endpoint returns delivery states
+and sanitized receipts only to the producer that owns the publication. The
+Openings CLI exposes this as `platform status --publication ID`.
+
+Before enabling Mastodon, configure its Worker credential and switch that
+channel's legacy executor to submit work and wait for its receipt in one coordinated change. Do not
 enable both owners for the same scheduled post. Media attachments and the other
 social providers remain separate rollout work.
 

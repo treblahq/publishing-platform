@@ -12,6 +12,7 @@ import { createR2WebAdapter } from '@trebla/publishing-adapter-r2';
 import { createSocialShadowAdapter } from '@trebla/publishing-adapter-shadow';
 import { createMastodonAdapter } from './adapters/mastodon.js';
 import { loadProducerSecrets } from './intake/producer-secrets.js';
+import { handlePublicationStatusRequest } from './intake/status.js';
 import { createAdapterRegistry } from './registry.js';
 import { acquireD1Lease } from './delivery/d1-lease.js';
 import { createD1DeliveryStore } from './delivery/d1-delivery-store.js';
@@ -63,6 +64,9 @@ export function createWorker(overrides: WorkerOverrides = {}) {
       if (pathname === '/v1/artifacts') {
         return (overrides.artifactHandler ?? handleRuntimeArtifactUpload)(request, environment);
       }
+      if (request.method === 'GET' && pathname.startsWith('/v1/publications/')) {
+        return handleRuntimePublicationStatus(request, environment);
+      }
       if (request.method === 'GET' && pathname.startsWith('/web/')) {
         return handleRuntimeWebEntity(request, environment);
       }
@@ -98,6 +102,29 @@ async function handleRuntimeArtifactUpload(request: Request, environment: Enviro
   } catch {
     return Response.json({ code: 'SERVICE_UNAVAILABLE' }, { status: 503 });
   }
+}
+
+async function handleRuntimePublicationStatus(request: Request, environment: Environment): Promise<Response> {
+  try {
+    const database = parseWorkerBindings(environment).ledger as D1Database;
+    const secrets = loadProducerSecrets(environment.PRODUCER_SECRETS, environment.SOCIAL_PRODUCER_SECRETS);
+    return await handlePublicationStatusRequest(request, {
+      now: () => new Date(),
+      loadClient: createD1ProducerClientLoader(database, id => secrets[id]),
+      loadStatus: async (tenant, clientId, publicationId) => {
+        const publication = await database.prepare(`SELECT id FROM publications
+          WHERE id = ? AND tenant_id = ? AND producer_client_id = ? LIMIT 1`)
+          .bind(publicationId, tenant, clientId).first();
+        if (!publication) return null;
+        const result = await database.prepare(`SELECT d.delivery_key AS id, d.adapter, d.state,
+          r.provider, r.remote_id AS remoteId, json_extract(r.receipt_json, '$.remoteUrl') AS remoteUrl
+          FROM deliveries d LEFT JOIN receipts r ON r.delivery_id = d.id AND r.tenant_id = d.tenant_id
+          WHERE d.publication_id = ? AND d.tenant_id = ? ORDER BY d.delivery_key LIMIT 100`)
+          .bind(publicationId, tenant).all();
+        return { publicationId, deliveries: result.results };
+      },
+    });
+  } catch { return Response.json({ code: 'SERVICE_UNAVAILABLE' }, { status: 503 }); }
 }
 
 async function handleRuntimeAdmin(request: Request, environment: Environment): Promise<Response> {
