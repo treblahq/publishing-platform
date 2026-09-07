@@ -6,6 +6,10 @@ The platform accepts immutable publication envelopes and coordinates delivery
 to web, push, social, and video adapters. It is designed to fail closed before
 crossing configured free-tier budgets.
 
+CPU-limit containment is not provided by those budget counters. Further live
+rollout is paused pending representative Free runtime validation; see the
+[CPU incident and recovery checkpoint](docs/runbooks/cpu_incident_checkpoint.md).
+
 ## Development
 
 Use Node.js 24 and run:
