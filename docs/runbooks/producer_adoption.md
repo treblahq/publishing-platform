@@ -378,6 +378,26 @@ browser's Mac was locked when that confirmation was requested. Installed 0.1.1
 consumers do not yet have the SDK recovery change; do not pin 0.1.2 until its
 immutable public registry version is verified.
 
+Openings subsequently merged `17583ab`: its submission path now delegates to
+`createPlatformPublisher` instead of maintaining a separate upload/intake loop,
+and validates the Openings-only shadow boundary before local accepted recovery.
+Verification passed 20 platform tests, 29 artwork/state tests (4 existing skips),
+and 165 deterministic contracts. It still pins public 0.1.1 until the release
+gate above is satisfied. The latest scheduled run stopped at a retryable bridge
+stage before Mastodon; a matching shadow publication is already verified, but
+that does not by itself identify the bridge error or prove a live Mastodon post.
+
+The new Kako runtime bridge remains unmerged in its isolated worktree. Its
+private-state persistence and independent pending replay have focused tests,
+but full verification against a temporary local 0.1.2 archive is provisional:
+the committed dependency remains 0.1.1. Do not enable it before publishing and
+pinning the required SDK and completing reproducible verification.
+
+Installing the three new producer credentials into GitHub Actions Secrets was
+blocked by the execution environment's permission review. No credentials were
+sent. Explicit user authorization is still required for the Trebla, Troco, and
+Kako repository destinations. Equity's credentials remain local.
+
 Remaining rollout gates include updating consumers to the reviewed recovery
 release, verifying product-level restart behavior, adding Kako's runtime bridge,
 and implementing Equity's durable local executor. Equity's YouTube OAuth and
