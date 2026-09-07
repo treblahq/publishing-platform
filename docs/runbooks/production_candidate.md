@@ -130,3 +130,26 @@ The Openings production cutover completed on 2026-09-06 (2026-09-07 UTC):
   from Cloudflare after cutover, including a repaired dynamic job route;
 - no GitHub Actions deployment was run for the cutover, and Hostinger was not
   deleted so rollback remains available.
+
+## Openings producer activation
+
+The durable Openings producer was activated on 2026-09-07:
+
+- producer client `openings-data-pipeline` is enabled only for tenant `openings`;
+- the Worker stores its signing material in the `PRODUCER_SECRETS` secret;
+- the data-pipeline `production` environment stores the endpoint, client ID, and
+  client secret, while `PUBLISHING_PRODUCTION_ENABLED` is the explicit gate;
+- the scheduled job is bound to the GitHub `production` environment and does
+  not target staging;
+- a local production smoke accepted one job, one author, and one community;
+  the new author and community deliveries reached `verified` and both public
+  canonical routes returned HTTP 200;
+- the smoke used 26 estimated D1 rows and 6 estimated queue operations;
+- `web.r2` remains the only enabled adapter. OneSignal and every social adapter
+  remain disabled.
+
+The activation also corrected the capacity query to select the latest daily
+usage window before aggregating active reservations. The former aggregate query
+could return an older window and fail closed with `FREE_TIER_BUDGET_EXHAUSTED`
+despite current capacity being available. Keep the regression test in
+`apps/worker/src/capacity/d1-capacity.test.ts` when changing quota logic.
