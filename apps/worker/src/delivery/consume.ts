@@ -4,7 +4,7 @@ import { DELIVERY_PAYLOAD_TYPES } from '@trebla/publishing';
 import { assertAdapterSupports } from '@trebla/publishing-adapter-kit';
 
 import type { AdapterRegistry } from '../registry.js';
-import type { DeliveryLeaseStore } from './lease.js';
+import type { DeliveryLeaseSnapshot, DeliveryLeaseStore } from './lease.js';
 import type { DeliveryAttemptStore } from './d1-attempt-store.js';
 
 export interface DeliveryWork {
@@ -20,6 +20,7 @@ export interface DeliveryWork {
   artifactStorageIds?: Readonly<Record<string, string>>;
   state?: DeliveryState;
   receipt?: DeliveryReceipt;
+  leaseSnapshot?: DeliveryLeaseSnapshot;
 }
 
 export interface DeliveryStateStore {
@@ -59,6 +60,7 @@ export async function consumeDelivery(
     dependencies.now(),
     dependencies.leaseDurationMs ?? 60_000,
     'delivery',
+    delivery.leaseSnapshot,
   );
   if (!lease.acquired) return;
 

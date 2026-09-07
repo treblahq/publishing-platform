@@ -166,7 +166,7 @@ async function consumeRuntimeBatch(batch: MessageBatch, environment: Environment
     await consumeDelivery(delivery, {
       registry: tenantRegistry,
       leases: {
-        acquire: (tenant, id, now, duration, purpose) => acquireD1Lease(database, tenant, id, now, duration, purpose),
+        acquire: (tenant, id, now, duration, purpose, snapshot) => acquireD1Lease(database, tenant, id, now, duration, purpose, snapshot),
         commit: () => Promise.resolve(),
       },
       states: store,
@@ -238,7 +238,7 @@ export async function reconcileRuntimeDeliveries(
     await reconcileDelivery(delivery, {
       registry: tenantRegistry,
       leases: {
-        acquire: (tenant, id, now, duration, purpose) => acquireD1Lease(database, tenant, id, now, duration, purpose),
+        acquire: (tenant, id, now, duration, purpose, snapshot) => acquireD1Lease(database, tenant, id, now, duration, purpose, snapshot),
         commit: () => Promise.resolve(),
       },
       states: store,

@@ -1,4 +1,4 @@
-import type { LeaseResult } from './lease.js';
+import type { DeliveryLeaseSnapshot, LeaseResult } from './lease.js';
 
 interface D1LeaseStatement {
   bind(...values: unknown[]): D1LeaseStatement;
@@ -16,6 +16,7 @@ export async function acquireD1Lease(
   now: Date,
   durationMs: number,
   purpose: 'delivery' | 'reconciliation' = 'delivery',
+  snapshot?: DeliveryLeaseSnapshot,
 ): Promise<LeaseResult> {
   const expiresAt = new Date(now.getTime() + durationMs).toISOString();
   const eligibleStates = purpose === 'reconciliation'
@@ -28,8 +29,10 @@ export async function acquireD1Lease(
     WHERE tenant_id = ? AND id = ?
       AND ${eligibleStates}
       AND (lease_expires_at IS NULL OR lease_expires_at <= ?)
+      ${snapshot === undefined ? '' : 'AND state = ? AND lease_token = ?'}
     RETURNING lease_token
-  `).bind(expiresAt, now.toISOString(), tenantId, deliveryId, now.toISOString())
+  `).bind(expiresAt, now.toISOString(), tenantId, deliveryId, now.toISOString(),
+    ...(snapshot === undefined ? [] : [snapshot.state, snapshot.token]))
     .first<{ lease_token: number }>();
   return row
     ? { acquired: true, token: row.lease_token, expiresAt }

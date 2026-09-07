@@ -37,7 +37,7 @@ export function createD1DeliveryStore(
   return {
     load: async (tenantId, deliveryId) => {
       const value = await database.prepare(`
-        SELECT delivery.id, delivery.tenant_id, delivery.adapter, delivery.operation, delivery.state,
+        SELECT delivery.id, delivery.tenant_id, delivery.adapter, delivery.operation, delivery.state, delivery.lease_token,
                delivery.delivery_key, delivery.payload_json, publication.idempotency_key, publication.envelope_json,
                (SELECT json_group_array(json_object('provider', provider, 'remote_id', remote_id, 'receipt_json', receipt_json))
                 FROM receipts WHERE tenant_id = delivery.tenant_id AND delivery_id = delivery.id) AS receipts_json
@@ -48,6 +48,7 @@ export function createD1DeliveryStore(
       const row = deliveryRow(value);
       if (row === undefined) return null;
       const { receipt, envelope, intent, payload } = validateStored(() => {
+        if (!Number.isSafeInteger(row.lease_token) || row.lease_token < 0) throw new Error('Invalid stored lease token');
         const receipt = storedReceipt(record(value) ? value.receipts_json : undefined, row.adapter);
         const envelope = validatePublicationEnvelope(JSON.parse(row.envelope_json));
         const intent = envelope.deliveries.find((entry) => entry.id === row.delivery_key);
@@ -93,6 +94,7 @@ export function createD1DeliveryStore(
         artifacts: envelope.artifacts,
         artifactStorageIds,
         state: row.state as DeliveryState,
+        leaseSnapshot: { state: row.state as DeliveryState, token: row.lease_token },
         ...(receipt === undefined ? {} : { receipt }),
       };
     },
@@ -161,7 +163,7 @@ function deliveryRow(value: unknown) {
   for (const key of ['id', 'tenant_id', 'adapter', 'operation', 'state', 'delivery_key', 'idempotency_key', 'payload_json', 'envelope_json']) {
     if (typeof value[key] !== 'string') return undefined;
   }
-  return value as unknown as Record<'id' | 'tenant_id' | 'adapter' | 'operation' | 'state' | 'delivery_key' | 'idempotency_key' | 'payload_json' | 'envelope_json', string>;
+  return value as unknown as Record<'id' | 'tenant_id' | 'adapter' | 'operation' | 'state' | 'delivery_key' | 'idempotency_key' | 'payload_json' | 'envelope_json', string> & { lease_token: number };
 }
 
 function artifactRow(value: unknown): ArtifactReference {

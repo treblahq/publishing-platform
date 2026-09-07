@@ -61,6 +61,53 @@ function fixture() {
 }
 
 describe('durable asynchronous delivery recovery', () => {
+  it('runtime refuses a stale delivering snapshot when the owner stores a receipt before the claim', async () => {
+    const f = fixture();
+    try {
+      await acquireD1Lease(f.database, 'troco', 'delivery', new Date('2000-01-01T00:00:00.000Z'), 60_000);
+      const receipt = { provider: 'test.fake', remoteId: 'accepted', acceptedAt: f.dependencies.now().toISOString() };
+      const prepare = f.database.prepare.bind(f.database);
+      let interleaved = false;
+      vi.spyOn(f.database, 'prepare').mockImplementation((sql) => {
+        const statement = prepare(sql);
+        if (sql.includes('SELECT delivery.id')) {
+          const first = statement.first.bind(statement);
+          statement.first = async <T>() => {
+            const snapshot = await first<T>();
+            if (!interleaved) {
+              interleaved = true;
+              await f.store().commit('troco', 'delivery', 1, 'processing', receipt);
+            }
+            return snapshot;
+          };
+        }
+        return statement;
+      });
+      await reconcileRuntimeDeliveries({ ADAPTER_CONFIGS: '{}' }, f.database as unknown as D1Database, []);
+      expect(interleaved).toBe(true);
+      expect(f.sqlite.prepare('SELECT state, lease_token FROM deliveries').get()).toMatchObject({ state: 'processing', lease_token: 1 });
+      expect(await f.store().load('troco', 'delivery')).toMatchObject({ receipt });
+    } finally { f.sqlite.close(); }
+  });
+
+  it.each(['accepted-receipt', 'newer-lease'] as const)('refuses reconciliation from a snapshot superseded by %s', async (variant) => {
+    const f = fixture();
+    try {
+      await acquireD1Lease(f.database, 'troco', 'delivery', f.dependencies.now(), 60_000);
+      const snapshot = required(await f.store().load('troco', 'delivery'));
+      const receipt = { provider: 'test.fake', remoteId: 'accepted', acceptedAt: f.dependencies.now().toISOString() };
+      if (variant === 'accepted-receipt') await f.store().commit('troco', 'delivery', 1, 'processing', receipt);
+      else f.sqlite.exec('UPDATE deliveries SET lease_token = lease_token + 1');
+      const reconcile = vi.spyOn(f.adapter, 'reconcile').mockResolvedValue({ status: 'absent' });
+      await reconcileDelivery(snapshot, { ...f.dependencies, now: () => new Date('2026-09-07T12:01:00.000Z') });
+      expect(reconcile).not.toHaveBeenCalled();
+      expect(f.sqlite.prepare('SELECT state, lease_token FROM deliveries').get()).toMatchObject({
+        state: variant === 'accepted-receipt' ? 'processing' : 'delivering', lease_token: variant === 'accepted-receipt' ? 1 : 2,
+      });
+      if (variant === 'accepted-receipt') expect(await f.store().load('troco', 'delivery')).toMatchObject({ receipt });
+    } finally { f.sqlite.close(); }
+  });
+
   it('atomically marks the first claim delivering and fences all later delivery claims', async () => {
     const f = fixture();
     try {

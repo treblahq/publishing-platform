@@ -7,6 +7,7 @@ export async function reconcileDelivery(
 ): Promise<void> {
   const lease = await dependencies.leases.acquire(
     delivery.tenant, delivery.id, dependencies.now(), dependencies.leaseDurationMs ?? 60_000, 'reconciliation',
+    delivery.leaseSnapshot,
   );
   if (!lease.acquired) return;
   const fencingToken = lease.token;

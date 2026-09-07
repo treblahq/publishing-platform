@@ -12,7 +12,7 @@ describe('D1 delivery store', () => {
       canonical: { title: 'Approved', language: 'pt-BR' }, artifacts: [artifact],
       deliveries: [{ id: 'instagram', adapter: 'social.shadow', operation: 'compare', required: false, payload, providerOptions: options }],
     };
-    const first = vi.fn().mockResolvedValue({ id: 'database-delivery', tenant_id: 'troco', adapter: 'social.shadow', operation: 'compare', state: 'ready', delivery_key: 'instagram', idempotency_key: 'key', payload_json: JSON.stringify(payload), envelope_json: JSON.stringify(envelope) });
+    const first = vi.fn().mockResolvedValue({ id: 'database-delivery', tenant_id: 'troco', adapter: 'social.shadow', operation: 'compare', state: 'ready', lease_token: 0, delivery_key: 'instagram', idempotency_key: 'key', payload_json: JSON.stringify(payload), envelope_json: JSON.stringify(envelope) });
     const all = vi.fn().mockResolvedValue({ results: [{ id: 'database-artifact', storage: artifact.storage, sha256: artifact.sha256, byte_size: artifact.byteSize, media_type: artifact.mediaType, locator: artifact.locator }] });
     const statements = [statement({ first }), statement({ all })];
     const database = { prepare: vi.fn().mockImplementation(() => statements.shift()), batch: vi.fn() };
@@ -23,7 +23,7 @@ describe('D1 delivery store', () => {
     const payload = { type: 'push.notification', audience: { type: 'all-subscribers' }, title: 'Title', body: 'Body' };
     const envelope = { schemaVersion: 1, identity: { tenant: 'openings', sourceType: 'job', sourceId: 'job', revision: '1', idempotencyKey: 'publication-key' }, canonical: { title: 'Title', language: 'en' }, artifacts: [{ id: 'artifact-1', storage: 'external', sha256: 'a'.repeat(64), byteSize: 10, mediaType: 'image/png', locator: 'https://example.test/image.png' }], deliveries: [{ id: 'push', adapter: 'push.onesignal', operation: 'publish', required: true, payload }] };
     const first = vi.fn().mockResolvedValue({
-      id: 'delivery-1', tenant_id: 'openings', adapter: 'push.onesignal', operation: 'publish', state: 'ready',
+      id: 'delivery-1', tenant_id: 'openings', adapter: 'push.onesignal', operation: 'publish', state: 'ready', lease_token: 0,
       delivery_key: 'push', idempotency_key: 'publication-key', payload_json: JSON.stringify(payload), envelope_json: JSON.stringify(envelope),
     });
     const all = vi.fn().mockResolvedValue({ results: [{

@@ -1,4 +1,11 @@
+import type { DeliveryState } from '@trebla/publishing';
+
 export type LeaseResult = { acquired: false } | { acquired: true; token: number; expiresAt: string };
+
+export interface DeliveryLeaseSnapshot {
+  state: DeliveryState;
+  token: number;
+}
 
 export interface DeliveryLeaseStore {
   acquire(
@@ -7,6 +14,7 @@ export interface DeliveryLeaseStore {
     now: Date,
     durationMs: number,
     purpose?: 'delivery' | 'reconciliation',
+    snapshot?: DeliveryLeaseSnapshot,
   ): LeaseResult | Promise<LeaseResult>;
   commit(
     tenantId: string,
