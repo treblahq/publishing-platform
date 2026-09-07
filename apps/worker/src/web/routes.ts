@@ -19,12 +19,19 @@ export async function handleWebEntityRequest(request: Request, dependencies: Dep
   const metadata = `${title(manifest.title)}<link rel="canonical" href="${escapeHtml(canonicalUrl)}">`
     + `<meta property="og:title" content="${escapeHtml(manifest.title)}">`
     + `<meta property="og:url" content="${escapeHtml(canonicalUrl)}">`
-    + (manifest.summary ? `<meta name="description" content="${escapeHtml(manifest.summary)}">` : '');
+    + `<meta name="twitter:card" content="summary">`
+    + `<meta name="twitter:title" content="${escapeHtml(manifest.title)}">`
+    + (manifest.summary ? `<meta name="description" content="${escapeHtml(manifest.summary)}">`
+      + `<meta property="og:description" content="${escapeHtml(manifest.summary)}">`
+      + `<meta name="twitter:description" content="${escapeHtml(manifest.summary)}">` : '');
   const entityJson = JSON.stringify({ revision: manifest.revision, contentSha256: manifest.contentSha256 })
     .replaceAll('<', '\\u003c');
   const cleanShell = (await shell.text())
     .replace(/<link(?=[^>]+rel=["']canonical["'])[^>]*>/giu, '')
-    .replace(/<meta(?=[^>]+property=["']og:(?:title|url)["'])[^>]*>/giu, '')
+    // The bounded shell may be exported from a different concrete entity. None
+    // of its social metadata or structured data proves identity for this route.
+    .replace(/<meta(?=[^>]+(?:property|name)=["'](?:og|twitter):[^"']+["'])[^>]*>/giu, '')
+    .replace(/<script(?=[^>]+type=["']application\/ld\+json["'])[^>]*>[\s\S]*?<\/script\s*>/giu, '')
     .replace(/<meta(?=[^>]+name=["']description["'])[^>]*>/giu, '');
   const html = cleanShell.replace(/<title>[^<]*<\/title>/iu, metadata)
     .replace('</body>', `<script type="application/json" id="publishing-entity">${entityJson}</script></body>`);

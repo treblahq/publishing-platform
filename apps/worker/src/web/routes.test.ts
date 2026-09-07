@@ -8,6 +8,32 @@ const manifest = {
 };
 
 describe('public web entity routes', () => {
+  it('does not leak another entity social metadata or structured data from the shared shell', async () => {
+    const response = await handleWebEntityRequest(
+      new Request('https://worker.test/web/openings/jobs/gh_123'),
+      {
+        find: () => Promise.resolve(manifest),
+        objectExists: () => Promise.resolve(true),
+        getShell: () => Promise.resolve(new Response(`<html><head><title>Template</title>
+          <meta property="og:image" content="https://openings.dev/jobs/other/opengraph-image.png">
+          <meta property='og:description' content='Other job summary'>
+          <meta name="twitter:title" content="Other job title">
+          <meta name="twitter:image" content="https://openings.dev/jobs/other/opengraph-image.png">
+          <meta property="og:image:alt" content="Other job image">
+          <script type="application/ld+json">{"@type":"JobPosting","title":"Other job title"}</script>
+          </head><body><script src="/app.js"></script></body></html>`)),
+        canonicalBaseUrl: 'https://openings.dev',
+      },
+    );
+    const html = await response.text();
+    expect(html).not.toContain('Other job');
+    expect(html).not.toContain('/jobs/other/');
+    expect(html).not.toContain('JobPosting');
+    expect(html).toContain('<meta property="og:description" content="Build safely">');
+    expect(html).toContain('<meta name="twitter:title" content="Platform &amp; Reliability Engineer">');
+    expect(html).toContain('<script src="/app.js"></script>');
+  });
+
   it('renders exact metadata into the bounded shell', async () => {
     let checkedObjectKey: string | undefined;
     const response = await handleWebEntityRequest(
