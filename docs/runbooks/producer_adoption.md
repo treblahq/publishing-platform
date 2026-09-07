@@ -81,7 +81,7 @@ envelope. The shared coordinator then enforces the same sequence for every
 product:
 
 ```ts
-await stagePlatformHandoff(handoff, producer); // local disk only
+const entry = await stagePlatformHandoff(handoff, producer); // local disk only
 const upload = await uploadPlatformHandoff(handoff, uploader);
 if (upload.outcome !== 'available') return; // retain bytes and outbox entry
 // Submit this exact envelope; a shared outbox can contain unuploaded work.
@@ -261,6 +261,13 @@ The Openings integration branch now includes that exclusive executor switch,
 legacy token requirement, submits one text/link publication, and waits for a
 verified receipt. Pending or ambiguous results never fall back to a native
 provider POST. This switch has not been enabled in production.
+
+Before submission, the workflow commits and pushes a per-job Cloudflare owner
+marker in the tracked queue. Only never-attempted, never-reset jobs are claimed;
+legacy ambiguous attempts require reconciliation instead of automatic transfer.
+Pending acceptance IDs are retained in that queue, survive manual retry resets,
+and resume through status reads on a fresh runner. Disabling the global switch
+does not authorize the legacy executor to take a cloud-owned job.
 
 The attempted encrypted Mastodon credential-transfer dispatch was rejected by
 automatic security review before execution. No credential was exported. Its
