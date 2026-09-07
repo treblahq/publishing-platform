@@ -50,10 +50,15 @@ needed for package installation or local outbox staging.
 Publishing a later version requires a new immutable version. npm package
 versions are never overwritten.
 
-## Version 0.1.1 release candidate
+## Version 0.1.1 release record
 
-Version 0.1.1 adds the durable single-handoff coordinator. The source and local
-archive are prepared; publication is not complete. The npm CLI session returned
-401 and web login requested an email one-time password. Product repositories
-remain pinned to the published 0.1.0 until login, publication and registry
-verification succeed. Do not represent the local candidate as a released package.
+Version 0.1.1 adds the durable single-handoff coordinator and was published on
+2026-09-07 after authenticated login and a separate publishing passkey approval.
+The registry exposes version 0.1.1 with SHA-1
+`6e336b71a20f62697a1c75be4d37778741b87732`, matching the audited 67-file,
+24,174-byte archive. Full platform validation passed 348 tests, and a clean
+registry installation verified the coordinator export under Node 20.
+
+Product integration branches may now adopt this exact version. Installing the
+package alone does not transfer live provider ownership or complete a product's
+Cloudflare migration; the local verification and rollout gates still apply.
