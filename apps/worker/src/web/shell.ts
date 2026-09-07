@@ -12,7 +12,7 @@ export function fetchWebShell(
   fetcher = fetch as unknown as ShellFetcher,
 ): Promise<Response> {
   const path = kind === 'job'
-    ? '/jobs/'
+    ? '/route-indexes/jobs/'
     : kind === 'author'
       ? '/route-indexes/authors/'
       : '/route-indexes/communities/';

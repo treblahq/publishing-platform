@@ -24,6 +24,10 @@ describe('web shell fetch', () => {
     await fetchWebShell('author', 'https://pages.example', fetcher);
     await fetchWebShell('community', 'https://pages.example', fetcher);
 
-    expect(urls).toEqual(['/jobs/', '/route-indexes/authors/', '/route-indexes/communities/']);
+    expect(urls).toEqual([
+      '/route-indexes/jobs/',
+      '/route-indexes/authors/',
+      '/route-indexes/communities/',
+    ]);
   });
 });
