@@ -12,8 +12,9 @@ export function assertProductionReady(config) {
   if (!production) throw new Error('Production environment is required');
   if (config?.env?.staging) throw new Error('Staging environment must be retired');
   if (production.name !== 'publishing-platform-production') throw new Error('Production Worker name is invalid');
-  if ([config.vars, production.vars].some((vars) => Object.hasOwn(vars ?? {}, 'MASTODON_ACCESS_TOKENS'))) {
-    throw new Error('Mastodon credentials must be installed as Worker secrets, never public vars');
+  if ([config.vars, production.vars].some((vars) =>
+    ['MASTODON_ACCESS_TOKENS', 'BUFFER_API_KEYS'].some((name) => Object.hasOwn(vars ?? {}, name)))) {
+    throw new Error('Provider credentials must be installed as Worker secrets, never public vars');
   }
 
   const database = production.d1_databases?.[0];

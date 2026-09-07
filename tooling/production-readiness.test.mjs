@@ -86,6 +86,13 @@ describe('production readiness', () => {
     expect(() => assertProductionReady(value)).toThrow();
   });
 
+  it.each(['root', 'production'])('rejects Buffer credentials in public %s vars even while disabled', (scope) => {
+    const value = mastodonConfig();
+    const target = scope === 'root' ? value : value.env.production;
+    target.vars = { ...target.vars, BUFFER_API_KEYS: '{"trebla":"test-only-token"}' };
+    expect(() => assertProductionReady(value)).toThrow(/credentials must be installed as Worker secrets/u);
+  });
+
   it.each([
     ['placeholder D1', (value) => { value.env.production.d1_databases[0].database_id = '00000000-0000-0000-0000-000000000003'; }],
     ['different D1', (value) => { value.env.production.d1_databases[0].database_name = 'publishing-platform-production'; }],
