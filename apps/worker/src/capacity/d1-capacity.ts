@@ -28,13 +28,17 @@ export function createD1CapacityChecker(
     for (const resource of ['d1Rows', 'queueOperations', 'r2Bytes'] as const) {
       const value = await database.prepare(`
         SELECT usage.used, usage.measured_at, COALESCE(SUM(reservations.amount), 0) AS reserved
-        FROM capacity_usage AS usage
+        FROM (
+          SELECT tenant_id, resource, used, measured_at
+          FROM capacity_usage
+          WHERE tenant_id = ? AND resource = ?
+          ORDER BY window_start DESC LIMIT 1
+        ) AS usage
         LEFT JOIN capacity_reservations AS reservations
           ON reservations.tenant_id = usage.tenant_id AND reservations.resource = usage.resource
           AND reservations.state = 'reserved' AND reservations.expires_at > ?
-        WHERE usage.tenant_id = ? AND usage.resource = ?
-        ORDER BY usage.window_start DESC LIMIT 1
-      `).bind(currentTime.toISOString(), tenant, resource).first();
+        GROUP BY usage.used, usage.measured_at
+      `).bind(tenant, resource, currentTime.toISOString()).first();
       const row = usageRow(value);
       const decision = evaluateCapacity({
         used: row?.used ?? 0,
