@@ -333,8 +333,9 @@ respectively, plus their existing static and publication-safety checks.
 the repository variable also remains false. Trebla `4305d7e` and Troco `c60d558`
 wire the four platform variables only into their publishing step. The exact
 `true` opt-in is required; otherwise credential values are empty. Their
-temporary runner outboxes still need durable cross-run persistence before
-activation. Legacy executors remain the only live provider owners.
+temporary runner outboxes required durable cross-run persistence at that
+checkpoint; the subsequent persistence changes are recorded below. Legacy
+executors remain the only live provider owners.
 
 Public SDK 0.1.2 adoption is verified on remote main for Openings `8369ea2`,
 Trebla `965bc7c`, Troco `ee62ad2`, and Equity `d4ee37b`. Equity's complete local
@@ -426,8 +427,25 @@ no remote publication IDs, private envelopes, media or credentials enter campaig
 state. Full checks passed 179 tests plus formatting, types, 18 campaign records
 and three provider contracts. Both commits are on main; the gate remains false.
 
-Remaining rollout gates include durable cross-run state for Trebla,
-verifying product-level restart behavior,
+Trebla commits `5aeafae` and `9d2b4a3` are now on main after 1,510 tests,
+lint, build and three publication-safety checks. Approved requests and bound
+acceptance receipts survive fresh runners in the existing private publication
+ledger. Revision conflicts stop safely. A separate manual `platform-recover`
+workflow mode replays at most three pending requests without new qualification
+or provider credentials. Missing media rotates pending work; capacity stops the
+pass. The shadow gate remains false, and this is not an automatic provider
+cutover.
+
+Platform commits `b399c43` and `b776a20` prevent stale delivery leases from
+releasing artifacts and preserve validated logical artifact IDs and approved
+provider options for adapters. Full validation passed 372 tests. Worker version
+`fa89f04d-4cef-40cf-9993-d7bb6ce01ab5` deployed from `cc5f65b` after a successful
+dry run, with no database migration or GitHub Action. Read-only post-deploy
+checks confirmed all four existing technical receipts and HTTP 200 for Worker
+health and the public Openings root. No new provider post was created.
+
+Remaining rollout gates include verifying product-level restart behavior
+under controlled activation,
 and implementing Equity's durable local executor. Equity's YouTube OAuth and
 large video files must remain local; a generic temporary-upload bridge is not
 a replacement for that executor. Live provider ownership for Trebla, Troco,
@@ -437,8 +455,10 @@ first eligible live Mastodon receipt, and OneSignal remains out of scope.
 - Keep signing secrets and provider credentials in environment variables or
   the product's existing secret store.
 - Commit only variable names and placeholder examples.
-- Never commit generated media, outbox entries, signed URLs, raw provider
-  responses, or publication state.
+- Never commit generated media, private outbox entries, signed URLs or raw
+  provider responses to public repositories. Troco's existing approved public
+  campaign metadata contains only the restricted checkpoint fields above;
+  private requests and receipts remain in private product-owned state.
 - Do not add automatic workflow triggers during adoption. Staging validation
   remains manual until local checks are green.
 - Stop before any configured free-tier safety threshold; there is no paid
