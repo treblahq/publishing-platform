@@ -11,6 +11,7 @@ import { createPagesAdapter } from '@trebla/publishing-adapter-pages';
 import { createR2WebAdapter } from '@trebla/publishing-adapter-r2';
 import { createSocialShadowAdapter } from '@trebla/publishing-adapter-shadow';
 import { createMastodonAdapter } from './adapters/mastodon.js';
+import { createBufferAdapter } from './adapters/buffer.js';
 import { loadProducerSecrets } from './intake/producer-secrets.js';
 import { handlePublicationStatusRequest } from './intake/status.js';
 import { createAdapterRegistry } from './registry.js';
@@ -147,14 +148,14 @@ async function consumeRuntimeBatch(batch: MessageBatch, environment: Environment
     await handleD1DeadLetterBatch(database, batch.messages);
     return;
   }
-  const configs = parseAdapterConfigs(environment.ADAPTER_CONFIGS, environment.ONESIGNAL_REST_API_KEY, environment.MASTODON_ACCESS_TOKENS);
+  const configs = parseAdapterConfigs(environment.ADAPTER_CONFIGS, environment.ONESIGNAL_REST_API_KEY, environment.MASTODON_ACCESS_TOKENS, environment.BUFFER_API_KEYS);
   const oneSignal = createOneSignalAdapter({ send: sendOneSignal, now: () => new Date() });
   const pages = createPagesAdapter({ request: (url, init) => fetch(url, init) });
   const r2 = createR2WebAdapter({
     stores: (tenant) => createD1R2EntityStores(database, bindings.artifacts as R2Bucket, tenant),
     request: (url, init) => fetch(url, init),
   });
-  const adapters = [oneSignal, pages, r2, createSocialShadowAdapter(), createMastodonAdapter()];
+  const adapters = [oneSignal, pages, r2, createSocialShadowAdapter(), createMastodonAdapter(), createBufferAdapter()];
   const registry = createAdapterRegistry(adapters, bindings.enabledAdapters);
   const store = createD1DeliveryStore(database, (adapter, tenant) => configs[tenant]?.[adapter] ?? {});
   await handleDeliveryBatch(batch.messages, async ({ tenantId, deliveryId }) => {
@@ -206,7 +207,7 @@ export async function reconcileRuntimeDeliveries(
   database: D1Database,
   enabledAdapters: readonly string[],
 ): Promise<number> {
-  const configs = parseAdapterConfigs(environment.ADAPTER_CONFIGS, environment.ONESIGNAL_REST_API_KEY, environment.MASTODON_ACCESS_TOKENS);
+  const configs = parseAdapterConfigs(environment.ADAPTER_CONFIGS, environment.ONESIGNAL_REST_API_KEY, environment.MASTODON_ACCESS_TOKENS, environment.BUFFER_API_KEYS);
   const adapters = [
     createOneSignalAdapter({ send: sendOneSignal, now: () => new Date() }),
     createPagesAdapter({ request: (url, init) => fetch(url, init) }),
@@ -216,6 +217,7 @@ export async function reconcileRuntimeDeliveries(
     }),
     createSocialShadowAdapter(),
     createMastodonAdapter(),
+    createBufferAdapter(),
   ];
   const registry = createAdapterRegistry(adapters, enabledAdapters);
   const store = createD1DeliveryStore(database, (adapter, tenant) => configs[tenant]?.[adapter] ?? {});
@@ -253,7 +255,7 @@ async function handleRuntimeWebEntity(request: Request, environment: Environment
     const database = bindings.ledger as D1Database;
     const tenant = new URL(request.url).pathname.split('/').filter(Boolean)[1];
     if (!tenant) return new Response('Not found', { status: 404 });
-    const configs = parseAdapterConfigs(environment.ADAPTER_CONFIGS, environment.ONESIGNAL_REST_API_KEY, environment.MASTODON_ACCESS_TOKENS);
+    const configs = parseAdapterConfigs(environment.ADAPTER_CONFIGS, environment.ONESIGNAL_REST_API_KEY, environment.MASTODON_ACCESS_TOKENS, environment.BUFFER_API_KEYS);
     const config = configs[tenant]?.['web.r2'] as { shellBaseUrl?: unknown; canonicalBaseUrl?: unknown } | undefined;
     if (typeof config?.shellBaseUrl !== 'string' || typeof config.canonicalBaseUrl !== 'string') {
       return new Response('Not found', { status: 404 });
