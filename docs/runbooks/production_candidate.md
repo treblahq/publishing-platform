@@ -13,7 +13,7 @@ during staging:
 - Worker: `publishing-platform-production`
 - Queue: `publishing-delivery-production`
 - DLQ: `publishing-delivery-dlq-production`
-- Pages origin: `https://cloudflare-preview.openings-dev-web.pages.dev`
+- Pages origin: `https://openings-dev-web-dfy.pages.dev`
 - Worker origin: `https://publishing-platform-production.business-850.workers.dev`
 
 The staging names on D1 and R2 are historical physical names. Wrangler provides

@@ -21,7 +21,8 @@ describe('wrangler environment isolation', () => {
     expect(config).toHaveProperty('vars.ENABLED_ADAPTERS', '');
     expect(config).toHaveProperty('env.production.vars.ENABLED_ADAPTERS', 'web.r2');
     expect(config).toHaveProperty('env.production.vars.ADAPTER_CONFIGS');
-    expect(serialized).toContain('https://cloudflare-preview.openings-dev-web.pages.dev');
+    expect(serialized).toContain('https://openings-dev-web-dfy.pages.dev');
+    expect(serialized).not.toContain('cloudflare-preview.openings-dev-web.pages.dev');
     const freeBudgets = JSON.stringify({ d1Rows: 55000, queueOperations: 5500, r2Bytes: 5500000000 });
     expect(serialized.split(JSON.stringify(freeBudgets))).toHaveLength(3);
   });

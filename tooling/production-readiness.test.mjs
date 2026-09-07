@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { assertProductionReady } from './production-readiness.mjs';
 
-const preview = 'https://cloudflare-preview.openings-dev-web.pages.dev';
+const preview = 'https://openings-dev-web-dfy.pages.dev';
 
 function config() {
   return {

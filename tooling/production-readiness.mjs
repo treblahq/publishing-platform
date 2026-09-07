@@ -5,7 +5,7 @@ import { pathToFileURL } from 'node:url';
 const PLACEHOLDER_ID = /^0{8}-0{4}-0{4}-0{4}-0{11}[0-9]$/u;
 const PROMOTED_DATABASE = 'publishing-platform-staging';
 const PROMOTED_BUCKET = 'publishing-artifacts-staging';
-const OPENINGS_PREVIEW = 'https://cloudflare-preview.openings-dev-web.pages.dev';
+const OPENINGS_PREVIEW = 'https://openings-dev-web-dfy.pages.dev';
 
 export function assertProductionReady(config) {
   const production = config?.env?.production;

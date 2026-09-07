@@ -63,7 +63,7 @@
       "vars": {
         "CAPACITY_BUDGETS": "{\"d1Rows\":55000,\"queueOperations\":5500,\"r2Bytes\":5500000000}",
         "ENABLED_ADAPTERS": "web.r2",
-        "ADAPTER_CONFIGS": "{\"openings\":{\"web.r2\":{\"publicBaseUrl\":\"https://cloudflare-preview.openings-dev-web.pages.dev\",\"shellBaseUrl\":\"https://cloudflare-preview.openings-dev-web.pages.dev\",\"canonicalBaseUrl\":\"https://openings.dev\"}}}"
+        "ADAPTER_CONFIGS": "{\"openings\":{\"web.r2\":{\"publicBaseUrl\":\"https://openings-dev-web-dfy.pages.dev\",\"shellBaseUrl\":\"https://openings-dev-web-dfy.pages.dev\",\"canonicalBaseUrl\":\"https://openings.dev\"}}}"
       }
     }
   }
