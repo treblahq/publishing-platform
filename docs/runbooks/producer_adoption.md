@@ -84,7 +84,9 @@ product:
 await stagePlatformHandoff(handoff, producer); // local disk only
 const upload = await uploadPlatformHandoff(handoff, uploader);
 if (upload.outcome !== 'available') return; // retain bytes and outbox entry
-await producer.drain({ limit: 25 });
+// Submit this exact envelope; a shared outbox can contain unuploaded work.
+const result = await client.submit(handoff.envelope);
+if (result.outcome === 'accepted') await outbox.acknowledge(entry.id, result.publicationId);
 ```
 
 `stagePlatformHandoff` cannot perform a network request. Upload bindings must
@@ -94,6 +96,20 @@ burst against the free allowance.
 
 The outbox path is product-owned runtime state. Do not place it inside Git or
 commit generated media.
+
+The 0.1.1 release candidate provides `createPlatformPublisher` to coordinate
+this entire sequence and retain accepted receipts. Until it is published, the
+repository-built private CLI can exercise the same implementation:
+
+```sh
+node apps/cli/dist/main.js submit /absolute/handoff.json --tenant troco --outbox /absolute/private-outbox
+```
+
+Use `PUBLISHING_ENDPOINT`, `PUBLISHING_CLIENT_ID`, and
+`PUBLISHING_CLIENT_SECRET` from a private environment. No administrative token
+is required. This rollout command rejects other tenants, non-shadow adapters,
+and artifacts larger than 50 MiB before submission; capacity deferrals exit 75.
+It does not enable a tenant or transfer live delivery ownership.
 
 ## Submission gate
 
@@ -239,6 +255,21 @@ Before enabling Mastodon, configure its Worker credential and switch that
 channel's legacy executor to submit work and wait for its receipt in one coordinated change. Do not
 enable both owners for the same scheduled post. Media attachments and the other
 social providers remain separate rollout work.
+
+The Openings integration branch now includes that exclusive executor switch,
+`PUBLISHING_MASTODON_ENABLED`, defaulting to false. When enabled it removes the
+legacy token requirement, submits one text/link publication, and waits for a
+verified receipt. Pending or ambiguous results never fall back to a native
+provider POST. This switch has not been enabled in production.
+
+The attempted encrypted Mastodon credential-transfer dispatch was rejected by
+automatic security review before execution. No credential was exported. Its
+explicit authorization and installation remain prerequisites for live cutover.
+
+Focused local adoption checks also pass for Trebla (17 request, qualification
+and handoff tests), Troco (4), Turma do Kako (4), and Equity (4). These checks
+do not establish live delivery: product dependencies remain at 0.1.0 and those
+four products have not been moved to a new provider owner by this change.
 
 - Keep signing secrets and provider credentials in environment variables or
   the product's existing secret store.

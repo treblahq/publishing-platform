@@ -14,7 +14,7 @@ describe('public package release metadata', () => {
     const publishing = await readPackage('packages/publishing/package.json');
 
     expect(publishing.name).toBe('@trebla/publishing');
-    expect(publishing.version).toBe('0.1.0');
+    expect(publishing.version).toBe('0.1.1');
     expect(publishing.private).not.toBe(true);
   });
 

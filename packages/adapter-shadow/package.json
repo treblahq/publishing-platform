@@ -8,7 +8,7 @@
   "types": "./dist/index.d.ts",
   "files": ["dist"],
   "dependencies": {
-    "@trebla/publishing": "0.1.0",
+    "@trebla/publishing": "0.1.1",
     "@trebla/publishing-adapter-kit": "0.1.0"
   },
   "scripts": {

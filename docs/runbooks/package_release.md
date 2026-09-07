@@ -41,11 +41,19 @@ product lockfile.
 
 ## Product adoption gate
 
-Each product branch may add `@trebla/publishing` only after version
-`0.1.0` is visible in the public registry and installs into a clean directory.
+Each product branch may update `@trebla/publishing` only after the target version
+is visible in the public registry and installs into a clean directory.
 Regenerate and commit that product's lockfile, run its full local verification,
 and confirm the branch starts no GitHub Action. Cloudflare credentials are not
 needed for package installation or local outbox staging.
 
 Publishing a later version requires a new immutable version. npm package
 versions are never overwritten.
+
+## Version 0.1.1 release candidate
+
+Version 0.1.1 adds the durable single-handoff coordinator. The source and local
+archive are prepared; publication is not complete. The npm CLI session returned
+401 and web login requested an email one-time password. Product repositories
+remain pinned to the published 0.1.0 until login, publication and registry
+verification succeed. Do not represent the local candidate as a released package.
