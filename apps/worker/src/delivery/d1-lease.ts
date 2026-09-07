@@ -19,7 +19,7 @@ export async function acquireD1Lease(
 ): Promise<LeaseResult> {
   const expiresAt = new Date(now.getTime() + durationMs).toISOString();
   const eligibleStates = purpose === 'reconciliation'
-    ? "state = 'reconciling'"
+    ? "state IN ('reconciling', 'processing')"
     : "state IN ('planned','validated','ready','delivering')";
   const row = await database.prepare(`
     UPDATE deliveries

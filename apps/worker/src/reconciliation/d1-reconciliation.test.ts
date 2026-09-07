@@ -18,7 +18,7 @@ describe('D1 reconciliation collector', () => {
     expect(statement.bind).toHaveBeenCalledWith(2);
     expect(process).toHaveBeenNthCalledWith(1, { tenantId: 'openings', deliveryId: 'd1' });
     expect(process).toHaveBeenNthCalledWith(2, { tenantId: 'troco', deliveryId: 'd2' });
-    expect(database.prepare.mock.calls[0]?.[0]).toContain("state = 'reconciling'");
+    expect(database.prepare.mock.calls[0]?.[0]).toContain("state IN ('reconciling', 'processing')");
   });
 
   it('rejects an unbounded page size', async () => {

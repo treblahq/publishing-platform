@@ -32,6 +32,6 @@ describe('D1 delivery leases', () => {
     let statement: Statement | undefined;
     const database = { prepare: (sql: string) => (statement = new Statement(sql, { lease_token: 5 })) };
     await d1Lease.acquireD1Lease(database, 'tenant-1', 'delivery-1', new Date(), 60_000, 'reconciliation');
-    expect(statement?.sql).toContain("state = 'reconciling'");
+    expect(statement?.sql).toContain("state IN ('reconciling', 'processing')");
   });
 });

@@ -19,6 +19,7 @@ export interface DeliveryWork {
   artifacts: readonly ArtifactReference[];
   artifactStorageIds?: Readonly<Record<string, string>>;
   state?: DeliveryState;
+  receipt?: DeliveryReceipt;
 }
 
 export interface DeliveryStateStore {

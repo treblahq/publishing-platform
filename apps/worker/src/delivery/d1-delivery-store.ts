@@ -1,5 +1,5 @@
 import type { ArtifactReference, DeliveryReceipt, DeliveryState } from '@trebla/publishing';
-import { validatePublicationEnvelope } from '@trebla/publishing';
+import { validateDeliveryReceipt, validatePublicationEnvelope } from '@trebla/publishing';
 
 import type { DeliveryStateStore, DeliveryWork } from './consume.js';
 
@@ -27,13 +27,16 @@ export function createD1DeliveryStore(
     load: async (tenantId, deliveryId) => {
       const value = await database.prepare(`
         SELECT delivery.id, delivery.tenant_id, delivery.adapter, delivery.operation, delivery.state,
-               delivery.delivery_key, delivery.payload_json, publication.idempotency_key, publication.envelope_json
+               delivery.delivery_key, delivery.payload_json, publication.idempotency_key, publication.envelope_json,
+               (SELECT json_group_array(json_object('provider', provider, 'remote_id', remote_id, 'receipt_json', receipt_json))
+                FROM receipts WHERE tenant_id = delivery.tenant_id AND delivery_id = delivery.id) AS receipts_json
         FROM deliveries AS delivery
         JOIN publications AS publication ON publication.id = delivery.publication_id
         WHERE delivery.tenant_id = ? AND delivery.id = ? LIMIT 1
       `).bind(tenantId, deliveryId).first();
       const row = deliveryRow(value);
       if (row === undefined) return null;
+      const receipt = storedReceipt(record(value) ? value.receipts_json : undefined, row.adapter);
       const envelope = validatePublicationEnvelope(JSON.parse(row.envelope_json));
       const intent = envelope.deliveries.find((entry) => entry.id === row.delivery_key);
       if (row.tenant_id !== tenantId || envelope.identity.tenant !== tenantId || envelope.identity.idempotencyKey !== row.idempotency_key
@@ -73,6 +76,7 @@ export function createD1DeliveryStore(
         artifacts: envelope.artifacts,
         artifactStorageIds,
         state: row.state as DeliveryState,
+        ...(receipt === undefined ? {} : { receipt }),
       };
     },
     commit: async (tenantId, deliveryId, fencingToken, state, receipt, dueAt, safeArtifactIds = []) => {
@@ -87,6 +91,21 @@ export function createD1DeliveryStore(
       if (stateResult?.meta?.changes !== 1) throw new Error('Cannot commit delivery with stale fencing token');
     },
   };
+}
+
+function storedReceipt(value: unknown, adapter: string): DeliveryReceipt | undefined {
+  if (value === undefined) return undefined;
+  if (typeof value !== 'string') throw new Error('Invalid stored receipts');
+  const rows: unknown = JSON.parse(value);
+  if (!Array.isArray(rows) || rows.length > 1) throw new Error('Conflicting stored receipts');
+  if (rows.length === 0) return undefined;
+  const row: unknown = rows[0];
+  if (!record(row) || typeof row.receipt_json !== 'string') throw new Error('Invalid stored receipt');
+  const receipt = validateDeliveryReceipt(JSON.parse(row.receipt_json));
+  if (receipt.provider !== adapter || receipt.provider !== row.provider || receipt.remoteId !== row.remote_id) {
+    throw new Error('Stored receipt does not match delivery provider');
+  }
+  return receipt;
 }
 
 function safeArtifactStatement(database: Database, tenant: string, delivery: string, token: number, artifact: string) {

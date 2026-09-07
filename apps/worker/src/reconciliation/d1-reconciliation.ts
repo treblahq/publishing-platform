@@ -21,7 +21,7 @@ export async function runD1Reconciliation(
     throw new Error('Reconciliation limit must be between 1 and 100');
   }
   const page = await database.prepare(`SELECT id, tenant_id FROM deliveries
-    WHERE state = 'reconciling' ORDER BY updated_at, id LIMIT ?`).bind(limit).all();
+    WHERE state IN ('reconciling', 'processing') ORDER BY updated_at, id LIMIT ?`).bind(limit).all();
   const rows = (page.results ?? []).map(candidateRow);
   for (const candidate of rows) await process(candidate);
   return rows.length;
