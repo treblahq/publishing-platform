@@ -479,6 +479,28 @@ headers. Cached historical media therefore does not prove migration. This media
 path must be implemented and verified before confirming the first live Mastodon
 delivery or retiring Hostinger; changing DNS alone did not migrate that path.
 
+Openings social-publisher `e9880ee` is now on main. When the verifier identifies
+a Cloudflare-owned page but cannot verify its approved bridge content, it returns
+`bridge_platform_media_pending` instead of dispatching the legacy Hostinger
+deployment. The ownership marker survives redirect rejection. Validation passed
+27 platform tests, 29 artwork/state tests (four existing skips) and 165 contract
+checks. This guard does not implement the missing media bridge.
+
+### Reviewed recovery changes awaiting the next consolidated deployment
+
+Platform `f496208`, `26b519c` and `ffb3aad` recover asynchronous deliveries using
+their stored provider receipt. Invalid stored records are isolated per delivery;
+temporary database errors leave work recoverable. Processing media remains held
+until confirmed ingestion. `bc93c18` and `dcb099a` persist the delivering claim
+before an external effect and bind lease acquisition to the observed state and
+token. A crashed delivery must reconcile before another attempt; stale snapshots
+cannot authorize a duplicate send. `9d80532` updates the confirmed receipt under
+the current tenant lease while preserving its original acceptance timestamp.
+
+These changes have not yet replaced Worker version `1a803bcf-d04e-4a25-9efc-d3bc9aac9d03`.
+The new LinkedIn Buffer adapter is also undergoing review and remains disabled.
+Neither code registration nor shadow intake transfers live provider ownership.
+
 Remaining rollout gates include verifying product-level restart behavior
 under controlled activation, migrating Openings bridge media,
 and implementing Equity's durable local executor. Equity's YouTube OAuth and

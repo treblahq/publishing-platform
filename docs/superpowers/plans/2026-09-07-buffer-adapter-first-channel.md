@@ -6,7 +6,8 @@
 ## Scope
 
 Implement a private build-time `social.buffer` adapter in the existing Worker,
-starting with LinkedIn `shareNow`, approved text and at most one PNG/JPEG image.
+starting with LinkedIn `shareNow`, approved text and zero to twenty PNG/JPEG
+images, preserving carousel order and limiting their combined size to 5 MiB.
 Reuse the current Buffer GraphQL API and existing product-owned public media.
 Do not add another npm package, another service, a provider SDK, video uploads,
 new Buffer channels, paid subscriptions, or changes to editorial approval.
@@ -22,7 +23,8 @@ gates disabled until tenant credentials and exclusive ownership are verified.
 - Trusted config binds the channel ID, LinkedIn account URL and allowed public
   media repository/path. Producer options cannot override account identity.
 - Payload carries exact approved text and artifact IDs; options carry the
-  selected channel, `shareNow`, explicit AI-assistance flag and image alt text.
+  selected channel, `shareNow`, explicit AI-assistance flag and an ordered alt-text
+  array covering every image exactly once. Text-only posts omit the array.
 - Accept only `external` images under an approved `raw.githubusercontent.com`
   repository, pinned to a full Git commit SHA. Validate MIME, size and SHA-256
   with a bounded public read before provider mutation. Never forward the Buffer
