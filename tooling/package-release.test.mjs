@@ -47,4 +47,21 @@ describe('public package release metadata', () => {
     expect(manifests.length).toBeGreaterThan(0);
     expect(manifests.every(({ private: isPrivate }) => isPrivate === true)).toBe(true);
   });
+
+  it('pins every internal consumer to the exact local public package version', async () => {
+    const publishing = await readPackage('packages/publishing/package.json');
+    const consumers = [];
+    for (const parent of ['apps', 'packages']) {
+      for (const directory of await readdir(resolve(root, parent))) {
+        const relativePath = `${parent}/${directory}/package.json`;
+        const manifest = await readPackage(relativePath);
+        const dependency = manifest.dependencies?.[publishing.name];
+        if (dependency === undefined) continue;
+        consumers.push(relativePath);
+        expect(dependency, `${relativePath} must not install a second publishing implementation`)
+          .toBe(publishing.version);
+      }
+    }
+    expect(consumers.length).toBeGreaterThan(0);
+  });
 });
