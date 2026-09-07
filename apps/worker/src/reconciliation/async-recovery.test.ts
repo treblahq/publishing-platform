@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { DatabaseSync, type SQLInputValue } from 'node:sqlite';
 import { describe, expect, it, vi } from 'vitest';
 import { createFakeAdapter } from '@trebla/publishing-adapter-test';
-import { createD1DeliveryStore } from '../delivery/d1-delivery-store.js';
+import { createD1DeliveryStore, StoredDeliveryIntegrityError } from '../delivery/d1-delivery-store.js';
 import { acquireD1Lease } from '../delivery/d1-lease.js';
 import { consumeDelivery } from '../delivery/consume.js';
 import { createAdapterRegistry } from '../registry.js';
@@ -59,7 +59,7 @@ function fixture() {
 }
 
 describe('durable asynchronous delivery recovery', () => {
-  it.each(['quarantine', 'stale', 'lease-error'] as const)('runtime isolates poisoned receipt across tenants: %s', async (variant) => {
+  it.each(['quarantine', 'stale', 'lease-error', 'first-error', 'all-error'] as const)('runtime isolates receipt and read failures across tenants: %s', async (variant) => {
     const f = fixture();
     try {
       await consumeDelivery(required(await f.store().load('troco', 'delivery')), f.dependencies);
@@ -72,6 +72,27 @@ describe('durable asynchronous delivery recovery', () => {
       f.sqlite.prepare(`INSERT INTO deliveries (id, tenant_id, publication_id, delivery_key, adapter, operation, required, payload_json, state) VALUES ('healthy', 'other', 'other-publication', 'social', 'social.shadow', 'compare', 0, ?, 'processing')`).run(JSON.stringify(payload));
       const receipt = { provider: 'social.shadow', remoteId: `shadow:${'a'.repeat(64)}`, acceptedAt: '2026-09-07T12:00:00.000Z' };
       f.sqlite.prepare(`INSERT INTO receipts (id, tenant_id, delivery_id, provider, remote_id, receipt_json) VALUES ('healthy-receipt', 'other', 'healthy', ?, ?, ?)`).run(receipt.provider, receipt.remoteId, JSON.stringify(receipt));
+      const transient = variant === 'first-error' || variant === 'all-error';
+      if (transient) {
+        f.sqlite.exec(`UPDATE deliveries SET adapter = 'social.shadow', operation = 'compare' WHERE id = 'delivery';
+          UPDATE publications SET envelope_json = json_set(envelope_json, '$.deliveries[0].adapter', 'social.shadow', '$.deliveries[0].operation', 'compare') WHERE id = 'publication';`);
+        f.sqlite.prepare("UPDATE receipts SET provider = ?, remote_id = ?, receipt_json = ? WHERE delivery_id = 'delivery'").run(receipt.provider, receipt.remoteId, JSON.stringify(receipt));
+        const prepare = f.database.prepare.bind(f.database);
+        let failed = false;
+        vi.spyOn(f.database, 'prepare').mockImplementation((sql) => {
+          const statement = prepare(sql);
+          const bind = statement.bind.bind(statement);
+          statement.bind = (...values) => {
+            if (!failed && values.includes('delivery') && (variant === 'first-error' ? sql.includes('SELECT delivery.id') : sql.includes('SELECT artifact.id'))) {
+              failed = true;
+              if (variant === 'first-error') statement.first = () => Promise.reject(new Error('Temporary read failure'));
+              else statement.all = () => Promise.reject(new Error('Temporary read failure'));
+            }
+            return bind(...values);
+          };
+          return statement;
+        });
+      }
       if (variant === 'stale') {
         const batch = f.database.batch.bind(f.database);
         vi.spyOn(f.database, 'batch').mockImplementationOnce((statements) => {
@@ -97,8 +118,12 @@ describe('durable asynchronous delivery recovery', () => {
       await expect(reconcileRuntimeDeliveries({ ADAPTER_CONFIGS: '{}' }, f.database as unknown as D1Database, ['social.shadow'])).resolves.toBe(variant === 'quarantine' ? 2 : 1);
       expect(f.sqlite.prepare("SELECT state FROM deliveries WHERE id = 'healthy'").get()).toMatchObject({ state: 'verified' });
       expect(f.sqlite.prepare("SELECT state FROM deliveries WHERE id = 'delivery'").get()).toMatchObject({ state: variant === 'quarantine' ? 'needs_attention' : 'processing' });
-      expect(f.sqlite.prepare("SELECT receipt_json FROM receipts WHERE delivery_id = 'delivery'").get()).toMatchObject({ receipt_json: '{}' });
+      expect(f.sqlite.prepare("SELECT receipt_json FROM receipts WHERE delivery_id = 'delivery'").get()).toMatchObject({ receipt_json: transient ? JSON.stringify(receipt) : '{}' });
       expect(f.sqlite.prepare('SELECT safe_to_delete FROM artifact_references').get()).toMatchObject({ safe_to_delete: 0 });
+      if (transient) {
+        await expect(reconcileRuntimeDeliveries({ ADAPTER_CONFIGS: '{}' }, f.database as unknown as D1Database, ['social.shadow'])).resolves.toBe(1);
+        expect(f.sqlite.prepare("SELECT state FROM deliveries WHERE id = 'delivery'").get()).toMatchObject({ state: 'verified' });
+      }
     } finally { f.sqlite.close(); }
   });
   it('continues the bounded page after an invalid stored receipt', async () => {
@@ -176,7 +201,16 @@ describe('durable asynchronous delivery recovery', () => {
       if (variant === 'wrong-tenant') f.sqlite.exec("UPDATE receipts SET tenant_id = 'other'");
       const load = f.store().load('troco', 'delivery');
       if (variant === 'wrong-tenant') expect((await load)).not.toHaveProperty('receipt');
-      else await expect(load).rejects.toThrow();
+      else await expect(load).rejects.toBeInstanceOf(StoredDeliveryIntegrityError);
+    } finally { f.sqlite.close(); }
+  });
+
+  it('preserves config resolution failures without labeling stored work corrupt', async () => {
+    const f = fixture();
+    try {
+      const error = new Error('Temporary config failure');
+      const store = createD1DeliveryStore(f.database, () => { throw error; });
+      await expect(store.load('troco', 'delivery')).rejects.toBe(error);
     } finally { f.sqlite.close(); }
   });
 });

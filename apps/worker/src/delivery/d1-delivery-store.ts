@@ -18,6 +18,17 @@ interface DeliveryStore extends DeliveryStateStore {
   load(tenantId: string, deliveryId: string): Promise<DeliveryWork | null>;
 }
 
+export class StoredDeliveryIntegrityError extends Error {
+  constructor() {
+    super('Stored delivery integrity validation failed');
+    this.name = 'StoredDeliveryIntegrityError';
+  }
+}
+
+function validateStored<T>(validate: () => T): T {
+  try { return validate(); } catch { throw new StoredDeliveryIntegrityError(); }
+}
+
 export function createD1DeliveryStore(
   database: Database,
   resolveConfig: (adapter: string, tenantId: string) => unknown,
@@ -36,12 +47,15 @@ export function createD1DeliveryStore(
       `).bind(tenantId, deliveryId).first();
       const row = deliveryRow(value);
       if (row === undefined) return null;
-      const receipt = storedReceipt(record(value) ? value.receipts_json : undefined, row.adapter);
-      const envelope = validatePublicationEnvelope(JSON.parse(row.envelope_json));
-      const intent = envelope.deliveries.find((entry) => entry.id === row.delivery_key);
-      if (row.tenant_id !== tenantId || envelope.identity.tenant !== tenantId || envelope.identity.idempotencyKey !== row.idempotency_key
-        || intent?.adapter !== row.adapter || intent.operation !== row.operation
-        || JSON.stringify(intent.payload) !== row.payload_json) throw new Error('Stored delivery does not match approved envelope');
+      const { receipt, envelope, intent, payload } = validateStored(() => {
+        const receipt = storedReceipt(record(value) ? value.receipts_json : undefined, row.adapter);
+        const envelope = validatePublicationEnvelope(JSON.parse(row.envelope_json));
+        const intent = envelope.deliveries.find((entry) => entry.id === row.delivery_key);
+        if (row.tenant_id !== tenantId || envelope.identity.tenant !== tenantId || envelope.identity.idempotencyKey !== row.idempotency_key
+          || intent?.adapter !== row.adapter || intent.operation !== row.operation
+          || JSON.stringify(intent.payload) !== row.payload_json) throw new Error('Stored delivery does not match approved envelope');
+        return { receipt, envelope, intent, payload: parsePayload(row.payload_json) };
+      });
       const artifactPage = await database.prepare(`
         SELECT artifact.id, artifact.storage, artifact.sha256, artifact.byte_size,
                artifact.media_type, artifact.locator
@@ -50,20 +64,23 @@ export function createD1DeliveryStore(
         WHERE reference.tenant_id = ? AND reference.delivery_id = ?
         ORDER BY artifact.id
       `).bind(tenantId, deliveryId).all();
-      const storedArtifacts = (artifactPage.results ?? []).map(artifactRow);
-      const artifactStorageIds: Record<string, string> = Object.create(null) as Record<string, string>;
-      const usedStorageIds = new Set<string>();
-      for (const artifact of envelope.artifacts) {
-        const matches = storedArtifacts.filter((stored) => stored.storage === artifact.storage && stored.sha256 === artifact.sha256
-          && stored.byteSize === artifact.byteSize && stored.mediaType === artifact.mediaType && stored.locator === artifact.locator);
-        const matched = matches[0];
-        if (matches.length !== 1 || matched === undefined || Object.hasOwn(artifactStorageIds, artifact.id) || usedStorageIds.has(matched.id)) {
-          throw new Error('Stored artifacts do not match approved envelope');
+      const artifactStorageIds = validateStored(() => {
+        const storedArtifacts = (artifactPage.results ?? []).map(artifactRow);
+        const storageIds: Record<string, string> = Object.create(null) as Record<string, string>;
+        const usedStorageIds = new Set<string>();
+        for (const artifact of envelope.artifacts) {
+          const matches = storedArtifacts.filter((stored) => stored.storage === artifact.storage && stored.sha256 === artifact.sha256
+            && stored.byteSize === artifact.byteSize && stored.mediaType === artifact.mediaType && stored.locator === artifact.locator);
+          const matched = matches[0];
+          if (matches.length !== 1 || matched === undefined || Object.hasOwn(storageIds, artifact.id) || usedStorageIds.has(matched.id)) {
+            throw new Error('Stored artifacts do not match approved envelope');
+          }
+          storageIds[artifact.id] = matched.id;
+          usedStorageIds.add(matched.id);
         }
-        artifactStorageIds[artifact.id] = matched.id;
-        usedStorageIds.add(matched.id);
-      }
-      if (usedStorageIds.size !== storedArtifacts.length) throw new Error('Unexpected stored delivery artifact');
+        if (usedStorageIds.size !== storedArtifacts.length) throw new Error('Unexpected stored delivery artifact');
+        return storageIds;
+      });
       return {
         tenant: row.tenant_id,
         id: row.id,
@@ -71,7 +88,7 @@ export function createD1DeliveryStore(
         operation: row.operation,
         idempotencyKey: `${row.idempotency_key}:${row.delivery_key}`,
         config: resolveConfig(row.adapter, tenantId),
-        payload: parsePayload(row.payload_json),
+        payload,
         ...(intent.providerOptions === undefined ? {} : { providerOptions: intent.providerOptions }),
         artifacts: envelope.artifacts,
         artifactStorageIds,

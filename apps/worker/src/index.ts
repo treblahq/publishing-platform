@@ -15,7 +15,7 @@ import { loadProducerSecrets } from './intake/producer-secrets.js';
 import { handlePublicationStatusRequest } from './intake/status.js';
 import { createAdapterRegistry } from './registry.js';
 import { acquireD1Lease } from './delivery/d1-lease.js';
-import { createD1DeliveryStore } from './delivery/d1-delivery-store.js';
+import { createD1DeliveryStore, StoredDeliveryIntegrityError } from './delivery/d1-delivery-store.js';
 import { consumeDelivery } from './delivery/consume.js';
 import { handleDeliveryBatch } from './delivery/queue-handler.js';
 import { createD1AttemptStore } from './delivery/d1-attempt-store.js';
@@ -223,7 +223,8 @@ export async function reconcileRuntimeDeliveries(
     let delivery;
     try {
       delivery = await store.load(tenantId, deliveryId);
-    } catch {
+    } catch (error) {
+      if (!(error instanceof StoredDeliveryIntegrityError)) throw error;
       const lease = await acquireD1Lease(database, tenantId, deliveryId, new Date(), 60_000, 'reconciliation');
       if (!lease.acquired) throw new Error('Cannot quarantine delivery without a current lease');
       // Keep the original receipt and artifacts for review; quarantine only under the current tenant-scoped lease.

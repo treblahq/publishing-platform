@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { DatabaseSync, type SQLInputValue } from 'node:sqlite';
 import { describe, expect, it } from 'vitest';
-import { createD1DeliveryStore } from './d1-delivery-store.js';
+import { createD1DeliveryStore, StoredDeliveryIntegrityError } from './d1-delivery-store.js';
 
 describe('approved delivery context on the real database schema', () => {
   it.each(['valid', 'tenant', 'payload', 'hash', 'size', 'duplicate-logical-id'] as const)('validates immutable context: %s', async (variant) => {
@@ -37,7 +37,7 @@ describe('approved delivery context on the real database schema', () => {
     };
     try {
       const result = createD1DeliveryStore(database, () => ({ trusted: true })).load('troco', 'database-delivery');
-      if (variant !== 'valid') await expect(result).rejects.toThrow();
+      if (variant !== 'valid') await expect(result).rejects.toBeInstanceOf(StoredDeliveryIntegrityError);
       else {
         await expect(result).resolves.toMatchObject({ providerOptions, payload, artifacts: [artifact], artifactStorageIds: { 'logical-video': 'database-artifact' }, config: { trusted: true } });
         expect(reads).toBe(2);
