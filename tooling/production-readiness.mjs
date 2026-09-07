@@ -12,6 +12,9 @@ export function assertProductionReady(config) {
   if (!production) throw new Error('Production environment is required');
   if (config?.env?.staging) throw new Error('Staging environment must be retired');
   if (production.name !== 'publishing-platform-production') throw new Error('Production Worker name is invalid');
+  if ([config.vars, production.vars].some((vars) => Object.hasOwn(vars ?? {}, 'MASTODON_ACCESS_TOKENS'))) {
+    throw new Error('Mastodon credentials must be installed as Worker secrets, never public vars');
+  }
 
   const database = production.d1_databases?.[0];
   if (typeof database?.database_id !== 'string' || PLACEHOLDER_ID.test(database.database_id)) {
@@ -21,8 +24,9 @@ export function assertProductionReady(config) {
   if (production.r2_buckets?.[0]?.bucket_name !== PROMOTED_BUCKET) {
     throw new Error('Production must bind the promoted R2 bucket');
   }
-  if (!['web.r2', 'web.r2,social.shadow'].includes(production.vars?.ENABLED_ADAPTERS)) {
-    throw new Error('Production candidate may enable only web.r2 and provider-free social.shadow');
+  const enabled = production.vars?.ENABLED_ADAPTERS;
+  if (!['web.r2', 'web.r2,social.shadow', 'web.r2,social.shadow,social.mastodon'].includes(enabled)) {
+    throw new Error('Production candidate may enable only approved web, shadow and Mastodon adapters');
   }
 
   let adapters;
@@ -33,8 +37,19 @@ export function assertProductionReady(config) {
     throw new Error('Production candidate contains an unknown tenant adapter');
   }
   const openings = adapters?.openings;
-  if (!openings || Object.keys(openings).some((adapter) => adapter !== 'web.r2')) {
-    throw new Error('Social and push adapters must remain absent');
+  if (!openings || Object.keys(openings).some((adapter) => !['web.r2', 'social.mastodon'].includes(adapter))) {
+    throw new Error('Unapproved social and push adapters must remain absent');
+  }
+  const mastodonEnabled = enabled === 'web.r2,social.shadow,social.mastodon';
+  const mastodon = openings['social.mastodon'];
+  if (mastodonEnabled) {
+    if (!mastodon || typeof mastodon !== 'object' || Array.isArray(mastodon)
+      || mastodon.baseUrl !== 'https://mastodon.social'
+      || Object.keys(mastodon).some((key) => key !== 'baseUrl')) {
+      throw new Error('Mastodon requires the approved origin and no public credentials or extra options');
+    }
+  } else if (Object.hasOwn(openings, 'social.mastodon')) {
+    throw new Error('Mastodon configuration requires explicit adapter enablement');
   }
   const web = openings['web.r2'];
   if (web?.publicBaseUrl !== OPENINGS_PREVIEW || web.shellBaseUrl !== OPENINGS_PREVIEW

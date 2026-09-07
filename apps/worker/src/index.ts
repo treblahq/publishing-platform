@@ -243,7 +243,7 @@ async function handleRuntimeWebEntity(request: Request, environment: Environment
     const database = bindings.ledger as D1Database;
     const tenant = new URL(request.url).pathname.split('/').filter(Boolean)[1];
     if (!tenant) return new Response('Not found', { status: 404 });
-    const configs = parseAdapterConfigs(environment.ADAPTER_CONFIGS, environment.ONESIGNAL_REST_API_KEY);
+    const configs = parseAdapterConfigs(environment.ADAPTER_CONFIGS, environment.ONESIGNAL_REST_API_KEY, environment.MASTODON_ACCESS_TOKENS);
     const config = configs[tenant]?.['web.r2'] as { shellBaseUrl?: unknown; canonicalBaseUrl?: unknown } | undefined;
     if (typeof config?.shellBaseUrl !== 'string' || typeof config.canonicalBaseUrl !== 'string') {
       return new Response('Not found', { status: 404 });

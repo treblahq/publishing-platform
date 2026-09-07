@@ -44,6 +44,48 @@ describe('production readiness', () => {
     expect(assertProductionReady(value)).toBe(true);
   });
 
+  function mastodonConfig() {
+    const value = config();
+    value.env.production.vars.ENABLED_ADAPTERS = 'web.r2,social.shadow,social.mastodon';
+    const adapters = JSON.parse(value.env.production.vars.ADAPTER_CONFIGS);
+    adapters.openings['social.mastodon'] = { baseUrl: 'https://mastodon.social' };
+    value.env.production.vars.ADAPTER_CONFIGS = JSON.stringify(adapters);
+    return value;
+  }
+
+  it('accepts only the approved Openings Mastodon rollout configuration', () => {
+    expect(assertProductionReady(mastodonConfig())).toBe(true);
+  });
+
+  it.each([
+    ['unapproved host', (adapters) => { adapters.openings['social.mastodon'].baseUrl = 'https://other.example'; }],
+    ['public credential', (adapters) => { adapters.openings['social.mastodon'].accessToken = 'test-only-not-a-secret'; }],
+    ['unknown option', (adapters) => { adapters.openings['social.mastodon'].account = 'another'; }],
+    ['missing configuration', (adapters) => { delete adapters.openings['social.mastodon']; }],
+    ['null configuration', (adapters) => { adapters.openings['social.mastodon'] = null; }],
+    ['another tenant', (adapters) => { adapters.troco = { 'social.mastodon': { baseUrl: 'https://mastodon.social' } }; }],
+    ['another provider', (adapters) => { adapters.openings['social.linkedin'] = {}; }],
+  ])('rejects Mastodon rollout with %s', (_name, mutate) => {
+    const value = mastodonConfig();
+    const adapters = JSON.parse(value.env.production.vars.ADAPTER_CONFIGS);
+    mutate(adapters);
+    value.env.production.vars.ADAPTER_CONFIGS = JSON.stringify(adapters);
+    expect(() => assertProductionReady(value)).toThrow();
+  });
+
+  it('rejects Mastodon configuration without explicit adapter enablement', () => {
+    const value = mastodonConfig();
+    value.env.production.vars.ENABLED_ADAPTERS = 'web.r2,social.shadow';
+    expect(() => assertProductionReady(value)).toThrow();
+  });
+
+  it.each(['root', 'production'])('rejects Mastodon credentials in public %s vars', (scope) => {
+    const value = mastodonConfig();
+    const target = scope === 'root' ? value : value.env.production;
+    target.vars = { ...target.vars, MASTODON_ACCESS_TOKENS: '{"openings":"test-only-token"}' };
+    expect(() => assertProductionReady(value)).toThrow();
+  });
+
   it.each([
     ['placeholder D1', (value) => { value.env.production.d1_databases[0].database_id = '00000000-0000-0000-0000-000000000003'; }],
     ['different D1', (value) => { value.env.production.d1_databases[0].database_name = 'publishing-platform-production'; }],

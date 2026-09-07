@@ -3,6 +3,30 @@ import { describe, expect, it, vi } from 'vitest';
 import { createWorker } from './index.js';
 
 describe('worker HTTP router', () => {
+  it('serves web entities when Mastodon is configured with a Worker secret', async () => {
+    const row = { kind: 'job', entity_id: 'gh_123', revision: 'r1', status: 'active',
+      title: 'Engineer', canonical_path: '/jobs/gh_123', content_sha256: 'a'.repeat(64), object_key: 'entity.json' };
+    const statement = { bind: () => statement, first: () => Promise.resolve(row) };
+    const shell = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('<html><head><title>Shell</title></head><body></body></html>'));
+    try {
+      const response = await createWorker().fetch(new Request('https://worker.test/web/openings/jobs/gh_123'), {
+        LEDGER: { prepare: () => statement }, ARTIFACTS: { head: () => Promise.resolve({ size: 1 }) },
+        DELIVERY_QUEUE: {}, DELIVERY_DLQ: {},
+        CAPACITY_BUDGETS: JSON.stringify({ d1Rows: 55000, queueOperations: 5500, r2Bytes: 5500000000 }),
+        ENABLED_ADAPTERS: 'web.r2,social.shadow,social.mastodon',
+        MASTODON_ACCESS_TOKENS: JSON.stringify({ openings: 'test-only-token' }),
+        ADAPTER_CONFIGS: JSON.stringify({ openings: {
+          'web.r2': { shellBaseUrl: 'https://openings-dev-web-dfy.pages.dev', canonicalBaseUrl: 'https://openings.dev' },
+          'social.mastodon': { baseUrl: 'https://mastodon.social' },
+        } }),
+      });
+      expect(response.status).toBe(200);
+      expect(await response.text()).toContain('<title>Engineer | openings.dev</title>');
+      expect(shell).toHaveBeenCalledOnce();
+      expect(shell.mock.calls[0]?.[0]).toEqual(new URL('https://openings-dev-web-dfy.pages.dev/route-indexes/jobs/'));
+    } finally { shell.mockRestore(); }
+  });
+
   it('keeps liveness independent from every durable binding', async () => {
     const response = await createWorker().fetch(new Request('https://worker.test/health/live'), {});
     expect(response.status).toBe(200);
