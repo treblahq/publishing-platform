@@ -62,8 +62,8 @@
       "triggers": { "crons": ["*/15 * * * *", "7 * * * *", "23 */6 * * *"] },
       "vars": {
         "CAPACITY_BUDGETS": "{\"d1Rows\":55000,\"queueOperations\":5500,\"r2Bytes\":5500000000}",
-        "ENABLED_ADAPTERS": "web.r2,social.shadow",
-        "ADAPTER_CONFIGS": "{\"openings\":{\"web.r2\":{\"publicBaseUrl\":\"https://openings-dev-web-dfy.pages.dev\",\"shellBaseUrl\":\"https://openings-dev-web-dfy.pages.dev\",\"canonicalBaseUrl\":\"https://openings.dev\"}}}"
+        "ENABLED_ADAPTERS": "web.r2,social.shadow,social.mastodon",
+        "ADAPTER_CONFIGS": "{\"openings\":{\"web.r2\":{\"publicBaseUrl\":\"https://openings-dev-web-dfy.pages.dev\",\"shellBaseUrl\":\"https://openings-dev-web-dfy.pages.dev\",\"canonicalBaseUrl\":\"https://openings.dev\"},\"social.mastodon\":{\"baseUrl\":\"https://mastodon.social\"}}}"
       }
     }
   }

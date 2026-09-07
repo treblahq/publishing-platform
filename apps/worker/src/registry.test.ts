@@ -32,12 +32,12 @@ describe('compile-time adapter registry', () => {
     expect(source).toContain("import { createSocialShadowAdapter } from '@trebla/publishing-adapter-shadow'");
     expect(source.match(/createSocialShadowAdapter\(\)/gu)).toHaveLength(2);
   });
-  it('compiles Mastodon without enabling its public effects in production', () => {
+  it('enables only the approved Mastodon rollout beside web and shadow in production', () => {
     const source = readFileSync('apps/worker/src/index.ts', 'utf8');
     expect(source.match(/createMastodonAdapter\(\)/gu)).toHaveLength(2);
     const config = JSON.parse(readFileSync('apps/worker/wrangler.json', 'utf8')) as {
       env: { production: { vars: { ENABLED_ADAPTERS: string } } };
     };
-    expect(config.env.production.vars.ENABLED_ADAPTERS.split(',')).not.toContain('social.mastodon');
+    expect(config.env.production.vars.ENABLED_ADAPTERS.split(',')).toEqual(['web.r2', 'social.shadow', 'social.mastodon']);
   });
 });
