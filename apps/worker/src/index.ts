@@ -9,6 +9,7 @@ import { enqueueDueRetries } from './coordinator/d1-retry.js';
 import { createOneSignalAdapter } from '@trebla/publishing-adapter-onesignal';
 import { createPagesAdapter } from '@trebla/publishing-adapter-pages';
 import { createR2WebAdapter } from '@trebla/publishing-adapter-r2';
+import { createSocialShadowAdapter } from '@trebla/publishing-adapter-shadow';
 import { createAdapterRegistry } from './registry.js';
 import { acquireD1Lease } from './delivery/d1-lease.js';
 import { createD1DeliveryStore } from './delivery/d1-delivery-store.js';
@@ -124,7 +125,7 @@ async function consumeRuntimeBatch(batch: MessageBatch, environment: Environment
     stores: (tenant) => createD1R2EntityStores(database, bindings.artifacts as R2Bucket, tenant),
     request: (url, init) => fetch(url, init),
   });
-  const adapters = [oneSignal, pages, r2];
+  const adapters = [oneSignal, pages, r2, createSocialShadowAdapter()];
   const registry = createAdapterRegistry(adapters, bindings.enabledAdapters);
   const store = createD1DeliveryStore(database, (adapter, tenant) => configs[tenant]?.[adapter] ?? {});
   await handleDeliveryBatch(batch.messages, async ({ tenantId, deliveryId }) => {
@@ -184,6 +185,7 @@ async function reconcileRuntimeDeliveries(
       stores: (tenant) => createD1R2EntityStores(database, (parseWorkerBindings(environment).artifacts as R2Bucket), tenant),
       request: (url, init) => fetch(url, init),
     }),
+    createSocialShadowAdapter(),
   ];
   const registry = createAdapterRegistry(adapters, enabledAdapters);
   const store = createD1DeliveryStore(database, (adapter, tenant) => configs[tenant]?.[adapter] ?? {});

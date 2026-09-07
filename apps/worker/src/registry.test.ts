@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { readFileSync } from 'node:fs';
 
 import { createFakeAdapter } from '@trebla/publishing-adapter-test';
 
@@ -19,5 +20,16 @@ describe('compile-time adapter registry', () => {
     const createAdapterRegistry = Reflect.get(registryModule, 'createAdapterRegistry');
     expect(createAdapterRegistry).toBeTypeOf('function');
     expect(createAdapterRegistry([], []).resolve('social.unknown')).toEqual({ outcome: 'unknown' });
+  });
+
+  it('compiles the provider-free social shadow adapter into both runtime paths', () => {
+    const source = readFileSync('apps/worker/src/index.ts', 'utf8');
+    const packageManifest = JSON.parse(readFileSync('apps/worker/package.json', 'utf8')) as {
+      dependencies?: Record<string, string>;
+    };
+
+    expect(packageManifest.dependencies).toHaveProperty('@trebla/publishing-adapter-shadow', '0.1.0');
+    expect(source).toContain("import { createSocialShadowAdapter } from '@trebla/publishing-adapter-shadow'");
+    expect(source.match(/createSocialShadowAdapter\(\)/gu)).toHaveLength(2);
   });
 });
