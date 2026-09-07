@@ -538,6 +538,32 @@ Approved JPEG order, alt text, content hashes and a single immutable media commi
 are bound to the checkpoint. Callback-provided source preparation and status
 authentication must be connected by the guarded CLI integration before use.
 
+Trebla `91ab27f` and `65a2068` connect that operation to the production CLI behind
+the new `PUBLISHING_LINKEDIN_ENABLED` flag, which remains disabled. The existing
+global and LinkedIn switches must also be explicitly true. Selected LinkedIn is
+removed from native execution before credentials or provider runtimes are
+constructed, including failure paths. Pre-staging failures are reported as
+failed runs rather than falsely claiming recoverable pending work.
+
+The private pending index holds at most 32 approvals and 256 KiB, processing at
+most three entries per pass. Capacity deferral stops the pass; other pending
+entries rotate. Saved prepared or accepted checkpoints recover without local
+media. A full index rejects new staging; the independent manual recovery command
+can drain existing entries without supplying new approvals. Its trusted-main
+workflow requires the global, platform, channel and zero-cost gates and receives
+only private-ledger and platform credentials, not provider or media credentials.
+
+Platform media uses separate bounded reads, preserving the native and ledger
+HTTP limits. Authenticated Contents reads request raw bytes and explicitly skip
+JSON parsing: a read-only check of an existing public JPEG confirmed GitHub's
+`application/vnd.github.raw+json` response header. Public pinned reads do not
+receive authentication. See the [GitHub Contents API contract](https://docs.github.com/en/rest/repos/contents#get-repository-content).
+Validation passed 1,650 tests, lint, clean build, all three safety checks and
+independent review. No workflow was dispatched and no live gate was enabled.
+Live Buffer account verification is still blocked by the locked Mac session;
+credentials, trusted identity, platform gates and runtime validation remain
+required before transferring actual delivery ownership.
+
 Platform `c5a98b1` prepares one message per queue consumer invocation. A full
 Buffer carousel can require twenty public media reads plus two provider calls;
 batching several such deliveries would exceed the Free external subrequest
@@ -545,6 +571,13 @@ budget. Validation passed 451 tests. This configuration change is committed but
 not included in deployed version `76c2fb69-22db-4f48-987b-037c7258b1e0`; it will
 join the next reviewed deployment, before Buffer activation. See
 [Workers limits](https://developers.cloudflare.com/workers/platform/limits/).
+
+Platform `36236c4` additionally rejects `BUFFER_API_KEYS` in public root or
+production variables, even while the adapter is disabled. Provider credentials
+must be installed as Worker secrets. The regression failed before the guard
+change and passed afterward; the complete suite passed 453 tests, with lint,
+secret scan and independent review. This is a local deployment preflight guard,
+not a credential installation or live adapter activation.
 
 Remaining rollout gates include verifying product-level restart behavior
 under controlled activation, migrating Openings bridge media,
