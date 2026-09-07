@@ -59,7 +59,7 @@ export function createD1DeliveryStore(
         statements.push(receiptStatement(database, tenantId, deliveryId, fencingToken, receipt, createId()));
       }
       for (const artifactId of safeArtifactIds) {
-        statements.push(safeArtifactStatement(database, tenantId, deliveryId, artifactId));
+        statements.push(safeArtifactStatement(database, tenantId, deliveryId, fencingToken, artifactId));
       }
       const [stateResult] = await database.batch(statements);
       if (stateResult?.meta?.changes !== 1) throw new Error('Cannot commit delivery with stale fencing token');
@@ -67,10 +67,12 @@ export function createD1DeliveryStore(
   };
 }
 
-function safeArtifactStatement(database: Database, tenant: string, delivery: string, artifact: string) {
+function safeArtifactStatement(database: Database, tenant: string, delivery: string, token: number, artifact: string) {
   return database.prepare(`UPDATE artifact_references SET safe_to_delete = 1,
     updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
-    WHERE tenant_id = ? AND delivery_id = ? AND artifact_id = ?`).bind(tenant, delivery, artifact);
+    WHERE tenant_id = ? AND delivery_id = ? AND artifact_id = ?
+      AND EXISTS (SELECT 1 FROM deliveries WHERE tenant_id = ? AND id = ? AND lease_token = ?)`)
+    .bind(tenant, delivery, artifact, tenant, delivery, token);
 }
 
 function stateStatement(database: Database, tenant: string, id: string, token: number, state: DeliveryState, dueAt?: string) {
