@@ -9,6 +9,8 @@ import { createAdapterRegistry } from '../registry.js';
 import { reconcileDelivery } from './reconcile-delivery.js';
 import { runD1Reconciliation } from './d1-reconciliation.js';
 import { reconcileRuntimeDeliveries } from '../index.js';
+import { handleDeliveryBatch } from '../delivery/queue-handler.js';
+import { enqueueDueRetries } from '../coordinator/d1-retry.js';
 
 function required<T>(value: T | null | undefined): T {
   if (value === undefined || value === null) throw new Error('Missing fixture value');
@@ -59,6 +61,63 @@ function fixture() {
 }
 
 describe('durable asynchronous delivery recovery', () => {
+  it('atomically marks the first claim delivering and fences all later delivery claims', async () => {
+    const f = fixture();
+    try {
+      const now = f.dependencies.now();
+      await expect(acquireD1Lease(f.database, 'troco', 'delivery', now, 60_000)).resolves.toMatchObject({ acquired: true, token: 1 });
+      expect(f.sqlite.prepare('SELECT state FROM deliveries').get()).toMatchObject({ state: 'delivering' });
+      await expect(acquireD1Lease(f.database, 'troco', 'delivery', new Date(now.getTime() + 60_000), 60_000)).resolves.toEqual({ acquired: false });
+      await expect(acquireD1Lease(f.database, 'other', 'delivery', new Date(now.getTime() + 60_000), 60_000, 'reconciliation')).resolves.toEqual({ acquired: false });
+    } finally { f.sqlite.close(); }
+  });
+
+  it.each(['found', 'absent', 'unknown'] as const)('recovers a crash after the provider POST through %s reconciliation, never a duplicate queue POST', async (status) => {
+    const f = fixture();
+    try {
+      let clock = f.dependencies.now();
+      const receipt = { provider: 'test.fake', remoteId: 'accepted-before-crash', acceptedAt: clock.toISOString() };
+      // The provider accepts the POST, then the process disappears before receiving/persisting its receipt.
+      let postStarted!: () => void;
+      const started = new Promise<void>((resolve) => { postStarted = resolve; });
+      const deliver = vi.spyOn(f.adapter, 'deliver').mockImplementationOnce(() => {
+        postStarted();
+        return new Promise(() => {});
+      });
+      void consumeDelivery(required(await f.store().load('troco', 'delivery')), f.dependencies);
+      await started;
+      const fresh = { ...f.dependencies, states: f.store(), now: () => clock };
+      const reconcile = vi.spyOn(f.adapter, 'reconcile').mockResolvedValue(status === 'found' ? { status, receipt } : { status });
+      const process = async () => reconcileDelivery(required(await f.store().load('troco', 'delivery')), fresh);
+      const ack = vi.fn();
+      const retry = vi.fn();
+      const duplicate = async () => handleDeliveryBatch([{ body: { tenantId: 'troco', deliveryId: 'delivery' }, ack, retry }], async () => {
+        await consumeDelivery(required(await f.store().load('troco', 'delivery')), fresh);
+      });
+      await duplicate();
+      await expect(runD1Reconciliation(f.database, 1, process, () => clock)).resolves.toBe(0);
+      await expect(acquireD1Lease(f.database, 'troco', 'delivery', clock, 60_000, 'reconciliation')).resolves.toEqual({ acquired: false });
+      expect(f.sqlite.prepare('SELECT lease_token FROM deliveries').get()).toMatchObject({ lease_token: 1 });
+      clock = new Date(clock.getTime() + 60_000);
+      await duplicate();
+      expect(ack).toHaveBeenCalledTimes(2);
+      expect(retry).not.toHaveBeenCalled();
+      expect(deliver).toHaveBeenCalledOnce();
+      await expect(runD1Reconciliation(f.database, 1, process, () => clock)).resolves.toBe(1);
+      expect(reconcile).toHaveBeenCalledOnce();
+      expect(f.sqlite.prepare('SELECT state FROM deliveries').get()).toMatchObject({ state: status === 'found' ? 'verified' : status === 'absent' ? 'retry_wait' : 'reconciling' });
+      if (status === 'found') expect(await f.store().load('troco', 'delivery')).toMatchObject({ receipt });
+      if (status === 'absent') {
+        await expect(acquireD1Lease(f.database, 'troco', 'delivery', clock, 60_000)).resolves.toEqual({ acquired: false });
+        await expect(enqueueDueRetries(f.database, 1, () => new Date('2099-01-01T00:00:00.000Z'))).resolves.toBe(1);
+        expect(f.sqlite.prepare('SELECT state FROM deliveries').get()).toMatchObject({ state: 'ready' });
+        expect(f.sqlite.prepare('SELECT event_type, dispatched_at FROM outbox').get()).toMatchObject({ event_type: 'delivery.retry', dispatched_at: null });
+        await expect(acquireD1Lease(f.database, 'troco', 'delivery', clock, 60_000)).resolves.toMatchObject({ acquired: true, token: 3 });
+      }
+      expect(deliver).toHaveBeenCalledOnce();
+    } finally { f.sqlite.close(); }
+  });
+
   it.each(['quarantine', 'stale', 'lease-error', 'first-error', 'all-error'] as const)('runtime isolates receipt and read failures across tenants: %s', async (variant) => {
     const f = fixture();
     try {

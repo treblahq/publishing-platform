@@ -16,12 +16,15 @@ export async function runD1Reconciliation(
   database: Database,
   limit: number,
   process: (candidate: ReconciliationCandidate) => Promise<void>,
+  now: () => Date = () => new Date(),
 ): Promise<number> {
   if (!Number.isSafeInteger(limit) || limit <= 0 || limit > 100) {
     throw new Error('Reconciliation limit must be between 1 and 100');
   }
   const page = await database.prepare(`SELECT id, tenant_id FROM deliveries
-    WHERE state IN ('reconciling', 'processing') ORDER BY updated_at, id LIMIT ?`).bind(limit).all();
+    WHERE state IN ('reconciling', 'processing', 'delivering')
+      AND (lease_expires_at IS NULL OR lease_expires_at <= ?)
+    ORDER BY updated_at, id LIMIT ?`).bind(now().toISOString(), limit).all();
   const rows = (page.results ?? []).map(candidateRow);
   let processed = 0;
   for (const candidate of rows) {

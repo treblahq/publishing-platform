@@ -18,7 +18,8 @@ describe('D1 delivery leases', () => {
     await expect(acquireD1Lease(database, 'tenant-1', 'delivery-1', new Date('2026-09-04T15:00:00.000Z'), 60_000)).resolves.toMatchObject({ acquired: true, token: 4 });
     expect(statement?.sql).toContain('lease_token = lease_token + 1');
     expect(statement?.sql).toContain('tenant_id = ?');
-    expect(statement?.sql).toContain("state IN ('planned','validated','ready','delivering')");
+    expect(statement?.sql).toContain("state IN ('planned','validated','ready')");
+    expect(statement?.sql).toContain("state = 'delivering'");
   });
 
   it('reports contention when the conditional update returns no row', async () => {
@@ -32,6 +33,6 @@ describe('D1 delivery leases', () => {
     let statement: Statement | undefined;
     const database = { prepare: (sql: string) => (statement = new Statement(sql, { lease_token: 5 })) };
     await d1Lease.acquireD1Lease(database, 'tenant-1', 'delivery-1', new Date(), 60_000, 'reconciliation');
-    expect(statement?.sql).toContain("state IN ('reconciling', 'processing')");
+    expect(statement?.sql).toContain("state IN ('reconciling', 'processing', 'delivering')");
   });
 });

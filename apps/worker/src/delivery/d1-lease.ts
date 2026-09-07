@@ -19,11 +19,12 @@ export async function acquireD1Lease(
 ): Promise<LeaseResult> {
   const expiresAt = new Date(now.getTime() + durationMs).toISOString();
   const eligibleStates = purpose === 'reconciliation'
-    ? "state IN ('reconciling', 'processing')"
-    : "state IN ('planned','validated','ready','delivering')";
+    ? "state IN ('reconciling', 'processing', 'delivering')"
+    : "state IN ('planned','validated','ready')";
   const row = await database.prepare(`
     UPDATE deliveries
     SET lease_token = lease_token + 1, lease_expires_at = ?, updated_at = ?
+      ${purpose === 'delivery' ? ", state = 'delivering'" : ''}
     WHERE tenant_id = ? AND id = ?
       AND ${eligibleStates}
       AND (lease_expires_at IS NULL OR lease_expires_at <= ?)

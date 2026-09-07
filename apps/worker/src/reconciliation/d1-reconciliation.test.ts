@@ -15,10 +15,10 @@ describe('D1 reconciliation collector', () => {
 
     await expect(runD1Reconciliation(database, 2, process)).resolves.toBe(2);
 
-    expect(statement.bind).toHaveBeenCalledWith(2);
+    expect(statement.bind).toHaveBeenCalledWith(expect.any(String), 2);
     expect(process).toHaveBeenNthCalledWith(1, { tenantId: 'openings', deliveryId: 'd1' });
     expect(process).toHaveBeenNthCalledWith(2, { tenantId: 'troco', deliveryId: 'd2' });
-    expect(database.prepare.mock.calls[0]?.[0]).toContain("state IN ('reconciling', 'processing')");
+    expect(database.prepare.mock.calls[0]?.[0]).toContain("state IN ('reconciling', 'processing', 'delivering')");
   });
 
   it('rejects an unbounded page size', async () => {
