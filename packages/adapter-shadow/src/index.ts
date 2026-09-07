@@ -8,7 +8,7 @@ export interface SocialShadowPayload extends Record<string, unknown> {
 }
 
 interface SocialShadowDependencies {
-  now?(): Date;
+  now?: () => Date;
 }
 
 export function createSocialShadowAdapter(

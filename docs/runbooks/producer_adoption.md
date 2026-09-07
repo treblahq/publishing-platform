@@ -68,9 +68,9 @@ await producer.prepare({
   deliveries: [{
     id: 'social',
     adapter: 'social.shadow',
-    operation: 'publish',
+    operation: 'compare',
     required: false,
-    payload: { type: 'social.post', text: 'Final approved copy' },
+    payload: { type: 'social.post', text: 'Final approved copy', artifactIds: ['social-video'] },
   }],
 });
 ```
@@ -188,6 +188,23 @@ Adopt one product and one non-writing shadow delivery at a time:
 Each product must pass local validation and a zero-network dry run before any
 staging submission. Live ownership remains with the legacy publisher until a
 separate cutover explicitly pauses the old owner and reconciles in-flight work.
+
+`social.shadow` is compiled into the Worker but is not enabled by compilation.
+It has no provider transport, credential, or write capability. It validates the
+final provider-neutral post, records a deterministic shadow receipt, and keeps
+temporary artifacts protected because no provider has ingested them.
+
+For each product, use this rollout order:
+
+1. validate its isolated integration branch locally;
+2. create a tenant-scoped producer credential without enabling provider access;
+3. enable only `social.shadow` for that tenant;
+4. submit one bounded handoff and verify its deterministic receipt;
+5. observe the queues and free-tier counters before onboarding another product.
+
+Compiling or enabling `social.shadow` does not enable OneSignal or any social
+network. A live provider adapter requires a separate reviewed rollout and an
+explicit transfer of delivery ownership from the existing publisher.
 
 ## Repository and secret boundaries
 
