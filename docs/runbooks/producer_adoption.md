@@ -486,7 +486,7 @@ deployment. The ownership marker survives redirect rejection. Validation passed
 27 platform tests, 29 artwork/state tests (four existing skips) and 165 contract
 checks. This guard does not implement the missing media bridge.
 
-### Reviewed recovery changes awaiting the next consolidated deployment
+### Consolidated recovery deployment
 
 Platform `f496208`, `26b519c` and `ffb3aad` recover asynchronous deliveries using
 their stored provider receipt. Invalid stored records are isolated per delivery;
@@ -497,9 +497,20 @@ token. A crashed delivery must reconcile before another attempt; stale snapshots
 cannot authorize a duplicate send. `9d80532` updates the confirmed receipt under
 the current tenant lease while preserving its original acceptance timestamp.
 
-These changes have not yet replaced Worker version `1a803bcf-d04e-4a25-9efc-d3bc9aac9d03`.
-The new LinkedIn Buffer adapter is also undergoing review and remains disabled.
-Neither code registration nor shadow intake transfers live provider ownership.
+Worker version `76c2fb69-22db-4f48-987b-037c7258b1e0` deployed from `931f133`
+after 450 tests, independent review and a successful local deployment rehearsal.
+The release includes these recovery changes and the disabled LinkedIn Buffer
+adapter. No database migration, new resource, provider post or GitHub Action was
+needed. Post-deploy reads verified the four existing technical receipts, Worker
+health and the Openings root. All commits are on platform main.
+
+The Buffer adapter accepts approved LinkedIn text and up to twenty ordered
+PNG/JPEG images totaling at most 5 MiB, with an alt text for each image. Public
+media must be pinned to an approved repository's full Git commit and verified
+before its single creation request. A durable Buffer ID is reconciled before
+completion; transient pre-publication media reads remain retryable. Registration
+does not enable the adapter. Product ownership transfer, credentials and runtime
+free-tier performance verification are still required before live activation.
 
 Remaining rollout gates include verifying product-level restart behavior
 under controlled activation, migrating Openings bridge media,
