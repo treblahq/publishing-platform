@@ -62,3 +62,22 @@ registry installation verified the coordinator export under Node 20.
 Product integration branches may now adopt this exact version. Installing the
 package alone does not transfer live provider ownership or complete a product's
 Cloudflare migration; the local verification and rollout gates still apply.
+
+## Version 0.1.2 release candidate
+
+Version 0.1.2 adds acceptance-first recovery: a fresh executor can recover an
+existing publication without reading or uploading deleted media. The matching
+Worker ownership/content checks have been deployed separately.
+
+The final local archive contains 67 files and is 24,585 bytes, with SHA-1
+`1e2c39f42a46b6e0e7e8dda878aba0cb8b13b5ac`. Its clean installation and exported
+coordinator were verified under Node 20. Full platform validation now passes
+361 tests, including a release guard that rejects internal consumers pinned to
+a different public-package version.
+
+This version is **not yet published**. The authenticated npm account requested
+a separate publication confirmation, and the Mac was locked when opening the
+authenticated browser was attempted. Do not treat the prepared archive or
+local temporary installations as registry availability. Complete authentication,
+publish the audited archive once, verify its registry checksum, and only then
+update each product's exact dependency and lockfile.

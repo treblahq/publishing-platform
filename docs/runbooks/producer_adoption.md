@@ -320,6 +320,12 @@ upstream publication-state changes. Kako's equivalent integration passed
 1,408 tests, type checking, and lint before merge. Original dirty product
 directories were not changed.
 
+Equity subsequently merged `cf61b94` after 368 tests and type checking. Its
+temporary preparation helper now admits exactly one `final_video` and at most
+one intended JPEG thumbnail, excludes intermediate renders, and rejects media
+above the Worker upload limit. This prevents accidental cache uploads; it does
+not implement or enable Equity's required local YouTube executor.
+
 Trebla and Troco now have real, opt-in shadow bridges in their publication
 executors. Their latest complete local checks passed 1,461 and 169 tests,
 respectively, plus their existing static and publication-safety checks.
