@@ -3,6 +3,18 @@ import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
 describe('wrangler environment isolation', () => {
+  it('isolates each delivery invocation within the external subrequest budget', () => {
+    const config = JSON.parse(readFileSync(resolve('apps/worker/wrangler.json'), 'utf8')) as {
+      queues: { consumers: { max_batch_size?: number }[] };
+      env: { production: { queues: { consumers: { max_batch_size?: number }[] } } };
+    };
+    // One full carousel needs 20 public media reads plus channel and creation calls.
+    // The default batch of ten could multiply these beyond the free limit of 50.
+    for (const consumer of [...config.queues.consumers, ...config.env.production.queues.consumers]) {
+      expect(consumer.max_batch_size).toBe(1);
+    }
+  });
+
   it('uses production as the only remote environment', () => {
     const path = resolve('apps/worker/wrangler.json');
     expect(existsSync(path)).toBe(true);
