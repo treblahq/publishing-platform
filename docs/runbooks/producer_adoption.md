@@ -305,11 +305,80 @@ The verified dependency-upgrade checkpoints are:
 | Turma do Kako | `83088d1` | 1,231 tests, types, lint |
 | Equity | `8e595c1` | 363 tests and types |
 
-These commits are on isolated integration branches, not a claim that all
-product main branches or live executors have adopted 0.1.1. Troco's isolated
+These are historical dependency-upgrade checkpoints, not proof of live
+provider ownership. Troco's isolated
 checks use `BRAND_ROOT` pointing to its existing canonical frontend assets and
 the installed, pinned `ffmpeg-static` binary. No provider or deployment workflow
 was dispatched for these dependency upgrades.
+
+### Cross-product rollout checkpoint (2026-09-07)
+
+Openings `2a5ef20`, Trebla `44cacdd`, Troco `d67b1c0`, and Equity `8e595c1`
+and Kako `0b6feec` are now on their respective remote main branches. Troco's integration was
+rebased by selecting only migration changes onto the current main, preserving
+upstream publication-state changes. Kako's equivalent integration passed
+1,408 tests, type checking, and lint before merge. Original dirty product
+directories were not changed.
+
+Trebla and Troco now have real, opt-in shadow bridges in their publication
+executors. Their latest complete local checks passed 1,461 and 169 tests,
+respectively, plus their existing static and publication-safety checks.
+`PUBLISHING_SHADOW_ENABLED` remains false in their private local configuration;
+the new credentials have not been wired into scheduled workflows. Legacy
+executors remain the only live provider owners for these products.
+
+Four tenant-scoped producers were registered and tested in the existing
+production Worker. Each test used one 68-byte technical PNG and the
+non-publishing `social.shadow` adapter:
+
+| Tenant | Verified technical publication |
+| --- | --- |
+| `troco` | `e454e670-a591-4edb-8070-e8324618af77` |
+| `trebla` | `e2158d2b-db30-41ad-91d3-a041be41f80f` |
+| `turma-do-kako` | `409fbb87-ebe1-4182-ae7b-3ee723db48c3` |
+| `equity` | `f1faeedc-2031-4d20-bee8-dc35ee320147` |
+
+All four receipts reached `verified`; repeating their handoffs reused the
+accepted publication. These checks prove tenant authentication, upload, queue
+processing, and shadow receipts, not end-to-end publication of product content.
+An earlier Troco technical test without an artifact failed validation; its
+immutable failure history was retained and the corrected fixture used a new
+revision.
+
+New social signing keys are stored separately from the existing primary
+producer map. The platform's ignored `.env.producers.local` and each product's
+ignored `.env.publishing.local` are private, mode-600 files. Only the social
+secret map was updated in the Worker; existing provider tokens were preserved.
+Explicit tenant controls disable web, Mastodon, and OneSignal deliveries for
+the four newly onboarded tenants. No real social post, YouTube upload, GitHub
+Action, paid resource, or DNS cutover was triggered by these tests.
+
+The reviewed SDK recovery change in platform commit `a66cf34` probes intake
+before opening media. Only `409 ARTIFACT_NOT_READY` permits uploading and
+resubmitting the same immutable envelope. An existing acceptance can therefore
+be recovered on a fresh executor after temporary media has been deleted.
+Accepted-envelope lookup also binds the authenticated producer and exact
+content; identity conflicts disclose no publication ID. Worker version
+`ffea1548-1241-43a1-aecc-03bd65257bfe` deployed successfully from platform
+commit `a2515b2` after 360 passing tests and a successful dry run. No database
+migration or GitHub Action was needed. A post-deploy check recovered all four
+technical publications from fresh local outboxes with deliberately absent media,
+performed zero uploads, and verified fixed conflicts for modified content.
+Worker health and the public Openings root both returned HTTP 200.
+
+Package 0.1.2 is built and passes a clean Node 20 archive installation, but
+publication is waiting for npm's separate authentication confirmation. The
+browser's Mac was locked when that confirmation was requested. Installed 0.1.1
+consumers do not yet have the SDK recovery change; do not pin 0.1.2 until its
+immutable public registry version is verified.
+
+Remaining rollout gates include updating consumers to the reviewed recovery
+release, verifying product-level restart behavior, adding Kako's runtime bridge,
+and implementing Equity's durable local executor. Equity's YouTube OAuth and
+large video files must remain local; a generic temporary-upload bridge is not
+a replacement for that executor. Live provider ownership for Trebla, Troco,
+Kako, and Equity has not transferred. Openings still needs confirmation of its
+first eligible live Mastodon receipt, and OneSignal remains out of scope.
 
 - Keep signing secrets and provider credentials in environment variables or
   the product's existing secret store.
