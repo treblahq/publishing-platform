@@ -63,6 +63,20 @@ The two temporary workflow files and their encrypted execution logs were deleted
 - Troco scheduled run `34252257230` at revision `a58fa08787e285888fcbca982958272501071b99` failed in `Preserve verified media archive`: artifact finalization returned HTTP 403 from an intermediary. Existing artifact metadata alone does not establish whether the cause is storage, permissions or an upstream service failure. Do not remove recovery media or blindly rerun publication.
 - Openings scheduled run `34252092047` at revision `76486198d9b0ac1ef7ca41c0efafa67570f2a152` checkpointed `bridge_platform_media_pending` before failing. The existing deployment client deliberately rejects a legacy dispatch when the current page is platform-owned and approved media does not match. This is an unfinished media binding/gateway boundary, not evidence that a generic deploy retry will fix the issue. See the [media gateway design](../superpowers/specs/2026-09-07-publication-media-gateway-design.md); it is not yet implemented or activated.
 
+September 8 follow-up distinguished two Troco failure classes without reruns.
+Run `34252257230` still reports one failed attempt at artifact finalization.
+The repository artifact inventory returned all 52 records, with 64,297,647
+non-expired bytes; this is not organization-wide billing/storage evidence.
+Earlier run `34220037580` failed at `Fail on reconciliation error`, after the
+reconciliation command returned `Provider execution ended in failed`, not
+at the website deployment. Existing local historical records include
+`buffer_async_failure`; they do not establish the affected remote provider's
+underlying reason. Current remote `state/campaigns/2026-09-08.json` reports
+Instagram, Facebook and YouTube as `published`, and TikTok as `skipped_disabled`.
+This is persisted state, not a fresh provider/permalink verification. Do not
+republish today's campaign merely because an overall workflow is red, and do
+not hide historical delivery failures to manufacture a successful workflow.
+
 ## Cloudflare and site verification: September 8 follow-up
 
 Existing Wrangler OAuth authentication permitted read-only Cloudflare API queries; no token was created, printed, or persisted by the audit. The production Worker query for `2026-09-07T19:19:19.250Z` through `2026-09-08T19:19:19.249Z` returned 813 requests, zero errors, 464 subrequests and only the success status. Raw CPU quantiles were P50 5994 and P99 26867 in the API's units. This is an aggregated historical observation, not a load test or evidence of guaranteed Free CPU headroom. Keep the rollout hold until representative runtime evidence supports activation.
