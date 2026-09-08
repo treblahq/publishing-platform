@@ -300,6 +300,32 @@ The actual migration gap is shared-package receipt reporting/coordination;
 large video bytes and OAuth remain local. This review does not establish live
 provider readiness or activate scheduling.
 
+Equity commit `5aa3679` now adds a pure local receipt projection through the
+existing `@trebla/publishing` 0.1.2 validator, on its isolated branch. It accepts
+only consistent persisted verification/scheduling/publication evidence and
+emits five allowlisted metadata fields. Private/scheduled videos have no public
+URL. The receipt acceptance timestamp is explicitly the saved remote
+verification time, not an invented upload timestamp. Full factory verification
+passed 446 tests and typecheck; independent review and root's 65 focused tests
+passed. No runtime caller, remote reporting, upload or ownership transfer was
+activated by this change.
+
+### Bounded public-history credential scan
+
+Fresh public main refs were fetched read-only: Troco `ba9f21a` and Openings
+`6923161`. Every reachable blob up to 5 MiB was checked using the platform's
+known credential-format patterns, reporting only blob IDs/line numbers on
+matches. Troco had 662 text and one binary blob; Openings had 1,175 text and two
+binary blobs. No large blob was skipped and no pattern match was found. Current
+isolated working sources also passed that scanner. Filename-history inspection
+found only Troco's `.env.example` and no matching Openings environment/key file.
+
+This is evidence for those patterns and refs, not a comprehensive secret or
+privacy guarantee: arbitrary-format credentials, binary content, permissions,
+public logs and unpublished editorial data require their separate checks.
+The newer main commits are operational checkpoints; isolated migration changes
+were not rebased over or substituted for them.
+
 ### Additional verified safeguards (September 8)
 
 Troco publisher commit `79f74b3`, on isolated branch
