@@ -10,6 +10,9 @@ CPU-limit containment is not provided by those budget counters. Further live
 rollout is paused pending representative Free runtime validation; see the
 [CPU incident and recovery checkpoint](docs/runbooks/cpu_incident_checkpoint.md).
 
+The approved cross-project completion criteria and verified progress are tracked
+in the [25-step migration checklist](docs/runbooks/migration_completion.md).
+
 ## Development
 
 Use Node.js 24 and run:
