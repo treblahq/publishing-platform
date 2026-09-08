@@ -21,9 +21,14 @@ export function evaluateCapacity(input: CapacityInput): CapacityDecision {
   const projected = input.used + input.reserved + input.requested;
   if (
     input.measuredAt === undefined
+    || !Number.isFinite(input.measuredAt.getTime())
+    || !Number.isFinite(input.now.getTime())
+    || !Number.isFinite(input.maxAgeMs)
+    || input.maxAgeMs < 0
     || input.measuredAt.getTime() > input.now.getTime()
     || input.now.getTime() - input.measuredAt.getTime() > input.maxAgeMs
     || !allNonNegative([input.used, input.reserved, input.requested])
+    || !Number.isSafeInteger(projected)
     || !Number.isFinite(input.internalBudget)
     || input.internalBudget <= 0
   ) {

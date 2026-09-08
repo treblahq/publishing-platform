@@ -7,6 +7,20 @@ const now = new Date('2026-09-04T12:05:00.000Z');
 
 describe('free-tier capacity admission', () => {
   it.each([
+    { measuredAt: new Date('invalid') },
+    { now: new Date('invalid') },
+    { maxAgeMs: Number.NaN },
+    { maxAgeMs: Number.POSITIVE_INFINITY },
+    { maxAgeMs: -1 },
+    { used: Number.MAX_SAFE_INTEGER, requested: 1, internalBudget: 1e30 },
+  ])('rejects uncertain clocks, freshness policies and arithmetic: %j', (override) => {
+    expect(evaluateCapacity({
+      used: 1, reserved: 0, requested: 1, internalBudget: 1_000,
+      measuredAt, now, maxAgeMs: 3_600_000, ...override,
+    })).toMatchObject({ state: 'reject', accepted: false, reason: 'usage-uncertain' });
+  });
+
+  it.each([
     [599, 'normal', true],
     [600, 'warning', true],
     [699, 'warning', true],
@@ -35,8 +49,8 @@ describe('free-tier capacity admission', () => {
     })).toMatchObject({ state: 'reject', accepted: false, projected: 700 });
   });
 
-  it.each([undefined, new Date('2026-09-01T00:00:00.000Z')])(
-    'fails closed when usage is missing or stale',
+  it.each([undefined, new Date('2026-09-01T00:00:00.000Z'), new Date('2026-09-04T12:06:00.000Z')])(
+    'fails closed when usage is missing, stale or in the future',
     (observation) => {
       expect(evaluateCapacity({
         used: 1,
