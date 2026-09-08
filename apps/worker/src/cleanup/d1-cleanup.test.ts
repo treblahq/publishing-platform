@@ -57,7 +57,7 @@ describe('temporary upload collector', () => {
     const bucket = { delete: vi.fn().mockImplementation(() => { order.push('delete'); return Promise.resolve(); }) };
 
     await expect(runD1UploadCleanup(database, bucket, 10)).resolves.toBe(1);
-    expect(order).toEqual(['claim', 'delete', 'mark', 'release', 'cursor']);
+    expect(order).toEqual(['claim', 'delete', 'release', 'mark', 'cursor']);
     expect(bucket.delete).toHaveBeenCalledWith('temporary/openings/u1/hash.mp4');
     expect(database.prepare.mock.calls.map((call) => String(call[0])).join('\n')).toContain("state IN ('uploading', 'available', 'failed')");
   });

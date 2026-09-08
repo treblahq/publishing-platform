@@ -80,18 +80,19 @@ export async function runD1UploadCleanup(
   let deleted = 0;
   for (const candidate of candidates) {
     const claimed = await database.prepare(`UPDATE artifact_uploads SET state = 'failed',
-      error_code = COALESCE(error_code, 'upload-expired')
+      updated_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
       WHERE tenant_id = ? AND id = ? AND state IN ('uploading', 'available', 'failed')
         AND (state = 'failed' OR expires_at <= strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`)
       .bind(candidate.tenantId, candidate.id).run();
     if (claimed.meta?.changes === 0) continue;
     await bucket.delete(candidate.locator);
+    // Keep the upload retryable until its reservation has been released.
+    await database.prepare(`UPDATE capacity_reservations SET state = 'released'
+      WHERE tenant_id = ? AND id = (SELECT capacity_reservation_id FROM artifact_uploads WHERE tenant_id = ? AND id = ?)
+        AND state = 'reserved'`).bind(candidate.tenantId, candidate.tenantId, candidate.id).run();
     await database.prepare(`UPDATE artifact_uploads SET state = 'deleted',
       deleted_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now')
       WHERE tenant_id = ? AND id = ? AND state = 'failed'`).bind(candidate.tenantId, candidate.id).run();
-    await database.prepare(`UPDATE capacity_reservations SET state = 'released'
-      WHERE tenant_id = ? AND id = (SELECT reservation_id FROM artifact_uploads WHERE tenant_id = ? AND id = ?)
-        AND state = 'reserved'`).bind(candidate.tenantId, candidate.tenantId, candidate.id).run();
     await saveCursor(database, 'artifact-upload-cleanup', candidate.id);
     deleted += 1;
   }
