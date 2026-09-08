@@ -78,17 +78,25 @@ function buildStatements(
 
   for (const artifact of envelope.artifacts) {
     const artifactId = requireMappedId(ids.artifactIds, artifact.id);
+    const temporary = artifact.storage === 'r2-temporary';
+    const uploadEligibility = `tenant_id = ? AND locator = ? AND sha256 = ? AND byte_size = ?
+      AND media_type = ? AND deleted_at IS NULL
+      AND (state = 'claimed' OR (state = 'available' AND julianday(expires_at) > julianday(?)))`;
+    const uploadBindings = [principal.tenant, artifact.locator, artifact.sha256,
+      artifact.byteSize, artifact.mediaType, acceptedAt];
+    // A missing eligible upload yields NULL, so locator's NOT NULL constraint aborts the entire batch.
+    const locatorValue = temporary
+      ? `(SELECT locator FROM artifact_uploads WHERE ${uploadEligibility} LIMIT 1)`
+      : '?';
     statements.push(database.prepare(`INSERT INTO artifacts
       (id, tenant_id, storage, sha256, byte_size, media_type, locator, state)
-      VALUES (?, ?, ?, ?, ?, ?, ?, '${artifact.storage === 'r2-temporary' ? 'available' : 'staged'}')`)
+      VALUES (?, ?, ?, ?, ?, ?, ${locatorValue}, '${temporary ? 'available' : 'staged'}')`)
       .bind(artifactId, principal.tenant, artifact.storage, artifact.sha256, artifact.byteSize,
-        artifact.mediaType, artifact.locator));
-    if (artifact.storage === 'r2-temporary') {
+        artifact.mediaType, ...(temporary ? uploadBindings : [artifact.locator])));
+    if (temporary) {
       statements.push(database.prepare(`UPDATE artifact_uploads SET state = 'claimed', claimed_at = ?,
-        updated_at = ? WHERE tenant_id = ? AND locator = ? AND sha256 = ? AND byte_size = ?
-        AND media_type = ? AND state IN ('available', 'claimed')`)
-        .bind(acceptedAt, acceptedAt, principal.tenant, artifact.locator, artifact.sha256,
-          artifact.byteSize, artifact.mediaType));
+        updated_at = ? WHERE ${uploadEligibility}`)
+        .bind(acceptedAt, acceptedAt, ...uploadBindings));
     }
   }
 
