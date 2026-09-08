@@ -324,7 +324,8 @@ Equity subsequently merged `cf61b94` after 368 tests and type checking. Its
 temporary preparation helper now admits exactly one `final_video` and at most
 one intended JPEG thumbnail, excludes intermediate renders, and rejects media
 above the Worker upload limit. This prevents accidental cache uploads; it does
-not implement or enable Equity's required local YouTube executor.
+not integrate the existing durable local YouTube executor with shared-platform
+receipt reporting or coordination.
 
 Trebla and Troco now have real, opt-in shadow bridges in their publication
 executors. Their latest complete local checks passed 1,462 and 170 tests,
@@ -340,7 +341,7 @@ executors remain the only live provider owners.
 Public SDK 0.1.2 adoption is verified on remote main for Openings `8369ea2`,
 Trebla `965bc7c`, Troco `ee62ad2`, and Equity `d4ee37b`. Equity's complete local
 check passed 368 tests and type checking. These package updates do not replace
-its missing durable local executor or transfer any provider ownership.
+its existing durable local executor or transfer any provider ownership.
 
 Four tenant-scoped producers were registered and tested in the existing
 production Worker. Each test used one 68-byte technical PNG and the
@@ -581,7 +582,8 @@ not a credential installation or live adapter activation.
 
 Remaining rollout gates include verifying product-level restart behavior
 under controlled activation, migrating Openings bridge media,
-and implementing Equity's durable local executor. Equity's YouTube OAuth and
+and integrating Equity's existing durable local executor with metadata-only
+receipt reporting. Equity's YouTube OAuth and
 large video files must remain local; a generic temporary-upload bridge is not
 a replacement for that executor. Live provider ownership for Trebla, Troco,
 Kako, and Equity has not transferred. Openings still needs confirmation of its

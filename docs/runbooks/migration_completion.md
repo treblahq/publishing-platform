@@ -27,7 +27,7 @@ Proceed through independent work when a dependency is blocked. A blocked item is
 | 13 | Inspect and integrate Equity | Actual workflow mapped and applicable integration tested | Isolated branch inspected; all 381 local factory tests and typecheck passed; live credentials/provider validation pending; original dirty checkout preserved |
 | 14 | Preserve history and quotas | Counters, receipts and deduplication survive repository changes | Trebla read-only migration bridge implemented and reviewed locally; actual freeze/drain/reconciliation record and cutover still pending |
 | 15 | Validate current site builds | Builds, content, links and legacy entity routes tested | All four local site builds, tests and lint passed; browser acceptance remains |
-| 16 | Prepare Pages deployment configuration | Validated build output and least-privilege deploy configuration | Openings main targets verified production branch and builds successfully; other projects' preview workflows still require verification |
+| 16 | Prepare Pages deployment configuration | Validated build output and least-privilege deploy configuration | Openings main targets verified production; Trebla/Troco/Kako guarded manual production workflows tested and pushed to isolated branches; main integration, environment protection and package access verification remain before activation |
 | 17 | Validate Cloudflare-hosted sites | Candidate URLs, navigation, redirects and integrations checked | Production Pages candidates: Troco eight redirects/five pages; Trebla ten routes; Kako four redirects/33 routes passed; complete browser/integration acceptance pending |
 | 18 | Complete necessary domain cutovers | DNS/HTTPS checks and rollback evidence | Openings domains bound to Pages; Trebla/Troco/Kako now have canonical Pages production without custom domains; remaining domain cutovers pending |
 | 19 | Verify deployment/publication triggers | One execution owner per effect; no duplicate schedules | Inventory begun; trigger details and current gates pending |
@@ -256,6 +256,49 @@ The [CPU checkpoint](cpu_incident_checkpoint.md) records new version-level
 metrics and explicitly retains the Worker rollout hold.
 
 ## Next executable work
+
+### Definitive static Pages workflows prepared
+
+The repeatable production configuration now exists on isolated branches:
+
+| Site | Commit | Local validation | Static export |
+| --- | --- | --- | --- |
+| Trebla | `5ebf296` | 100 tests, lint, build | 101 files |
+| Troco | `0eb5477` | 62 Node + 45 Vitest tests, lint, build | 375 files |
+| Kako | `d0c4778` | 135 tests, lint, build and existing 43-artifact verifier | 916 files |
+
+All three workflows are manual, main-only and skipped unless the repository
+variable `CLOUDFLARE_PRODUCTION_ENABLED` is explicitly true. They deploy current
+Git main to the already-existing Pages project's `main` production branch,
+not a pinned preview source. Actions and Wrangler versions are pinned;
+Cloudflare credentials exist only in the final step. Troco/Kako's package token
+is limited to dependency installation. No workflow was dispatched or enabled.
+
+The metadata-only guard rejects more than 20,000 files, individual files above
+25 MiB, symlinks/special files, credential-like filenames and missing index.
+It also rejects runtime paths in the export **and** Functions/Wrangler config
+in the deployment working directory. Independent review caught the latter
+Wrangler discovery behavior; new failing regressions preceded its correction.
+See [Cloudflare Direct Upload limits](https://developers.cloudflare.com/pages/get-started/direct-upload/).
+
+Independent reviews passed and root reran the focused guards. Hostinger and
+preview workflows are unchanged. Declaring `cloudflare-production` does not
+provision its protection rules: those rules, scoped credentials and private
+package access must be verified before activation. These branches have not
+been merged into the existing product mains and no DNS or hosting changed.
+
+### Equity executor inventory correction
+
+Read-only review at isolated revision `0c6c8f8` confirms an existing durable
+native executor: file-backed SQLite state/leases, persisted transitions,
+intent-before-upload, known YouTube ID reuse and an ambiguous-upload block.
+Fifty targeted fixture tests passed without production state or provider access.
+The supervised Studio scheduling boundary is documented in the product and is
+not evidence of an absent runner. Earlier descriptions of a "missing durable
+local executor" were inaccurate and have been corrected in producer adoption.
+The actual migration gap is shared-package receipt reporting/coordination;
+large video bytes and OAuth remain local. This review does not establish live
+provider readiness or activate scheduling.
 
 ### Additional verified safeguards (September 8)
 
