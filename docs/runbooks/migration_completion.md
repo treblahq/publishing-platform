@@ -13,10 +13,10 @@ Proceed through independent work when a dependency is blocked. A blocked item is
 | # | Work item | Completion evidence | Current state |
 | --- | --- | --- | --- |
 | 1 | Inventory all products | Current repositories, branches, runtime, DNS, package and triggers recorded | In progress; GitHub and local repository inventory checked September 8 |
-| 2 | Complete project backups | Missing credentials/configuration saved without overwriting user files | Partial; Trebla/Kako recovered, platform local files copied; Troco/Openings remote export blocked |
+| 2 | Complete project backups | Missing credentials/configuration saved without overwriting user files | Partial; Trebla/Kako recovered, platform local files copied; local producer credentials saved for Troco/Openings/Equity; social-provider remote export blocked |
 | 3 | Validate backup security | Owner-only access, integrity, no Git inclusion, transfer cleanup | Partial; copied files verified; user-added mobile files preserved |
 | 4 | Establish Free execution boundaries | Applicable limits and representative runtime evidence | Pending; historical Worker CPU incident remains unresolved |
-| 5 | Verify shared package | Release identity, package contents and tests verified | Partial; all four remote publishers declare 0.1.2; platform validation passes |
+| 5 | Verify shared package | Release identity, package contents and tests verified | Verified package 0.1.2 checksum/content allowlist and platform validation; integration acceptance tracked separately |
 | 6 | Complete Trebla private/public split | All state consumers private; clean public executor ready | Partial; isolated implementation exists, not deployed |
 | 7 | Complete Kako private/public split | Inputs, media metadata and operational state remain private | Pending |
 | 8 | Audit public repositories | Selected source/history and workflow permissions reviewed | Pending; original Trebla/Kako histories remain private |
@@ -46,7 +46,11 @@ Proceed through independent work when a dependency is blocked. A blocked item is
 - Kako `story-first-publisher.yml` remains disabled. Platform validation workflow is disabled; production workflow is registered active. No workflow was dispatched during this inventory.
 - Platform `npm run validate` exited zero: secret scan, build, lint, type checking, 453 tests across 85 test files. Wrangler could not write its diagnostic log outside the sandbox, but generated types successfully. No deployment occurred. These tests do not prove Cloudflare CPU compliance.
 - Local backup copies were byte-compared and created with mode 0600 in owner-only project folders. Backups are outside this repository and are not encrypted at rest by this task.
-- Openings user-added backups cover mobile/Android/OneSignal services, not the complete social-provider credentials. Troco backup folder was empty at inspection. Remote credential export was rejected by the environment security gate; do not retry through an indirect method.
+- Openings user-added backups cover mobile/Android/OneSignal services, not the complete social-provider credentials. Troco backup folder was initially empty. Existing local producer credentials were subsequently saved separately for Troco, Openings and Equity; this does not establish remote credential freshness. Remote social credential export was rejected by the environment security gate; do not retry through an indirect method.
+- The npm registry checksum for 0.1.2 matches the local audited package: SHA-1 `1e2c39f42a46b6e0e7e8dda878aba0cb8b13b5ac`, 67 files, 24,585 bytes. Every packed path passed the release allowlist; no test or environment file is included. No new npm version was published.
+- Current default-branch workflow files confirm Openings Pages production deploy is manual-only on main. Troco frontend, Trebla website and Kako website still deploy to Hostinger on main pushes or manual dispatch; their Cloudflare entrypoints are manual reusable workflows on `cloudflare-preview`. An old Openings preview workflow registration exists, but that file is absent from current main.
+- `equity-hq/equity` is private and returned no registered Actions workflows. Its local factory is not evidence of an existing hosted website or social executor.
+- Public DNS for Openings, Troco and Kako uses Cloudflare nameservers and proxy IPs. This does not identify the origin hosting; Pages/domain binding must be checked separately.
 
 ## Next executable work
 
