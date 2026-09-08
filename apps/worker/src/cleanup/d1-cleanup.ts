@@ -16,9 +16,8 @@ export async function runD1ArtifactCleanup(
   const cursorValue = await database.prepare(`SELECT cursor FROM maintenance_cursors
     WHERE name = 'artifact-cleanup' LIMIT 1`).first();
   const cursor = readCursor(cursorValue);
-  const page = await database.prepare(`SELECT artifact.id, artifact.tenant_id, artifact.locator
-    FROM artifacts AS artifact
-    WHERE artifact.storage = 'r2-temporary' AND artifact.state <> 'deleted' AND artifact.id > ?
+  // Use the same eligibility fence at selection and at the atomic tombstone claim.
+  const eligibility = `artifact.storage = 'r2-temporary' AND artifact.state <> 'deleted'
       AND NOT EXISTS (
         SELECT 1 FROM artifact_references AS reference
         JOIN deliveries AS delivery ON delivery.id = reference.delivery_id
@@ -39,24 +38,35 @@ export async function runD1ArtifactCleanup(
             JOIN deliveries AS delivery ON delivery.id = reference.delivery_id
             WHERE reference.artifact_id = artifact.id
               AND delivery.state NOT IN ('failed_terminal','needs_attention','cancelled','skipped')))
-      )
+      )`;
+  const page = await database.prepare(`SELECT artifact.id, artifact.tenant_id, artifact.locator
+    FROM artifacts AS artifact
+    WHERE artifact.id > ? AND ${eligibility}
     ORDER BY artifact.id LIMIT ?`).bind(cursor, limit).all();
   const candidates = (page.results ?? []).map(cleanupRow);
   if (candidates.length === 0) {
     if (cursor !== '') await saveCursor(database, 'artifact-cleanup', '');
     return 0;
   }
+  let deleted = 0;
   for (const candidate of candidates) {
-    await database.prepare(`UPDATE artifacts SET state = 'tombstoned',
+    const claimed = await database.prepare(`UPDATE artifacts AS artifact SET state = 'tombstoned',
       tombstoned_at = COALESCE(tombstoned_at, strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))
-      WHERE tenant_id = ? AND id = ? AND state <> 'deleted'`).bind(candidate.tenantId, candidate.id).run();
+      WHERE artifact.tenant_id = ? AND artifact.id = ? AND ${eligibility}`)
+      .bind(candidate.tenantId, candidate.id).run();
+    if (claimed.meta?.changes === 0) {
+      await saveCursor(database, 'artifact-cleanup', candidate.id);
+      continue;
+    }
+    if (claimed.meta?.changes !== 1) throw new Error('Artifact cleanup claim could not be confirmed');
     await bucket.delete(candidate.locator);
     await database.prepare(`UPDATE artifacts SET state = 'deleted', deleted_at = strftime('%Y-%m-%dT%H:%M:%fZ', 'now'),
       deletion_reason = COALESCE(deletion_reason, 'retention-satisfied') WHERE tenant_id = ? AND id = ?`)
       .bind(candidate.tenantId, candidate.id).run();
     await saveCursor(database, 'artifact-cleanup', candidate.id);
+    deleted += 1;
   }
-  return candidates.length;
+  return deleted;
 }
 
 export async function runD1UploadCleanup(

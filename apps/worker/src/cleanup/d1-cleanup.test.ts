@@ -11,7 +11,7 @@ describe('D1 and R2 artifact collector', () => {
           bind: vi.fn(),
           first: () => Promise.resolve(sql.includes('maintenance_cursors') ? { cursor: '' } : null),
           all: () => Promise.resolve({ results: [{ id: 'a1', tenant_id: 'openings', locator: 'tmp/a1' }] }),
-          run: () => { order.push(sql.includes("state = 'tombstoned'") ? 'tombstone' : sql.includes("state = 'deleted'") ? 'mark' : 'cursor'); return Promise.resolve({}); },
+          run: () => { order.push(sql.includes("state = 'tombstoned'") ? 'tombstone' : sql.includes("state = 'deleted'") ? 'mark' : 'cursor'); return Promise.resolve({ meta: { changes: 1 } }); },
         };
         statement.bind.mockReturnValue(statement);
         return statement;
