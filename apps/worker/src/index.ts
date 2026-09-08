@@ -43,6 +43,7 @@ type RouteHandler = (request: Request, environment: Environment) => Promise<Resp
 interface WorkerOverrides {
   publicationHandler?: RouteHandler;
   artifactHandler?: RouteHandler;
+  outboxHandler?: (environment: Environment) => Promise<number>;
   scheduledHandler?: (environment: Environment) => Promise<number>;
   queueHandler?: (batch: MessageBatch, environment: Environment) => Promise<void>;
   adminHandler?: RouteHandler;
@@ -58,7 +59,7 @@ export function createWorker(overrides: WorkerOverrides = {}) {
       if (pathname === '/v1/publications') {
         const response = await (overrides.publicationHandler ?? handleRuntimePublication)(request, environment);
         if (response.status === 202 && context) {
-          context.waitUntil((overrides.scheduledHandler ?? dispatchRuntimeOutbox)(environment));
+          context.waitUntil((overrides.outboxHandler ?? dispatchRuntimeOutbox)(environment));
         }
         return response;
       }
@@ -81,7 +82,7 @@ export function createWorker(overrides: WorkerOverrides = {}) {
       environment: Environment,
       context: ExecutionContext,
     ): void {
-      context.waitUntil((overrides.scheduledHandler ?? dispatchRuntimeOutbox)(environment));
+      context.waitUntil((overrides.scheduledHandler ?? runRuntimeMaintenance)(environment));
     },
     async queue(batch: MessageBatch, environment: Environment): Promise<void> {
       await (overrides.queueHandler ?? consumeRuntimeBatch)(batch, environment);
@@ -188,15 +189,21 @@ async function sendOneSignal(request: { url: string; headers: Readonly<Record<st
   return { status: response.status, body, ...(retryAfter === null ? {} : { retryAfter }) };
 }
 
-async function dispatchRuntimeOutbox(environment: Environment): Promise<number> {
+async function runRuntimeMaintenance(environment: Environment): Promise<number> {
   const bindings = parseWorkerBindings(environment);
   const database = bindings.ledger as D1Database;
-  const queue = bindings.deliveryQueue as Queue;
   await refreshD1CapacityUsage(database, 25);
   await reconcileRuntimeDeliveries(environment, database, bindings.enabledAdapters);
   await enqueueDueRetries(database, 25);
   await runD1UploadCleanup(database, bindings.artifacts as R2Bucket, 25);
   await runD1ArtifactCleanup(database, bindings.artifacts as R2Bucket, 25);
+  return dispatchRuntimeOutbox(environment);
+}
+
+async function dispatchRuntimeOutbox(environment: Environment): Promise<number> {
+  const bindings = parseWorkerBindings(environment);
+  const database = bindings.ledger as D1Database;
+  const queue = bindings.deliveryQueue as Queue;
   return dispatchOutbox(createD1OutboxStore(database), {
     send: async (message) => { await queue.send(message); },
   }, 50);

@@ -45,8 +45,9 @@ describe('worker HTTP router', () => {
   it('routes artifact uploads without waking delivery work', async () => {
     const artifactHandler = vi.fn().mockResolvedValue(new Response('stored', { status: 201 }));
     const scheduledHandler = vi.fn();
+    const outboxHandler = vi.fn();
     const waitUntil = vi.fn();
-    const worker = createWorker({ artifactHandler, scheduledHandler });
+    const worker = createWorker({ artifactHandler, scheduledHandler, outboxHandler });
     const request = new Request('https://worker.test/v1/artifacts', { method: 'PUT' });
 
     const response = await worker.fetch(request, { marker: true }, { waitUntil } as unknown as ExecutionContext);
@@ -54,32 +55,79 @@ describe('worker HTTP router', () => {
     expect(response.status).toBe(201);
     expect(artifactHandler).toHaveBeenCalledWith(request, { marker: true });
     expect(scheduledHandler).not.toHaveBeenCalled();
+    expect(outboxHandler).not.toHaveBeenCalled();
     expect(waitUntil).not.toHaveBeenCalled();
   });
 
   it('wakes the durable outbox immediately after accepted intake', async () => {
     const publicationHandler = vi.fn().mockResolvedValue(new Response('accepted', { status: 202 }));
-    const scheduledHandler = vi.fn().mockResolvedValue(1);
+    const outboxHandler = vi.fn().mockResolvedValue(1);
+    const scheduledHandler = vi.fn();
     const waitUntil = vi.fn();
-    const worker = createWorker({ publicationHandler, scheduledHandler });
+    const worker = createWorker({ publicationHandler, outboxHandler, scheduledHandler });
     await worker.fetch(
       new Request('https://worker.test/v1/publications', { method: 'POST' }),
       { marker: true },
       { waitUntil } as unknown as ExecutionContext,
     );
-    expect(scheduledHandler).toHaveBeenCalledWith({ marker: true });
+    expect(outboxHandler).toHaveBeenCalledWith({ marker: true });
+    expect(scheduledHandler).not.toHaveBeenCalled();
     expect(waitUntil).toHaveBeenCalledOnce();
+  });
+
+  it('does not run account maintenance after each accepted HTTP request', async () => {
+    const prepare = vi.fn((sql: string) => {
+      if (!sql.includes('UPDATE outbox SET claim_token')) throw new Error('Unexpected maintenance query');
+      const statement = { bind: () => statement, all: () => Promise.resolve({ results: [] }) };
+      return statement;
+    });
+    const pending: Promise<unknown>[] = [];
+    const send = vi.fn();
+    const worker = createWorker({
+      publicationHandler: () => Promise.resolve(new Response(null, { status: 202 })),
+    });
+    const response = await worker.fetch(new Request('https://worker.test/v1/publications', { method: 'POST' }), {
+      LEDGER: { prepare }, DELIVERY_QUEUE: { send }, DELIVERY_DLQ: {}, ARTIFACTS: {},
+      CAPACITY_BUDGETS: JSON.stringify({ d1Rows: 55000, queueOperations: 5500, r2Bytes: 5500000000 }),
+      ENABLED_ADAPTERS: '',
+    }, { waitUntil: (promise: Promise<unknown>) => { pending.push(promise); } } as unknown as ExecutionContext);
+    expect(response.status).toBe(202);
+    expect(pending).toHaveLength(1);
+    await expect(pending[0]).resolves.toBe(0);
+    expect(prepare).toHaveBeenCalledOnce();
+    expect(send).not.toHaveBeenCalled();
   });
 
   it('does not wake delivery work for rejected intake', async () => {
     const scheduledHandler = vi.fn();
+    const outboxHandler = vi.fn();
     const waitUntil = vi.fn();
     const worker = createWorker({
       publicationHandler: () => Promise.resolve(new Response('invalid', { status: 400 })),
       scheduledHandler,
+      outboxHandler,
     });
     await worker.fetch(new Request('https://worker.test/v1/publications'), {}, { waitUntil } as unknown as ExecutionContext);
     expect(waitUntil).not.toHaveBeenCalled();
+    expect(outboxHandler).not.toHaveBeenCalled();
+    expect(scheduledHandler).not.toHaveBeenCalled();
+  });
+
+  it.each(['binding', 'query'])('does not swallow a background %s failure', async (failure) => {
+    const pending: Promise<unknown>[] = [];
+    const environment = failure === 'binding' ? {} : {
+      LEDGER: { prepare: () => { throw new Error('Outbox unavailable'); } },
+      DELIVERY_QUEUE: {}, DELIVERY_DLQ: {}, ARTIFACTS: {},
+      CAPACITY_BUDGETS: JSON.stringify({ d1Rows: 55000, queueOperations: 5500, r2Bytes: 5500000000 }),
+      ENABLED_ADAPTERS: '',
+    };
+    const response = await createWorker({
+      publicationHandler: () => Promise.resolve(new Response(null, { status: 202 })),
+    }).fetch(new Request('https://worker.test/v1/publications', { method: 'POST' }), environment,
+      { waitUntil: (promise: Promise<unknown>) => { pending.push(promise); } } as unknown as ExecutionContext);
+    expect(response.status).toBe(202);
+    expect(pending).toHaveLength(1);
+    await expect(pending[0]).rejects.toThrow(failure === 'query' ? 'Outbox unavailable' : 'capacity configuration');
   });
 
   it('does not expose an accidental catch-all route', async () => {
@@ -89,11 +137,39 @@ describe('worker HTTP router', () => {
 
   it('dispatches durable outbox work from the scheduled trigger', async () => {
     const scheduledHandler = vi.fn().mockResolvedValue(2);
+    const outboxHandler = vi.fn();
     const waitUntil = vi.fn();
-    createWorker({ scheduledHandler }).scheduled({} as ScheduledController, { marker: true }, { waitUntil } as unknown as ExecutionContext);
+    createWorker({ scheduledHandler, outboxHandler }).scheduled({} as ScheduledController, { marker: true }, { waitUntil } as unknown as ExecutionContext);
+    expect(outboxHandler).not.toHaveBeenCalled();
     expect(scheduledHandler).toHaveBeenCalledWith({ marker: true });
     expect(waitUntil).toHaveBeenCalledOnce();
     await expect(waitUntil.mock.calls[0]?.[0]).resolves.toBe(2);
+  });
+
+  it('preserves all maintenance stages on the default scheduled path', async () => {
+    const queries: string[] = [];
+    const prepare = vi.fn((sql: string) => {
+      queries.push(sql);
+      const statement = { bind: () => statement,
+        all: () => Promise.resolve({ results: [] }), first: () => Promise.resolve(null) };
+      return statement;
+    });
+    const pending: Promise<unknown>[] = [];
+    createWorker().scheduled({} as ScheduledController, {
+      LEDGER: { prepare }, DELIVERY_QUEUE: {}, DELIVERY_DLQ: {}, ARTIFACTS: {},
+      CAPACITY_BUDGETS: JSON.stringify({ d1Rows: 55000, queueOperations: 5500, r2Bytes: 5500000000 }),
+      ENABLED_ADAPTERS: '', ADAPTER_CONFIGS: '{}',
+    }, { waitUntil: (promise: Promise<unknown>) => { pending.push(promise); } } as unknown as ExecutionContext);
+    await expect(pending[0]).resolves.toBe(0);
+    expect(queries).toHaveLength(8);
+    expect(queries[0]).toContain('SELECT id FROM tenants');
+    expect(queries[1]).toContain("state IN ('reconciling', 'processing', 'delivering')");
+    expect(queries[2]).toContain("state = 'retry_wait'");
+    expect(queries[3]).toContain("name = 'artifact-upload-cleanup'");
+    expect(queries[4]).toContain('FROM artifact_uploads');
+    expect(queries[5]).toContain("name = 'artifact-cleanup'");
+    expect(queries[6]).toContain('FROM artifacts AS artifact');
+    expect(queries[7]).toContain('UPDATE outbox SET claim_token');
   });
 
   it('routes queue batches through the durable consumer', async () => {
