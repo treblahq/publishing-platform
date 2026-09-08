@@ -280,6 +280,18 @@ files, lint, typecheck and the secret scan. This requires no migration and has
 not been deployed. It does not prove full artifact lifecycle safety or Free
 CPU readiness.
 
+The HTTP intake path also repeated the complete scheduled maintenance chain
+after every accepted publication. A regression reproduced this extra work
+through the default runtime, not a mocked maintenance implementation. Intake
+now dispatches only the existing bounded outbox; scheduled events retain
+capacity refresh, reconciliation, retries, upload cleanup and artifact cleanup
+in their original order. Admission checks and atomic capacity accounting are
+unchanged. Maintenance-dependent capacity recovery may wait for the next
+scheduled run, conservatively. Independent review passed; full verification
+passed 654 tests before two additional background-error cases, and the final
+focused router suite passed 14 tests with lint/typecheck. Build and secret scan
+also passed. This is not a measured CPU improvement or authorization to deploy.
+
 ### Active-revision concurrency prerequisite
 
 The media-binding investigation reproduced a race in the existing entity store:
