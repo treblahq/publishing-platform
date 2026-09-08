@@ -130,6 +130,41 @@ working Kako Aventureiro client. Starting, muting and pausing that game worked.
 These are bounded interaction checks, not acceptance of every game, external
 video service, device size or remaining legacy redirect.
 
+A third bounded Buffer query retrieved only the failed posts' media locators.
+Eight HEAD requests to the approved Troco GitHub Pages origin all returned 200
+with JPEG/MP4 content types, without downloading bodies. Thus those files are
+available now; the recorded provider failures refer to an earlier attempt.
+The last API allowance was 227 daily / 2,752 monthly requests remaining. A
+separate local reproduction confirms the current retention predicate can omit
+a campaign still marked `scheduled` once it falls outside the rolling dates.
+That unsafe case is being corrected on the isolated Troco branch; it is not
+proof of the precise historical removal event.
+
+Kako isolated commit `d70b60e` pins original private bootstrap repository ID
+`1349928184` before release/asset access and refreshes the reviewed compiler
+fingerprint. All 1,432 tests passed with no skips or failures, plus typecheck,
+lint and 31 focused cases. Independent specification and quality reviews passed.
+It was pushed only to `cloudflare-publishing-cutover`; no main merge, rename,
+public exposure or workflow dispatch occurred.
+
+The inactive durable media resolver and migration `0009_public_media_grants.sql`
+now have 88 real-SQLite/resolver tests. Exact tenant/hash/delivery approval,
+explicit enabled controls and live retention are required; no access writes,
+provider calls or grant creation occur. Review found and fixed a mismatch
+between SQLite Julian dates and JavaScript expiry parsing: normalization now
+happens before row limiting, with exclusive-expiry regressions. Both reviews
+passed; the final platform build and all 621 tests across 90 files passed.
+The resolver is not wired into production. Bridge approval issuance, provider
+ownership, account admission, post-claim cleanup races and Free CPU acceptance
+still prevent activation; this is not completed Openings end-to-end migration.
+
+Platform `1d55270` rejects invalid measurement/clock dates, non-finite freshness
+windows and unsafe summed capacity values. Five regression cases previously
+admitted uncertain usage; the final suite passes 628 tests, including future
+measurement rejection. Lint, typecheck, secret scanning and independent review
+passed. This strengthens local admission but does not establish the historical
+CPU incident's cause or replace account-wide usage evidence.
+
 ## Cloudflare and site verification: September 8 follow-up
 
 Existing Wrangler OAuth authentication permitted read-only Cloudflare API queries; no token was created, printed, or persisted by the audit. The production Worker query for `2026-09-07T19:19:19.250Z` through `2026-09-08T19:19:19.249Z` returned 813 requests, zero errors, 464 subrequests and only the success status. Raw CPU quantiles were P50 5994 and P99 26867 in the API's units. This is an aggregated historical observation, not a load test or evidence of guaranteed Free CPU headroom. Keep the rollout hold until representative runtime evidence supports activation.
