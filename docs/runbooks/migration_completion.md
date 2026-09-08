@@ -169,6 +169,25 @@ metrics and explicitly retains the Worker rollout hold.
 
 ## Next executable work
 
+### Active-revision concurrency prerequisite
+
+The media-binding investigation reproduced a race in the existing entity store:
+two activations could both read the previous row, then write different hashes
+under the same active revision. Real-SQLite tests loading the actual migrations
+failed for both initially absent and existing entities. The corrected conditional
+UPSERT evaluates revision/hash compatibility within the write and returns no
+row on conflict, preserving the existing rejection error. It eliminates the
+separate pre-write SELECT; no schema migration is required.
+
+All 511 tests across 88 files, lint, typecheck and build passed. Independent
+review found no blockers. Matching replay, distinct revisions and tenant
+isolation remain covered. This guarantees only active-revision hash consistency,
+not historical revision immutability or stale revision ordering. The immutable
+media binding itself remains pending. No live D1 write, Worker deployment or
+provider call was performed for this change.
+
+### Remaining execution order
+
 1. Complete browser/integration and legacy HTTP behavior acceptance for the three canonical Pages candidates before attaching custom domains.
 2. Complete the newer Trebla private-state token backup without revoking existing credentials; freeze/drain and reconcile actual historical usage before provisioning its cutover record.
 3. Complete Kako's private/public state boundary and public-history audit before changing repository identities or visibility.
