@@ -25,11 +25,11 @@ Proceed through independent work when a dependency is blocked. A blocked item is
 | 11 | Verify Trebla package integration | Editorial approvals, media and delivery tested | Package adopted; public executor cutover pending |
 | 12 | Verify Kako package integration | Content/media preparation and delivery tested | Package adopted; public executor cutover pending |
 | 13 | Inspect and integrate Equity | Actual workflow mapped and applicable integration tested | Isolated branch inspected; all 381 local factory tests and typecheck passed; live credentials/provider validation pending; original dirty checkout preserved |
-| 14 | Preserve history and quotas | Counters, receipts and deduplication survive repository changes | Pending; Trebla replacement repository currently fails closed |
+| 14 | Preserve history and quotas | Counters, receipts and deduplication survive repository changes | Trebla read-only migration bridge implemented and reviewed locally; actual freeze/drain/reconciliation record and cutover still pending |
 | 15 | Validate current site builds | Builds, content, links and legacy entity routes tested | All four local site builds, tests and lint passed; browser acceptance remains |
 | 16 | Prepare Pages deployment configuration | Validated build output and least-privilege deploy configuration | Openings main targets verified production branch and builds successfully; other projects' preview workflows still require verification |
-| 17 | Validate Cloudflare-hosted sites | Candidate URLs, navigation, redirects and integrations checked | Pending fresh verification |
-| 18 | Complete necessary domain cutovers | DNS/HTTPS checks and rollback evidence | Openings domains confirmed bound to Pages; others have preview projects only; remaining cutovers pending |
+| 17 | Validate Cloudflare-hosted sites | Candidate URLs, navigation, redirects and integrations checked | Production Pages candidates: Troco eight redirects/five pages; Trebla ten routes; Kako four redirects/33 routes passed; complete browser/integration acceptance pending |
+| 18 | Complete necessary domain cutovers | DNS/HTTPS checks and rollback evidence | Openings domains bound to Pages; Trebla/Troco/Kako now have canonical Pages production without custom domains; remaining domain cutovers pending |
 | 19 | Verify deployment/publication triggers | One execution owner per effect; no duplicate schedules | Inventory begun; trigger details and current gates pending |
 | 20 | Run non-publishing end-to-end validation | Preparation, package, state, media and recovery evidence | Pending; platform local validation alone is insufficient |
 | 21 | Activate one publisher at a time | Bounded real cycle verified before routine enablement | Blocked on safety, cost and integration gates |
@@ -87,11 +87,79 @@ Platform validation passed build, lint, typecheck and the secret scan. The final
 
 Equity's clean isolated `cloudflare-publishing-platform` branch is at `0c6c8f8`, two local commits ahead of its tracking branch. Its factory already declares package 0.1.2. Thirty focused platform-envelope, private YouTube client and durable upload-fencing tests passed, along with typecheck. The full factory suite then passed all 381 tests after allowing its loopback-only dashboard test to bind a local port (the initial sandbox run had 380 passes and one `listen EPERM`). Tests use local media/SQLite and injected provider APIs; they do not establish live OAuth validity or a real scheduled upload. Original Equity files and local changes were not modified.
 
+## September 8 private history and static Pages follow-up
+
+Trebla isolated branch `cloudflare-publishing-platform` contains `ccd90fb`,
+which pins workflow private-state reads to original repository ID `1348881573`
+as well as name and visibility. Its 59 targeted tests, lint and unchanged
+publication boundary passed. Commit `0d644ad` adds a GET-only historical quota
+bridge for replacement ID `1361346222`, with strict private-record identity,
+freeze/drain declarations, UTC cutover month, evidence hash and bounded reads.
+It removes credentials from the CLI environment before asynchronous work,
+requires the record even in later months and never falls back to zero on error.
+The final four changed suites passed 124 tests; lint, production compilation
+and all three unchanged safety boundaries passed. The ordinary `tsx` CLI build
+was sandbox-blocked by its IPC socket; executing the same entry through
+`node --import tsx` and the compiler/alias stages succeeded. Full-project
+typechecking has 169 existing diagnostics both before and after this change;
+there are no new diagnostics. Independent specification and quality reviews
+passed. Remote isolated branch was verified at `0d644ad`, with no repository rename, public exposure,
+workflow activation or fabricated migration record.
+
+Fresh Pages metadata and browser inspection distinguished preview deployment
+URLs from canonical production deployments. Basic Trebla, Troco and Kako home
+pages rendered. HTTP checks then exposed Apache-only redirect behavior absent
+on Pages, so static redirect parity was implemented before further acceptance.
+
+Troco commit `27d739a`, isolated branch `fix/pages-static-redirects`, preserves
+four legacy blog redirects plus their nontrailing-slash variants. All 60 Node
+tests, 45 Vitest tests, lint and the 53-route static build passed; independent
+review verified the exact legacy destinations. A single direct static upload
+created production deployment `caae1ef1-31e5-419e-976f-47ed5916dd68` at
+<https://caae1ef1.troco-frontend-preview.pages.dev>. Metadata confirms the existing
+project now has canonical production on Pages branch `main`. All eight live
+301 responses and five home/destination 200 responses passed. Git main and
+Hostinger were not changed; no custom domain was attached.
+
+The already validated, unchanged Trebla site at `57878c03` was uploaded once to
+<https://2fb09fa4.trebla-website-preview.pages.dev> using Pages branch `main`.
+The static output had 101 files, largest 241,457 bytes, no Worker/Functions or
+blocked credential/configuration paths. All ten exported index routes returned
+200. Host-specific legacy redirects still require separate acceptance before
+domain cutover; this upload does not prove that parity.
+
+Kako commit `d0b4e43`, isolated branch `codex/cloudflare-lola-redirects`, preserves
+both original Lola redirects and their optional slash forms. All 133 tests,
+lint, build and 43-artifact verification passed; independent review passed.
+A single static upload created production deployment
+`786f0df2-2570-4595-8516-4918d67306f3` at
+<https://786f0df2.turmadokako-website-preview.pages.dev>. Four live 301 redirects
+matched the exact original external destinations without following them. All
+33 exported index routes returned 200. Initial probes of three guessed category
+paths returned 404; these paths are absent from the export, so acceptance was
+rerun against the actual generated route inventory. Removed legacy paths still
+return 404 on Pages instead of Apache's 410; that parity gap remains explicit
+and no Worker was added to work around it.
+
+Final read-only Pages metadata confirms canonical production for Trebla, Troco
+and Kako on Pages branch `main`, with their original preview deployments retained.
+The project names still end in `-preview`; the API environment is `production`.
+This is parallel hosted production for validation, not a completed domain cutover.
+
+These direct uploads ran no GitHub Actions, D1 operation or publisher Worker.
+There was no plan upgrade, DNS change, social post or deletion of old hosting.
+Troco and Kako source corrections were pushed only to their isolated branches,
+whose push events do not match the main-only legacy deployment triggers.
+The [CPU checkpoint](cpu_incident_checkpoint.md) records new version-level
+metrics and explicitly retains the Worker rollout hold.
+
 ## Next executable work
 
-1. Finish read-only trigger, site/DNS and Equity inventory; record deployed evidence rather than inferring from branch names.
-2. Verify package release contents and the existing isolated private-state implementation locally.
-3. Complete private-state ownership and counter migration with regression tests before public executor cutover.
-4. Complete the newer Trebla private-state token backup without revoking existing credentials, then continue the private executor cutover gates.
+1. Complete browser/integration and legacy HTTP behavior acceptance for the three canonical Pages candidates before attaching custom domains.
+2. Complete the newer Trebla private-state token backup without revoking existing credentials; freeze/drain and reconcile actual historical usage before provisioning its cutover record.
+3. Complete Kako's private/public state boundary and public-history audit before changing repository identities or visibility.
+4. Complete the durable media gateway and Openings revision ownership locally, then obtain representative Free CPU evidence before runtime activation.
+5. Diagnose the Troco artifact-finalization 403 from existing execution evidence before any bounded publication recovery.
+6. Finish actual trigger ownership, Equity live provider validation and non-publishing end-to-end acceptance. OneSignal stays outside activation until its application is available.
 
 See [producer adoption](producer_adoption.md) and [package release](package_release.md) for existing implementations that must be retained.

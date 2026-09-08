@@ -72,6 +72,26 @@ occasional overruns. Daily D1/R2/request quotas are different constraints; waiti
 for their reset does not fix an over-budget execution. Verify the applicable
 queue-specific limit separately rather than extrapolating from HTTP or paid plans.
 
+## September 8 version-level follow-up
+
+A read-only GraphQL query covered September 1 at 21:01:28 UTC through
+September 8 at 21:01:28 UTC, grouped by date, version and status. Its returned
+production errors were the same 128 `exceededResources` events on September 7:
+104 for `49863959`, 12 for `31429fbe` and 12 for `d4850667`.
+
+Current version `76c2fb69` returned 497 successful invocations on September 7
+and 604 on September 8, with no error-status group. Its daily CPU P99 values
+were 26.803 ms and 27.749 ms respectively. API schema introspection explicitly
+identifies CPU quantiles as microseconds; earlier raw values must be divided by
+1,000 to express milliseconds. Do not average the daily quantiles or interpret
+absence of errors as proof of Free headroom.
+
+The dataset exposes version/status dimensions but no invocation-type or request
+path dimension. The settings response omitted observability configuration.
+These reads therefore do not attribute the hotspot to HTTP, Cron, queue work,
+or a particular route. No Worker invocation, settings change, deployment or load
+test was performed by this investigation. The rollout hold remains unchanged.
+
 ## Stop conditions
 
 Stop before any paid service, uncertain provider side effect or unproven rollout.
