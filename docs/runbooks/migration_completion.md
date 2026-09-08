@@ -257,6 +257,29 @@ metrics and explicitly retains the Worker rollout hold.
 
 ## Next executable work
 
+### Additional verified safeguards (September 8)
+
+Troco publisher commit `79f74b3`, on isolated branch
+`cloudflare-publishing-cutover`, retains media while a channel is scheduling,
+scheduled or publishing, regardless of calendar age. The candidate Pages
+payload is measured before replacing local output and rejected above the fixed
+500,000,000-byte policy. Actual file bytes, generated metadata, symlinks and
+copy-time changes are checked. Full check/validation passed: 192 tests and 19
+tracked files across three provider contracts. Independent specification and
+quality reviews passed. This branch was pushed without dispatching a workflow;
+the change is not yet active on main and no historical post was retried.
+
+The platform's temporary-upload intake now rechecks exact upload eligibility
+inside the atomic artifact insertion. If cleanup has already claimed the
+upload, its missing eligible locator fails the existing NOT NULL constraint
+and rolls back the entire acceptance batch. The following claim UPDATE uses
+the same predicate. Twenty-four real-SQLite regressions cover both cleanup
+orderings, metadata/status rejection, multi-artifact rollback and compatibility.
+Independent review passed; a fresh root run passed all 652 tests across 91
+files, lint, typecheck and the secret scan. This requires no migration and has
+not been deployed. It does not prove full artifact lifecycle safety or Free
+CPU readiness.
+
 ### Active-revision concurrency prerequisite
 
 The media-binding investigation reproduced a race in the existing entity store:
