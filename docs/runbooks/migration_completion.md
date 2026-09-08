@@ -26,10 +26,10 @@ Proceed through independent work when a dependency is blocked. A blocked item is
 | 12 | Verify Kako package integration | Content/media preparation and delivery tested | Package adopted; public executor cutover pending |
 | 13 | Inspect and integrate Equity | Actual workflow mapped and applicable integration tested | Pending; original local checkout has uncommitted changes |
 | 14 | Preserve history and quotas | Counters, receipts and deduplication survive repository changes | Pending; Trebla replacement repository currently fails closed |
-| 15 | Validate current site builds | Builds, content, links and legacy entity routes tested | Pending |
+| 15 | Validate current site builds | Builds, content, links and legacy entity routes tested | Troco/Trebla/Kako local tests, lint and static builds passed; Openings full site build and browser acceptance remain |
 | 16 | Prepare Pages deployment configuration | Validated build output and least-privilege deploy configuration | Pending verification; existing preview workflows found |
 | 17 | Validate Cloudflare-hosted sites | Candidate URLs, navigation, redirects and integrations checked | Pending fresh verification |
-| 18 | Complete necessary domain cutovers | DNS/HTTPS checks and rollback evidence | Pending; do not assume current DNS from workflow names |
+| 18 | Complete necessary domain cutovers | DNS/HTTPS checks and rollback evidence | Openings domains confirmed bound to Pages; others have preview projects only; remaining cutovers pending |
 | 19 | Verify deployment/publication triggers | One execution owner per effect; no duplicate schedules | Inventory begun; trigger details and current gates pending |
 | 20 | Run non-publishing end-to-end validation | Preparation, package, state, media and recovery evidence | Pending; platform local validation alone is insufficient |
 | 21 | Activate one publisher at a time | Bounded real cycle verified before routine enablement | Blocked on safety, cost and integration gates |
@@ -62,6 +62,20 @@ The two temporary workflow files and their encrypted execution logs were deleted
 
 - Troco scheduled run `34252257230` at revision `a58fa08787e285888fcbca982958272501071b99` failed in `Preserve verified media archive`: artifact finalization returned HTTP 403 from an intermediary. Existing artifact metadata alone does not establish whether the cause is storage, permissions or an upstream service failure. Do not remove recovery media or blindly rerun publication.
 - Openings scheduled run `34252092047` at revision `76486198d9b0ac1ef7ca41c0efafa67570f2a152` checkpointed `bridge_platform_media_pending` before failing. The existing deployment client deliberately rejects a legacy dispatch when the current page is platform-owned and approved media does not match. This is an unfinished media binding/gateway boundary, not evidence that a generic deploy retry will fix the issue. See the [media gateway design](../superpowers/specs/2026-09-07-publication-media-gateway-design.md); it is not yet implemented or activated.
+
+## Cloudflare and site verification: September 8 follow-up
+
+Existing Wrangler OAuth authentication permitted read-only Cloudflare API queries; no token was created, printed, or persisted by the audit. The production Worker query for `2026-09-07T19:19:19.250Z` through `2026-09-08T19:19:19.249Z` returned 813 requests, zero errors, 464 subrequests and only the success status. Raw CPU quantiles were P50 5994 and P99 26867 in the API's units. This is an aggregated historical observation, not a load test or evidence of guaranteed Free CPU headroom. Keep the rollout hold until representative runtime evidence supports activation.
+
+Local Node profiling of the existing compiled web handler against actual exported shells used no network or storage writes. Warm CPU medians were 1.235 ms for jobs (140,831-byte shell), 0.814 ms for authors (94,856 bytes), and 0.780 ms for communities (96,505 bytes). The first job invocation used 23.524 ms. Node CPU measurements exclude actual D1/R2/network paths and cannot be substituted for Cloudflare CPU measurements; no speculative Worker optimization was deployed from this experiment.
+
+Pages project metadata confirms:
+
+- `openings-dev-web` has `openings.dev` and `www.openings.dev`, with production branch **production**, not main. Its canonical deployment is `7b231454-ee39-4e25-bc53-f98951c90390`, created September 7 at 03:21 UTC, reporting source commit `8a2b52403734340bc1cd64d5cc9b1dc82edcf853` and a dirty source checkout.
+- `trebla-website-preview`, `troco-frontend-preview`, and `turmadokako-website-preview` have only their Pages preview domains and no canonical production deployment returned by this query.
+- The current Openings GitHub workflow incorrectly targets `--branch=main`. Fix `fb57f41` on isolated local branch `fix/pages-production-target` changes only the Pages target to `production` while keeping Git source/main, manual invocation, project and secret scopes unchanged. A regression assertion failed before the change; all existing project validation contracts and lint passed afterward. Independent review found no issues. The environment rejected a direct main push because the earlier branch-isolation authorization remains in force; no remote change occurred. Specific merge authorization is required.
+
+Fresh local site validation (no deploy): Trebla passed 80 tests and lint, then its registry check and static build. The sandbox blocked the `tsx` CLI's IPC socket, so the same registry script ran through `node --import tsx` before the normal Next webpack build. Troco passed 59 Node tests plus 45 Vitest tests, lint and static build. Kako passed 132 tests, lint, static build and its 43-artifact export verifier. All three original source checkouts remained clean afterward. These are not browser/production acceptance tests and do not prove their local revisions match every remote update.
 
 ## Next executable work
 
