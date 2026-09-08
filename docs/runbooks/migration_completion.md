@@ -109,6 +109,27 @@ This is persisted state, not a fresh provider/permalink verification. Do not
 republish today's campaign merely because an overall workflow is red, and do
 not hide historical delivery failures to manufacture a successful workflow.
 
+Two bounded read-only Buffer queries subsequently verified the exact stored
+provider identities. September 8 Instagram, Facebook and YouTube posts are
+`sent` and each has an HTTPS external permalink. September 4 Facebook/YouTube,
+September 5 Facebook/YouTube and September 6 Facebook remain `error` with no
+permalink. Their provider error messages all identify inaccessible public media
+URLs. This establishes a media availability failure, separate from GitHub's
+artifact-finalization HTTP 403; it does not establish when or why the bytes
+became unavailable. No post was created, edited or retried. The last response
+reported 228 daily and 2,753 monthly API requests remaining. The diagnostic used
+the documented `Post.error.message` field, excluded raw service errors and
+redacted credentials/URLs from output. See the
+[Buffer API reference](https://developers.buffer.com/reference.html).
+
+Additional live Pages browser checks passed Trebla's theme toggle, projects,
+blog index and article navigation; the article rendered 33 main paragraphs,
+with no loaded broken images or horizontal overflow. Kako's character menu
+opened, its Kako detail page rendered, and the games index linked to the
+working Kako Aventureiro client. Starting, muting and pausing that game worked.
+These are bounded interaction checks, not acceptance of every game, external
+video service, device size or remaining legacy redirect.
+
 ## Cloudflare and site verification: September 8 follow-up
 
 Existing Wrangler OAuth authentication permitted read-only Cloudflare API queries; no token was created, printed, or persisted by the audit. The production Worker query for `2026-09-07T19:19:19.250Z` through `2026-09-08T19:19:19.249Z` returned 813 requests, zero errors, 464 subrequests and only the success status. Raw CPU quantiles were P50 5994 and P99 26867 in the API's units. This is an aggregated historical observation, not a load test or evidence of guaranteed Free CPU headroom. Keep the rollout hold until representative runtime evidence supports activation.
