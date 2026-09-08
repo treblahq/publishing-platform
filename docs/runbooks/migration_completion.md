@@ -36,9 +36,41 @@ Proceed through independent work when a dependency is blocked. A blocked item is
 | 22 | Verify stability and consumption | Actual CPU, storage, execution and media cleanup evidence | Pending; no synthetic load test |
 | 23 | Retire unused old infrastructure | All dependencies verified absent; recovery retained | Pending; do not delete or cancel current hosting prematurely |
 | 24 | Deliver per-project closeout | URLs, versions, triggers, recovery and evidence recorded | Pending; this checklist is not the closeout |
-| 25 | Test and enable OneSignal | Real application push verified | External dependency; no application availability confirmed |
+| 25 | Test and enable OneSignal | Real application push verified | Explicitly deferred by the user; excluded from the current completion scope |
 
 ## Fresh evidence: September 8, 2026
+
+The active completion scope is items 1–24. OneSignal is deferred, not silently
+counted as implemented and not a reason to stop the other migration work.
+
+### Latest local safety and browser checks
+
+Platform commit `b83a071` rechecks artifact retention eligibility atomically when
+claiming cleanup. An intervening required or reconciling reference prevents
+deletion. Missing or unexpected database change counts fail closed before R2;
+skipped candidates advance pagination without counting as deletions. Twenty-two
+real-SQLite regression cases cover the migration schema and race boundaries.
+All 533 tests across 89 files, build, lint, typecheck and secret scanning passed;
+specification and quality reviews found no blockers. This is local evidence,
+not a production deployment. References acquired after the tombstone claim
+still need the shared ownership protocol before media gateway activation.
+
+Troco's canonical Pages site passed desktop (1280 px) and mobile (390 px)
+browser checks across light, dark and system themes and Portuguese, English
+and Spanish. No page error or horizontal overflow was observed. Its calculator
+returned R$17.35 for R$100.00 received on an R$82.65 purchase, with matching
+notes and coins. These checks did not submit a provider publication.
+
+Fresh remote main revisions are Troco `0a4de3ae`, Trebla `57878c03` and Kako
+`45934659`. The existing Pages candidates use these sources respectively with
+Troco's isolated `27d739a` redirects, unchanged Trebla, and Kako's isolated
+`d0b4e43` redirects. No newer remote main was omitted from those candidates.
+
+DNS inventory remains blocked: the current Wrangler OAuth can enumerate the
+Troco zone but its DNS-record read returns HTTP 403. No record was guessed or
+changed. An interactive Cloudflare sign-in was requested while independent
+implementation continues; DNS backup and rollback verification must precede
+the remaining domain cutovers.
 
 - Remote `openings-dev/social-publisher`, `trocohq/social-publisher`, `treblahq/social-publisher`, and `turmadokako/social-publisher` all declare `@trebla/publishing` version `0.1.2` on their default branches. Some original local checkouts are older; do not overwrite them or downgrade the package based on stale local manifests.
 - Openings and Troco publisher repositories are public. Original Trebla and Kako publisher repositories and their `social-publisher-public` preparation repositories remain private.
