@@ -1,6 +1,5 @@
 // Opt-in disposable local runtime rehearsal; importing has no side effects.
 import { spawn } from 'node:child_process';
-import { Buffer } from 'node:buffer';
 import { createHash, randomUUID } from 'node:crypto';
 import { lstat, mkdtemp, writeFile, unlink } from 'node:fs/promises';
 import { createServer } from 'node:net';
@@ -8,15 +7,15 @@ import { homedir, tmpdir } from 'node:os';
 import { resolve } from 'node:path';
 import process from 'node:process';
 import { setTimeout as delay } from 'node:timers/promises';
-import { fileURLToPath, pathToFileURL, URL, URLSearchParams } from 'node:url';
-import { buildSignedHeaders, buildSignedHeadersFromHash } from '@trebla/publishing';
+import { fileURLToPath, pathToFileURL, URL } from 'node:url';
+import { buildSignedHeaders } from '@trebla/publishing';
+import { assertLoopbackUrl, fixtureTenant as tenant, fixtureClientId as clientId, fixtureSecret as secret } from './rehearse-producer.mjs';
+
+export { assertLoopbackUrl } from './rehearse-producer.mjs';
 
 const root = resolve(fileURLToPath(new URL('..', import.meta.url)));
 const { fetch, AbortSignal } = globalThis;
 const cli = resolve(root, 'node_modules/wrangler/bin/wrangler.js');
-const tenant = 'runtime-fixture';
-const clientId = 'runtime-fixture-client';
-const secret = 'local-runtime-rehearsal-test-only-not-a-live-secret';
 const database = 'runtime-fixture-ledger';
 
 export function buildRuntimeConfig() {
@@ -50,10 +49,9 @@ export function buildRuntimeCommand(action, directory, port) {
   throw new Error('Unsupported local rehearsal action');
 }
 
-export function assertLoopbackUrl(value) {
-  const url = new URL(value);
-  if (url.protocol !== 'http:' || url.hostname !== '127.0.0.1' || !url.port || url.username || url.password || url.pathname !== '/' || url.search || url.hash) throw new Error('Rehearsal requires an explicit loopback HTTP origin');
-  return url.origin;
+export function buildProducerCommand(mode, directory, base) {
+  if (!['submit-lost', 'recover'].includes(mode)) throw new Error('Unsupported fixture producer action');
+  return [resolve(root, 'tooling/rehearse-producer.mjs'), mode, directory, assertLoopbackUrl(base)];
 }
 
 async function availablePort() {
@@ -102,9 +100,9 @@ async function stopProcessGroup(child) {
   for (let attempt = 0; attempt < 20 && exists(); attempt += 1) await delay(50);
 }
 
-function launch(args, directory, scope) {
+function launch(args, directory, scope, executable = cli) {
   scope.assertActive();
-  const child = spawn(process.execPath, [cli, ...args], { cwd: directory, env: buildRuntimeEnvironment(process.env, directory), stdio: ['ignore', 'pipe', 'pipe'], detached: process.platform !== 'win32' });
+  const child = spawn(process.execPath, [executable, ...args], { cwd: directory, env: buildRuntimeEnvironment(process.env, directory), stdio: ['ignore', 'pipe', 'pipe'], detached: process.platform !== 'win32' });
   scope.track(child);
   let output = '';
   const capture = chunk => { output = (output + chunk.toString()).slice(-65536); };
@@ -128,6 +126,16 @@ async function command(action, directory, port, scope) {
     const code = await Promise.race([run.done, delay(60000, undefined, { ref: false }).then(() => 'timeout')]);
     if (code !== 0) throw new Error(`Local ${action} failed (${String(code)}); inspect disposable logs`);
     return run.output();
+  } finally { await stop(run); }
+}
+
+async function producer(mode, directory, base, scope) {
+  const [executable, ...args] = buildProducerCommand(mode, directory, base);
+  const run = launch(args, directory, scope, executable);
+  try {
+    const code = await Promise.race([run.done, delay(45000, undefined, { ref: false }).then(() => 'timeout')]);
+    if (code !== 0) throw new Error(`Fixture producer ${mode} failed (${String(code)}): ${run.output()}`);
+    return JSON.parse(run.output());
   } finally { await stop(run); }
 }
 
@@ -193,31 +201,22 @@ async function runScopedRehearsal(scope) {
     const base = assertLoopbackUrl(`http://127.0.0.1:${port}`);
     server = launch(buildRuntimeCommand('dev', directory, port), directory, scope);
     await ready(server, base);
-    const bytes = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=', 'base64');
-    const sha256 = createHash('sha256').update(bytes).digest('hex');
-    const artifact = { id: 'fixture-image', storage: 'r2-temporary', locator: `temporary/${tenant}/fixture/${sha256}.png`, sha256, byteSize: bytes.length, mediaType: 'image/png' };
-    const path = `/v1/artifacts?${new URLSearchParams({ locator: artifact.locator, size: String(bytes.length), mediaType: artifact.mediaType })}`;
-    const headers = await buildSignedHeadersFromHash({ clientId, secret, tenant, method: 'PUT', path, timestamp: new Date().toISOString(), nonce: randomUUID(), bodySha256: sha256, contentType: artifact.mediaType });
-    await writeFile(resolve(directory, 'producer-fixture.png'), bytes, { mode: 0o600 });
-    const uploaded = await fetch(`${base}${path}`, { method: 'PUT', headers, body: bytes, redirect: 'error', signal: AbortSignal.timeout(10000) });
-    if (uploaded.status !== 201 || (await uploaded.json()).status !== 'stored') throw new Error(`Local upload failed with HTTP ${uploaded.status}`);
-    const body = JSON.stringify({ schemaVersion: 1, identity: { tenant, sourceType: 'fixture', sourceId: 'runtime-one', revision: '1', idempotencyKey: 'runtime-one-v1' }, canonical: { title: 'Local technical fixture', language: 'en' }, artifacts: [artifact], deliveries: [{ id: 'shadow', adapter: 'social.shadow', operation: 'compare', required: true, payload: { type: 'social.post', text: 'Local technical fixture; never published externally.', artifactIds: [artifact.id] } }] });
-    const accepted = await request(base, '/v1/publications', 'POST', body);
-    if (typeof accepted.publicationId !== 'string') throw new Error('Local acceptance omitted publication identity');
+    const accepted = await producer('submit-lost', directory, base, scope);
+    if (accepted.status !== 'acceptance-lost' || typeof accepted.publicationId !== 'string' || accepted.puts !== 1) throw new Error('Producer did not simulate lost remote acceptance');
     const first = await receipt(base, accepted.publicationId);
     await stop(server);
     await unlink(resolve(directory, 'producer-fixture.png'));
     server = launch(buildRuntimeCommand('dev', directory, port), directory, scope);
     await ready(server, base);
-    const replay = await request(base, '/v1/publications', 'POST', body);
-    if (replay.publicationId !== accepted.publicationId) throw new Error('Replay created a second publication');
+    const replay = await producer('recover', directory, base, scope);
+    if (replay.status !== 'recovered' || replay.publicationId !== accepted.publicationId || replay.puts !== 0 || replay.pid === accepted.pid) throw new Error('Fresh producer did not recover the same acceptance without uploads');
     const second = await receipt(base, replay.publicationId);
     if (JSON.stringify(first) !== JSON.stringify(second)) throw new Error('Restart changed the shadow receipt');
     await stop(server);
     const rows = JSON.parse(await command('inspect', directory, undefined, scope));
     const counts = rows[0]?.results?.[0];
     if (!counts || ['publications', 'deliveries', 'receipts', 'attempts', 'uploads'].some(key => counts[key] !== 1)) throw new Error('Local ledger contains unexpected duplicate counts');
-    return { status: 'passed', workerRestartReplay: 'persisted-publication-and-receipt-idempotency', counts, directory, evidence: 'local-only; not producer recovery, production CPU or provider validation' };
+    return { status: 'passed', workerRestartReplay: 'persisted-publication-and-receipt-idempotency', producerRecovery: 'fresh-process-persisted-handoff-after-lost-acceptance', recoveryPuts: replay.puts, producerPids: [accepted.pid, replay.pid], counts, directory, evidence: 'local-only; not production CPU, public gateway or live provider validation' };
   } catch (error) {
     throw new Error(`${error instanceof Error ? error.message : 'Local rehearsal failed'}; disposable state: ${directory}`);
   } finally { await stop(server); }

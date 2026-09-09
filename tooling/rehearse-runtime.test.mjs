@@ -6,6 +6,16 @@ import { setTimeout as delay } from 'node:timers/promises';
 import * as rehearsal from './rehearse-runtime.mjs';
 
 describe('disposable runtime rehearsal safety', () => {
+  it('launches only the two fixture producer phases with a validated loopback origin', () => {
+    expect(rehearsal.buildProducerCommand).toBeTypeOf('function');
+    for (const mode of ['submit-lost', 'recover']) {
+      const args = rehearsal.buildProducerCommand(mode, '/tmp/runtime-fixture', 'http://127.0.0.1:8799');
+      expect(args[0]).toMatch(/tooling\/rehearse-producer.mjs$/u);
+      expect(args.slice(1)).toEqual([mode, '/tmp/runtime-fixture', 'http://127.0.0.1:8799']);
+    }
+    expect(() => rehearsal.buildProducerCommand('deploy', '/tmp/runtime-fixture', 'http://127.0.0.1:8799')).toThrow();
+    expect(() => rehearsal.buildProducerCommand('recover', '/tmp/runtime-fixture', 'https://external.test')).toThrow();
+  });
   it('registers no signal handlers merely by importing the tool', async () => {
     const before = ['SIGINT', 'SIGTERM'].map(signal => process.listenerCount(signal));
     await import(`${new URL('./rehearse-runtime.mjs', import.meta.url).href}?import-only`);
