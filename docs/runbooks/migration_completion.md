@@ -24,7 +24,7 @@ Proceed through independent work when a dependency is blocked. A blocked item is
 | 10 | Verify Troco package integration | Content, media, channels and durable state tested | Package adopted; end-to-end acceptance pending |
 | 11 | Verify Trebla package integration | Editorial approvals, media and delivery tested | Package adopted; public executor cutover pending |
 | 12 | Verify Kako package integration | Content/media preparation and delivery tested | Package adopted; public executor cutover pending |
-| 13 | Inspect and integrate Equity | Actual workflow mapped and applicable integration tested | Isolated receipt projection implemented; 446 tests passed; existing durable local executor retained; live credentials/provider validation pending; original dirty checkout preserved |
+| 13 | Inspect and integrate Equity | Actual workflow mapped and applicable integration tested | Receipt projection integrated into main f31e1e7 after fresh 446 tests and typecheck; durable local executor retained; live credentials/provider validation and durable platform reporting pending; original dirty checkout preserved |
 | 14 | Preserve history and quotas | Counters, receipts and deduplication survive repository changes | Trebla read-only migration bridge implemented and reviewed locally; actual freeze/drain/reconciliation record and cutover still pending |
 | 15 | Validate current site builds | Builds, content, links and legacy entity routes tested | All four local site builds, tests and lint passed; browser acceptance remains |
 | 16 | Prepare Pages deployment configuration | Validated build output and least-privilege deploy configuration | Openings main targets verified production; Trebla/Troco/Kako guarded manual production workflows now integrated into main after fresh local tests/builds; environment protection and package access verification remain before activation |
@@ -42,7 +42,39 @@ Proceed through independent work when a dependency is blocked. A blocked item is
 
 ### September 9 release and deployment follow-up
 
+#### Finite public-media admission
+
+The internal public-media admission component now uses one account-shared finite
+allocation and a single conditional UPDATE reserving D1 reads, D1 writes and R2
+Class B work together. It denies missing, disabled, expired, depleted or
+uncertain allocations; counters persist across fresh callers and are never
+refunded or reset on the public path. Migration 0011 creates no live allocation.
+The component is not wired into the production router.
+
+All 81 real-SQLite tests passed, including exact exhaustion, multi-resource
+atomicity, shared tenant callers, expiry/day boundaries, response loss and HTTP
+transport composition. A denied reservation reached neither resolver nor bucket;
+downstream failure after admission kept its reservation consumed. Full platform
+validation passed 982 tests across 98 files, build, lint, types and secret scan.
+Independent specification and quality reviews approved the component.
+
+A separate local EXPLAIN QUERY PLAN check of the real public-grant resolver
+showed indexed lookups across artifacts, adapter controls, tenants, grants,
+references and deliveries. This is not measured D1 billing or an upper bound on
+matching grant rows. The two-read cost floor must not become an assumed deployed
+cost. Exclusive measured account allocation provisioning, denied-request/abuse
+bounds, conservative resolver costs, native ownership, grant/cleanup acceptance
+and representative Free CPU evidence still block route activation.
+
 #### Initial provider receipt ownership
+
+Equity's previously isolated pure receipt projection is now on main `f31e1e7`,
+based on freshly fetched `6551eec`. Only the projection, its tests and existing
+implementation plan were integrated. Fresh verification passed 446 tests and
+typecheck, followed by independent integration review. Package 0.1.3 remains
+unchanged. SQLite retains ownership; private/scheduled videos receive no public
+URL, no CLI/runtime caller was activated, and nothing was uploaded or scheduled.
+This is not durable platform reporting or native-provider live acceptance.
 
 Initial delivery now checks that the returned receipt belongs to the resolved
 adapter, matching reconciliation's existing identity boundary. A foreign
@@ -55,8 +87,6 @@ reconciliation tests passed; full validation passed 901 tests across 97 files,
 build, lint, types and secret scanning. Independent review approved the change.
 This closes an internal receipt boundary, not native-provider cutover or public
 media gateway acceptance. No deployment or external provider call was made.
-
-#### Static-site deployment activation gates
 
 #### Current publisher trigger inventory
 
@@ -77,6 +107,8 @@ Openings credential-transfer workflow remains disabled manually. Validation
 workflows are separate from provider publication. Do not infer global mutual
 exclusion from concurrency groups scoped to individual repositories; actual
 native-provider owner reconciliation remains a cutover requirement.
+
+#### Static-site deployment activation gates
 
 The DNS comparator now rejects malformed baselines, duplicate case-insensitive
 query keys and mismatched query coverage. Capture deduplicates queries before
