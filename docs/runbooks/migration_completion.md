@@ -42,6 +42,40 @@ Proceed through independent work when a dependency is blocked. A blocked item is
 
 ### September 9 release and deployment follow-up
 
+#### Equity live identity and active-executor boundary
+
+The two expected Keychain entries exist. One authenticated read-only YouTube
+`channels.list` request confirmed channel `UCjT5B1wjCb7dSAHG16i6o2w`, title
+`Equity`, public channel status and `madeForKids: false`. Credentials were read
+only in process memory and were not printed, copied or persisted. No video,
+caption or scheduling mutation occurred. The documented lookup costs one quota
+unit: [YouTube channels.list](https://developers.google.com/youtube/v3/docs/channels/list).
+
+`launchctl` confirms `com.equity.shorts-then-longs` is currently running with
+PID 70110 from the original `equity` checkout. Its script performs local
+production, private upload, scheduling and reconciliation; it was inspected,
+not executed again. Its last completed invocation exited 1, but that is not the
+status of its current active process. Read-only SQLite counts reported 49
+scheduled, 20 published, six QA-approved, three script-approved, one
+captions-ready and one visual-manifest-ready production. These are local state
+counts, not independent per-video remote verification.
+
+The live checkout remains at `f04c898` with uncommitted production, rendering
+and state-store changes; remote main is `f31e1e7`. The active SQLite database
+has no tables whose names contain upload, platform or receipt. Do not equate
+the reviewed remote-main integration with the running executor. Updating it
+now overlaps live work and user changes; preserve that work and arrange a safe
+executor transition before claiming durable recovery/reporting activation.
+No LaunchAgent, process, database, local source or scheduling state was changed.
+
+#### Openings error-state fix integrated without deployment
+
+After fresh validation and an exact remote-main check, reviewed branch commit
+`1dfb67d` was fast-forwarded to web main. The latest production deployment still
+contains `4acc40c`; no additional deployment was dispatched. The GitHub token
+page still requests owner reauthentication, so private-state token provisioning
+remains pending.
+
 #### Kako source-bound reconstruction rehearsal
 
 Follow-up isolated the fingerprint inputs changed since candidate registration
