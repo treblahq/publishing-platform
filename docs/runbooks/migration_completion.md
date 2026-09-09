@@ -50,6 +50,13 @@ completed. The public registry now exposes 0.1.3 with matching SHA-1
 passed. Adoption is being verified on the five isolated product branches, without
 changing production mains or dispatching workflows.
 
+The authenticated npm configuration was copied byte-for-byte to the owner's
+requested external `docs/publishing-platform` backup folder as
+`npm-auth-2026-09-09.npmrc`, without overwriting an existing file. The project
+folder is mode 0700 and the copy is mode 0600. This is a plaintext credential
+backup (including the registry entries already present in that configuration),
+not an encrypted archive; it must remain outside Git and public storage.
+
 Verified isolated adoption of the registry package:
 
 | Product | Branch commit | Local evidence |
@@ -58,8 +65,9 @@ Verified isolated adoption of the registry package:
 | Equity | `36fbc7e` | 446 tests and typecheck passed; videos and credentials remain local |
 | Openings | `b023c3a` | 27 package tests, 42 artwork/title/state tests and 165 contracts passed with zero skips, after incorporating current main |
 | Trebla | `e6bf778` | 1,781 tests, lint, build and all three publication-boundary checks passed; private-state CLI fixtures corrected in `812b7e6` |
+| Kako | `8c7557c` | Package adoption `d7c3cfc`: 1,440 tests, typecheck and lint passed; final workflow changes separately passed all 38 workflow contracts and typecheck/lint |
 
-All four product tips were pushed only to their existing integration branches.
+The four earlier product tips were pushed only to their existing integration branches.
 Trebla's two CLI shadow fixtures referenced the former public-state destination;
 updating them to the existing private-state contract retained explicit refusal
 of the broad executor token. Concurrent runs exposed cold-import test timeouts;
@@ -82,8 +90,23 @@ Kako's initial 1,440-test run had twelve compiler-identity failures, not twelve
 provider errors. Its committed identity intentionally includes package.json
 and the dependency lock. The existing collector calculated the new identity
 from all 191 implementation artifacts under Node 24.14.1; updating the generated
-constant restored all sixteen focused identity/locking tests. Final full-suite
-validation is in progress; no safety comparison was removed or weakened.
+constant restored all sixteen focused identity/locking tests. The subsequent
+full suite passed all 1,440 tests with zero skips in 993.8 seconds, followed by
+typecheck and lint; no safety comparison was removed or weakened.
+
+Kako `8c7557c` adds an early read-only identity comparison to CI and manual dry
+runs, after dependency installation and before the expensive full verifier.
+Two missing-step assertions failed before implementation; all 38 workflow
+contracts passed afterward. The actual workflow command passed with the real
+identity and rejected an injected stale identity with exit 1. It does not
+regenerate or approve identity automatically. Workflow/test files changed while
+the long suite was running, so its 1,440 count is the pre-addition suite; the
+complete workflow suite and typecheck/lint were rerun on the final files.
+No additional runtime compiler input changed in the preflight slice.
+
+Read-only branch-run queries returned zero workflows for each publisher
+integration branch at inspection time. No dispatch, rerun or production merge
+was performed. Equity still has no registered GitHub Actions workflows.
 No successful production deployment or live publisher recovery is claimed here.
 
 ### Additional mobile acceptance and private-boundary findings
@@ -99,6 +122,14 @@ navigated to Nina Splash. Portrait orientation displayed its rotate-device
 guard; at 844 x 390 the game started, muted and paused correctly. These checks
 do not certify every game or external music/video provider and do not change
 DNS, hosting or deployment ownership.
+
+Read-only GitHub environment checks found only `cloudflare-preview` on each of
+`treblahq/website`, `trocohq/frontend` and `turmadokako/website`, with no protection
+rules and no deployment-branch policy. All three repositories are private. None
+has a `CLOUDFLARE_PRODUCTION_ENABLED` Actions variable. Consequently the prepared
+manual production workflows remain gated off; production environment, credential
+scope and execution-budget acceptance are not complete. No environment, secret,
+activation variable or workflow was changed during this inspection.
 
 Read-only Kako source inventory found 299 tracked asset files and 349 content
 files. Moving the state branch alone cannot make this history safe to publish.
