@@ -23,6 +23,17 @@ export async function runD1ArtifactCleanup(
         JOIN deliveries AS delivery ON delivery.id = reference.delivery_id
         WHERE reference.artifact_id = artifact.id AND delivery.state = 'reconciling'
       )
+      AND NOT EXISTS (
+        SELECT 1 FROM artifact_references AS reference
+        WHERE reference.artifact_id = artifact.id AND reference.tenant_id = artifact.tenant_id
+          AND reference.safe_to_delete = 0
+          AND (EXISTS (SELECT 1 FROM receipts AS receipt
+            WHERE receipt.tenant_id = reference.tenant_id AND receipt.delivery_id = reference.delivery_id)
+            OR EXISTS (SELECT 1 FROM public_media_grants AS grant_record
+              WHERE grant_record.tenant_id = reference.tenant_id
+                AND grant_record.artifact_id = reference.artifact_id
+                AND grant_record.delivery_id = reference.delivery_id))
+      )
       AND (
         artifact.state = 'tombstoned'
         OR (artifact.state = 'staged' AND artifact.created_at < strftime('%Y-%m-%dT%H:%M:%fZ', 'now', '-24 hours'))

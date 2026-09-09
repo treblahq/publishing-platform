@@ -42,6 +42,28 @@ Proceed through independent work when a dependency is blocked. A blocked item is
 
 ### September 9 release and deployment follow-up
 
+#### Provider acceptance versus cleanup
+
+Cleanup now retains an unsafe provider reference with a same-tenant durable
+receipt or public-media approval. Expired/revoked grants and old terminal states
+are not proof of ingestion. The protection applies before candidate selection
+and again at the atomic tombstone claim, including staged/tombstoned retries.
+It does not extend grant expiry, expose files, restore deleted bytes or alter
+unaccepted/unreferenced artifact retention. Once all protected references are
+explicitly safe, existing cleanup eligibility applies again.
+
+Six failing real-SQLite cases reproduced premature deletion before the fix.
+Final tests also cover grant creation between selection and claim and the final
+outstanding reference among multiple providers. Full verification passed 990
+tests across 98 files, build, lint, types and secret scan. Independent review
+approved the boundary. Additional indexed reads are not certified production
+costs. Stuck accepted work may retain storage and must be reconciled; capacity
+pressure must not be resolved by silently deleting still-needed media.
+
+The grant-creation side still needs an atomic available-artifact fence so that
+approval cannot revive an artifact after cleanup claims it. This change closes
+the cleanup side only; no remote migration, provider call or deployment occurred.
+
 #### Finite public-media admission
 
 The internal public-media admission component now uses one account-shared finite

@@ -55,6 +55,77 @@ function cursor() {
 }
 
 describe('artifact cleanup against actual migrations', () => {
+  it.each([null, '2000-01-02T00:00:00.000Z'])('does not treat expired or revoked public approval as provider ingestion (%s)', async (revokedAt) => {
+    sqlite.exec(`UPDATE artifacts SET created_at = '2000-01-01T00:00:00.000Z';
+      UPDATE artifact_references SET safe_to_delete = 0;
+      UPDATE deliveries SET state = 'needs_attention'`);
+    sqlite.prepare(`INSERT INTO public_media_grants
+      (tenant_id, artifact_id, delivery_id, sha256, approved_at, expires_at, revoked_at)
+      VALUES ('openings', 'a1', 'delivery', ?, '2000-01-01T00:00:00.000Z', '2000-01-02T00:00:00.000Z', ?)`)
+      .run('a'.repeat(64), revokedAt);
+    let deletes = 0;
+    const bucket = { delete: () => { deletes++; return Promise.resolve(); } };
+    expect(await runD1ArtifactCleanup(database(), bucket, 10)).toBe(0);
+    expect(deletes).toBe(0);
+    sqlite.exec('UPDATE artifact_references SET safe_to_delete = 1');
+    expect(await runD1ArtifactCleanup(database(), bucket, 10)).toBe(1);
+    expect(deletes).toBe(1);
+  });
+
+  it.each(['available', 'staged', 'tombstoned'])('retains %s media for an accepted provider until its reference is released', async (state) => {
+    sqlite.prepare("UPDATE artifacts SET state = ?, created_at = '2000-01-01T00:00:00.000Z'").run(state);
+    sqlite.exec(`UPDATE artifact_references SET safe_to_delete = 0;
+      UPDATE deliveries SET state = 'needs_attention';
+      INSERT INTO receipts (id, tenant_id, delivery_id, provider, remote_id, receipt_json)
+      VALUES ('receipt', 'openings', 'delivery', 'test', 'remote-1', '{}')`);
+    const deleted: string[] = [];
+    const bucket = { delete: (key: string) => { deleted.push(key); return Promise.resolve(); } };
+    expect(await runD1ArtifactCleanup(database(), bucket, 10)).toBe(0);
+    expect(deleted).toEqual([]);
+    expect(artifact()?.state).toBe(state);
+    sqlite.exec('UPDATE artifact_references SET safe_to_delete = 1');
+    expect(await runD1ArtifactCleanup(database(), bucket, 10)).toBe(1);
+    expect(deleted).toEqual(['tmp/a1']);
+  });
+
+  it.each(['receipt', 'grant'])('rechecks %s appearing between selection and tombstone claim', async (evidence) => {
+    sqlite.exec(`UPDATE artifacts SET created_at = '2000-01-01T00:00:00.000Z';
+      UPDATE artifact_references SET safe_to_delete = 0;
+      UPDATE deliveries SET state = 'needs_attention'`);
+    const db = database((sql) => {
+      if (!sql.includes("SET state = 'tombstoned'")) return;
+      if (evidence === 'receipt') sqlite.exec(`INSERT INTO receipts
+          (id, tenant_id, delivery_id, provider, remote_id, receipt_json)
+          VALUES ('receipt', 'openings', 'delivery', 'test', 'remote-1', '{}')`);
+      else sqlite.prepare(`INSERT INTO public_media_grants
+        (tenant_id, artifact_id, delivery_id, sha256, approved_at, expires_at)
+        VALUES ('openings', 'a1', 'delivery', ?, '2000-01-01T00:00:00.000Z', '2000-01-02T00:00:00.000Z')`)
+        .run('a'.repeat(64));
+    });
+    let deletes = 0;
+    expect(await runD1ArtifactCleanup(db, { delete: () => { deletes++; return Promise.resolve(); } }, 10)).toBe(0);
+    expect(deletes).toBe(0);
+    expect(artifact()).toEqual({ state: 'available', tombstoned_at: null, deleted_at: null });
+  });
+
+  it('waits for the last accepted provider reference rather than the first release', async () => {
+    sqlite.exec(`UPDATE artifacts SET created_at = '2000-01-01T00:00:00.000Z';
+      UPDATE deliveries SET state = 'needs_attention';
+      INSERT INTO deliveries (id, tenant_id, publication_id, delivery_key, adapter, operation, required, payload_json, state)
+        VALUES ('second', 'openings', 'publication', 'second', 'another', 'publish', 1, '{}', 'needs_attention');
+      INSERT INTO artifact_references (tenant_id, artifact_id, delivery_id, safe_to_delete)
+        VALUES ('openings', 'a1', 'second', 0);
+      INSERT INTO receipts (id, tenant_id, delivery_id, provider, remote_id, receipt_json)
+        VALUES ('receipt', 'openings', 'second', 'another', 'remote-2', '{}')`);
+    let deletes = 0;
+    const bucket = { delete: () => { deletes++; return Promise.resolve(); } };
+    expect(await runD1ArtifactCleanup(database(), bucket, 10)).toBe(0);
+    expect(deletes).toBe(0);
+    sqlite.exec("UPDATE artifact_references SET safe_to_delete = 1 WHERE delivery_id = 'second'");
+    expect(await runD1ArtifactCleanup(database(), bucket, 10)).toBe(1);
+    expect(deletes).toBe(1);
+  });
+
   it.each([{}, { meta: {} }, { meta: { changes: '1' } }, { meta: { changes: 2 } }, { meta: { changes: -1 } }])(
     'fails closed when the tombstone result does not confirm one affected row: %j', async (claimResult) => {
       const actual = database();
