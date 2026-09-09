@@ -21,12 +21,10 @@ export interface DnsBaseline {
 interface DnsJsonAnswer { data: string }
 interface DnsJsonResponse { Answer?: DnsJsonAnswer[] }
 
-export function normalizeDnsAnswers(answers: DnsJsonAnswer[]): string[] {
-  return [...new Set(answers.map(({ data }) => data
-    .replace(/"\s+"/g, '')
-    .replaceAll('"', '')
-    .replace(/\.$/, '')
-    .toLowerCase()))].sort();
+export function normalizeDnsAnswers(answers: DnsJsonAnswer[], type: DnsRecordType): string[] {
+  return [...new Set(answers.map(({ data }) => type === 'TXT' || type === 'CAA'
+    ? data
+    : data.replace(/\.$/, '').toLowerCase()))].sort();
 }
 
 export async function queryDnsRecord(name: string, type: DnsRecordType): Promise<DnsBaselineRecord> {
@@ -36,7 +34,7 @@ export async function queryDnsRecord(name: string, type: DnsRecordType): Promise
   const response = await fetch(url, { headers: { accept: 'application/dns-json' } });
   if (!response.ok) throw new Error(`DNS query failed for ${name} ${type}: HTTP ${String(response.status)}`);
   const payload: DnsJsonResponse = await response.json();
-  return { name: name.toLowerCase(), type, values: normalizeDnsAnswers(payload.Answer ?? []) };
+  return { name: name.toLowerCase(), type, values: normalizeDnsAnswers(payload.Answer ?? [], type) };
 }
 
 function defaultQueries(domain: string): Array<[string, DnsRecordType]> {

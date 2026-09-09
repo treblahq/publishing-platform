@@ -43,11 +43,43 @@ describe('DNS cutover guard', () => {
     expect(result.protectedChanges).toHaveLength(1);
   });
 
-  test('normalizes DNS answers deterministically', () => {
-    expect(normalizeDnsAnswers([
-      { data: '"part one" "part two"' },
-      { data: '10 MAIL.EXAMPLE.COM.' },
-      { data: '10 mail.example.com.' },
-    ])).toEqual(['10 mail.example.com', 'part onepart two']);
+  test.each([
+    { type: 'A', data: ['192.0.2.20', '192.0.2.10', '192.0.2.20'], expected: ['192.0.2.10', '192.0.2.20'] },
+    { type: 'AAAA', data: ['2001:DB8::B', '2001:db8::a', '2001:db8::b'], expected: ['2001:db8::a', '2001:db8::b'] },
+    { type: 'CNAME', data: ['WWW.EXAMPLE.COM.', 'www.example.com.'], expected: ['www.example.com'] },
+    { type: 'MX', data: ['20 BACKUP.EXAMPLE.COM.', '10 MAIL.EXAMPLE.COM.', '10 mail.example.com.'], expected: ['10 mail.example.com', '20 backup.example.com'] },
+  ] as const)('normalizes $type answers deterministically', ({ type, data, expected }) => {
+    expect(normalizeDnsAnswers(data.map(value => ({ data: value })), type)).toEqual(expected);
+  });
+
+  test.each(['TXT', 'CAA'] as const)('preserves opaque %s data while sorting and deduplicating exact matches', type => {
+    const values = type === 'TXT'
+      ? ['token=abc', '"Part One" "Part Two"', 'token=AbC.', 'token=AbC', 'token=AbC']
+      : ['0 issue "CA.EXAMPLE"', '0 issue "ca.example"', '0 issue "CA.EXAMPLE"'];
+    const expected = type === 'TXT'
+      ? ['"Part One" "Part Two"', 'token=AbC', 'token=AbC.', 'token=abc']
+      : ['0 issue "CA.EXAMPLE"', '0 issue "ca.example"'];
+
+    expect(normalizeDnsAnswers(values.map(data => ({ data })), type)).toEqual(expected);
+  });
+
+  test.each([
+    { name: 'openings.dev', before: '"verification=AbCd123"', after: '"verification=abcd123"' },
+    { name: 'selector._domainkey.openings.dev', before: '"v=DKIM1; p=AbCd"', after: '"v=DKIM1; p=abcd"' },
+  ])('blocks a case-only TXT mutation at $name after normalization', ({ name, before, after }) => {
+    const baseline: DnsBaseline = {
+      ...BASELINE,
+      records: [{ name, type: 'TXT', values: normalizeDnsAnswers([{ data: before }], 'TXT') }],
+    };
+    const proposed: DnsBaseline = {
+      ...baseline,
+      records: [{ name, type: 'TXT', values: normalizeDnsAnswers([{ data: after }], 'TXT') }],
+    };
+
+    expect(compareDnsBaselines(baseline, proposed)).toEqual({
+      safe: false,
+      protectedChanges: [{ name, type: 'TXT', before: [before], after: [after] }],
+      webChanges: [],
+    });
   });
 });
