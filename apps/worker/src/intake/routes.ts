@@ -74,6 +74,23 @@ export async function handlePublicationRequest(
     if (error instanceof PublicationConflictError) {
       return Response.json({ code: 'PUBLICATION_CONFLICT' }, { status: 409 });
     }
+    if (isDurableCapacityRejection(error)) {
+      const now = dependencies.now();
+      const retry = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1));
+      return Response.json({
+        outcome: 'retry-later', code: 'FREE_TIER_BUDGET_EXHAUSTED', publicationAccepted: false,
+        retryAfter: retry.toISOString(),
+      }, { status: 429, headers: { 'retry-after': retry.toUTCString() } });
+    }
     return Response.json({ code: 'INVALID_PUBLICATION' }, { status: 400 });
   }
+}
+
+function isDurableCapacityRejection(error: unknown): boolean {
+  // D1 may wrap the SQLite trigger error. Do not classify arbitrary DB errors as capacity denial.
+  for (let depth = 0; depth < 4 && error instanceof Error; depth++) {
+    if (error.message.includes('free-tier capacity reservation rejected')) return true;
+    error = error.cause;
+  }
+  return false;
 }
