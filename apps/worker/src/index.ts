@@ -36,6 +36,7 @@ import { handleWebEntityRequest } from './web/routes.js';
 import { handleArtifactUploadRequest } from './artifacts/routes.js';
 import { createD1UploadStore } from './artifacts/d1-uploads.js';
 import { verifyTemporaryArtifacts } from './artifacts/verify-uploads.js';
+import { handleRuntimePublicMedia } from './artifacts/public-media-runtime.js';
 
 type Environment = Record<string, unknown>;
 type RouteHandler = (request: Request, environment: Environment) => Promise<Response>;
@@ -55,6 +56,9 @@ export function createWorker(overrides: WorkerOverrides = {}) {
       const pathname = new URL(request.url).pathname;
       if (request.method === 'GET' && pathname === '/health/live') {
         return Response.json({ status: 'live' });
+      }
+      if (pathname === '/media' || pathname.startsWith('/media/')) {
+        return handleRuntimePublicMedia(request, environment);
       }
       if (pathname === '/v1/publications') {
         const response = await (overrides.publicationHandler ?? handleRuntimePublication)(request, environment);
