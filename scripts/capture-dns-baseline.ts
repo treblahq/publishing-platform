@@ -110,7 +110,10 @@ function parseQuery(value: string): [string, DnsRecordType] {
 }
 
 export async function captureDnsBaseline(domain: string, extraQueries: string[] = []): Promise<DnsBaseline> {
-  const queries = [...defaultQueries(domain), ...extraQueries.map(parseQuery)];
+  const queries = [...new Map(
+    [...defaultQueries(domain), ...extraQueries.map(parseQuery)]
+      .map(query => [`${query[0].toLowerCase()}:${query[1]}`, query]),
+  ).values()];
   const records = await Promise.all(queries.map(([name, type]) => queryDnsRecord(name, type)));
   records.sort((left, right) => `${left.name}:${left.type}`.localeCompare(`${right.name}:${right.type}`));
   return { schemaVersion: 1, domain: domain.toLowerCase(), capturedAt: new Date().toISOString(), records };

@@ -42,6 +42,43 @@ Proceed through independent work when a dependency is blocked. A blocked item is
 
 ### September 9 release and deployment follow-up
 
+#### Static-site deployment activation gates
+
+The DNS comparator now rejects malformed baselines, duplicate case-insensitive
+query keys and mismatched query coverage. Capture deduplicates queries before
+requests; malformed JSON errors do not echo evidence contents. All 111 focused
+tests and full validation (899 tests across 97 files, build, lint, types and
+secret scanning) passed, followed by independent specification and quality
+reviews. New owner-only `*-2026-09-09-validated-v2.json` baselines preserve the
+older files and contain 14 unique record sets for trocofacil.app, 17 for
+troco.net, 13 for treb.la, 14 for trebla.com.br and 14 for turmadokako.com.
+Each passed shape/coverage self-validation; that is not cutover or propagation
+acceptance. No DNS records or deployments were changed.
+
+Read-only GitHub checks after main integration confirm that all three website
+repositories remain private. Each has only `cloudflare-preview`, with no
+deployment protection rules or branch policy; `cloudflare-production` does not
+exist yet. Repository variables contain no Cloudflare activation settings, and
+repository secrets contain FTP credentials only, not Cloudflare credentials.
+No environment, permission, secret or activation variable was changed.
+
+The manual production workflows therefore remain inactive. Running their builds
+on these private repositories would consume included Actions minutes; adopting
+the workflow alone does not establish the intended public-runner cost boundary.
+Do not dispatch speculative builds or describe these sites as having an active
+automated Pages production deployment. Keep the already-validated Pages
+candidates and current Hostinger production intact while resolving the execution
+and credential boundary.
+
+Lockfile inspection found only npmjs registry dependencies for Trebla. Troco
+depends on GitHub Packages `@trocohq/core` and `@trocohq/design-tokens`; Kako
+depends on `@turmadokako/runner-core` and `@turmadokako/web-ui`. GitHub metadata
+confirms all four packages are private. Their production workflows configure
+the GitHub registry and use the job token for installation, but local cached
+installation is not proof that a fresh job token has package access. Do not
+make these packages public or copy them into public executor output merely to
+bypass authentication or included-minute limits.
+
 #### Current private-release and Troco diagnostic follow-up
 
 ##### September 9 DNS acceptance and Openings package main integration
