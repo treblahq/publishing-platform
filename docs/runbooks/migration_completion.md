@@ -30,7 +30,7 @@ Proceed through independent work when a dependency is blocked. A blocked item is
 | 16 | Prepare Pages deployment configuration | Validated build output and least-privilege deploy configuration | Openings main targets verified production; Trebla/Troco/Kako guarded manual production workflows now integrated into main after fresh local tests/builds; environment protection and package access verification remain before activation |
 | 17 | Validate Cloudflare-hosted sites | Candidate URLs, navigation, redirects and integrations checked | Production Pages candidates: Troco eight redirects/five pages; Trebla ten routes; Kako four redirects/33 routes passed; complete browser/integration acceptance pending |
 | 18 | Complete necessary domain cutovers | DNS/HTTPS checks and rollback evidence | Openings domains bound to Pages; Trebla/Troco/Kako now have canonical Pages production without custom domains; remaining domain cutovers pending |
-| 19 | Verify deployment/publication triggers | One execution owner per effect; no duplicate schedules | Inventory begun; trigger details and current gates pending |
+| 19 | Verify deployment/publication triggers | One execution owner per effect; no duplicate schedules | Current main workflow/API inventory recorded September 9; exclusive provider ownership and cutover gates still pending |
 | 20 | Run non-publishing end-to-end validation | Preparation, package, state, media and recovery evidence | Real local Worker and fresh-producer lost-acceptance recovery passed with zero reuploads and no duplicate rows; product/native-provider and public gateway acceptance remain pending |
 | 21 | Activate one publisher at a time | Bounded real cycle verified before routine enablement | Blocked on safety, cost and integration gates |
 | 22 | Verify stability and consumption | Actual CPU, storage, execution and media cleanup evidence | Pending; no synthetic load test |
@@ -43,6 +43,26 @@ Proceed through independent work when a dependency is blocked. A blocked item is
 ### September 9 release and deployment follow-up
 
 #### Static-site deployment activation gates
+
+#### Current publisher trigger inventory
+
+GitHub workflow state and current main YAML were read without dispatching or
+changing any workflow. These are configured triggers, not proof of successful
+delivery or permission to enable another execution owner. Schedule times below
+are UTC.
+
+| Product | Configured main triggers | Current observed gate/state |
+| --- | --- | --- |
+| Openings | Social intake every two hours at minute 17; editorial Monday/Wednesday/Friday 15:17; manual alternatives | Both active; editorial auto-publish variable true; both share `social-publisher-publication` concurrency; intake still encounters the media bridge boundary |
+| Troco | Every three hours at minute 17 and manual execution | Active; one `troco-social-publication` group with main-branch guard; existing publication-health failure remains |
+| Trebla | Scout every six hours at minute 17; weekly Monday 12:17; PR/manual editorial and blog delivery; repository-dispatch release workflows | Workflows active; scout, weekly and heavy-runtime variables true; auto-release true, but general social-publishing and zero-cost-confirmed repository variables absent in this read; per-job conditions still apply; private repository consumes included runner minutes |
+| Kako | Curated publisher has six daily scheduled slots and manual execution; bootstrap, activation, snapshots and dry-run workflows manual | Curated publisher disabled manually; other manual workflows active; activation/bootstrap/curated share `story-first-production`; no activation performed |
+| Equity | No GitHub Actions workflows returned | Existing local/native executor remains; absence of Actions is not verification of local scheduler state |
+
+Openings credential-transfer workflow remains disabled manually. Validation
+workflows are separate from provider publication. Do not infer global mutual
+exclusion from concurrency groups scoped to individual repositories; actual
+native-provider owner reconciliation remains a cutover requirement.
 
 The DNS comparator now rejects malformed baselines, duplicate case-insensitive
 query keys and mismatched query coverage. Capture deduplicates queries before
