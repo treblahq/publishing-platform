@@ -18,7 +18,7 @@ Proceed through independent work when a dependency is blocked. A blocked item is
 | 4 | Establish Free execution boundaries | Applicable limits and representative runtime evidence | Pending; historical Worker CPU incident remains unresolved |
 | 5 | Verify shared package | Release identity, package contents and tests verified | Released 0.1.3 checksum/content allowlist and clean Node 20 installation verified; integration acceptance tracked separately |
 | 6 | Complete Trebla private/public split | All state consumers private; clean public executor ready | Partial; isolated implementation exists, not deployed |
-| 7 | Complete Kako private/public split | Inputs, media metadata and operational state remain private | Private release completed with approval; read-only token verified 140 asset metadata records and one file hash; descriptor adoption, full media recovery, state token, editorial separation and cutover pending |
+| 7 | Complete Kako private/public split | Inputs, media metadata and operational state remain private | Explicit completed-release descriptor adopted; all 140 media files and replay verified; state token, editorial source separation and public executor cutover pending |
 | 8 | Audit public repositories | Selected source/history and workflow permissions reviewed | Partial: read-only selected-code inventory passed for Trebla/Kako; full history, private input and public workflow boundaries remain unapproved |
 | 9 | Verify Openings package integration | Intake, content, duplicate prevention and provider ownership tested | Package adopted; end-to-end acceptance pending |
 | 10 | Verify Troco package integration | Content, media, channels and durable state tested | Package adopted; end-to-end acceptance pending |
@@ -45,6 +45,35 @@ Proceed through independent work when a dependency is blocked. A blocked item is
 #### Current private-release and Troco diagnostic follow-up
 
 ##### Approved live release completion, September 9
+
+Subsequent full recovery through the actual publisher downloader verified all
+140 files (292,457,017 bytes) against the reviewed candidate and explicit
+version-two descriptor. The 284 initial HTTP requests include metadata and
+asset redirects; the verified replay made only four metadata requests and zero
+asset requests. Files are retained in the owner-only external Kako docs folder,
+with size/hash checks, regular-file checks and no symlinks. This completes byte
+recovery, not source hydration, current-date approval or provider activation.
+The isolated committed-descriptor adoption passed all 1,450 tests and typecheck.
+The full run then identified a redundant assertion in the new test; after
+removing only that assertion, all 21 focused tests, typecheck, lint and diff
+checks passed. Independent specification and quality reviews passed. No runtime
+logic was changed in descriptor adoption and the production workflow remains off.
+
+DNS guard correction `dd4bb69` now preserves opaque TXT/CAA data instead of
+lowercasing tokens or stripping their quotes/periods. Case-only verification and
+DKIM mutations now block the real comparison. Full platform validation passed
+801 tests across 97 files, build, lint, types and secret scanning; both independent
+reviews passed. Capture fresh baselines before a cutover: old normalized files
+cannot recover lost case. DNS response status and answer-type filtering still
+require review before treating capture as a complete fail-closed boundary.
+
+Authenticated Cloudflare UI access also permitted DNS record inventory without
+a new token. Private JSON snapshots now cover all displayed records in
+`trocofacil.app` (12), `treb.la` (12), `trebla.com.br` (26, both pages), and
+`turmadokako.com` (14). These are DNS values/proxy/TTL snapshots, not full zone
+settings exports. No DNS record was changed. Existing Hostinger dependencies
+include Troco `links`/`marca`, Trebla `goal`/`tools`, FTP and mail services;
+website cutover alone does not justify retiring the entire hosting service.
 
 After specific owner approval, release `383205199` was completed at
 `2026-09-09T12:05:07Z`, with `make_latest=false`. Repository ID `1349928184`
