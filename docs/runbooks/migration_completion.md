@@ -420,6 +420,36 @@ project JSON backups, without printing values. Neither Trebla nor Kako's backup
 contains `PUBLISHING_STATE_TOKEN`; the dedicated private-state credentials remain
 a provisioning/backup gate, not a completed item.
 
+### Immediate outbox work bound
+
+Accepted HTTP intake now dispatches at most one due outbox row instead of up to
+50. The limit is applied by the existing atomic SQL claim: a real-SQLite test
+proved that the remaining eligible rows stay unclaimed and undispatched. The
+scheduled maintenance path explicitly retains its existing 50-row bound; no
+cron, admission, dependency or provider-ownership setting changed. Multi-delivery
+publications may wait longer for scheduled draining. This is a work bound, not
+a measured Free CPU guarantee.
+
+Independent review approved the change. Full verification passed 707 tests across
+93 files, lint, typecheck, build and the known credential-pattern scan. A fresh
+actual local Worker upload/intake/shadow/restart/replay rehearsal also passed
+with one publication, delivery, receipt, attempt and upload. No deploy occurred.
+
+### Openings and Trebla existing-run diagnosis (September 9 UTC)
+
+Openings run `34294030595`, source `6923161`, preserved intake with
+`bridge_platform_media_pending`, `queueDepth: 28`, zero bridges and an incomplete
+snapshot. The final failing step deliberately propagated that saved error.
+This is the still-unimplemented media bridge boundary, not evidence that this
+run exhausted CPU. No retired-origin dispatch or queue loss was introduced.
+
+Trebla weekly run `34187245020` stopped at its zero-cost guard with
+`MONTHLY_HEAVY_RUN_CAP_REACHED`, 16 heavy runs counted and zero remaining. Its
+three later signal-scout runs succeeded, which does not imply a successful
+weekly edition or provider delivery. The cap was not relaxed and no private
+heavy workflow was rerun. Kako's recent non-migration publisher executions were
+cancelled; the successful secret-transfer run is not delivery evidence.
+
 ### Remaining execution order
 
 1. Complete browser/integration and legacy HTTP behavior acceptance for the three canonical Pages candidates before attaching custom domains.

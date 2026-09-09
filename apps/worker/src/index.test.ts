@@ -1,4 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
+import { readFileSync, readdirSync } from 'node:fs';
+import { DatabaseSync, type SQLInputValue } from 'node:sqlite';
 
 import { createWorker } from './index.js';
 
@@ -113,6 +115,48 @@ describe('worker HTTP router', () => {
     expect(scheduledHandler).not.toHaveBeenCalled();
   });
 
+  it('dispatches only one persisted outbox row from accepted HTTP intake', async () => {
+    const sqlite = new DatabaseSync(':memory:');
+    try {
+      for (const file of readdirSync('apps/worker/migrations').filter(name => name.endsWith('.sql')).sort()) {
+        sqlite.exec(readFileSync(`apps/worker/migrations/${file}`, 'utf8'));
+      }
+      sqlite.exec(`INSERT INTO tenants (id, name, enabled) VALUES ('openings', 'Openings', 1);
+        INSERT INTO producer_clients (id, tenant_id, name, secret_hash, enabled) VALUES ('client', 'openings', 'test', 'hash', 1);
+        INSERT INTO publications (id, tenant_id, producer_client_id, source_type, source_id, revision, idempotency_key, envelope_json, state)
+          VALUES ('publication', 'openings', 'client', 'test', 'source', '1', 'key', '{}', 'accepted');`);
+      for (const id of ['a', 'b', 'c']) {
+        sqlite.prepare(`INSERT INTO deliveries (id, tenant_id, publication_id, delivery_key, adapter, operation, required, payload_json, state)
+          VALUES (?, 'openings', 'publication', ?, 'social.shadow', 'publish', 1, '{}', 'ready')`).run(id, id);
+        sqlite.prepare(`INSERT INTO outbox (id, tenant_id, delivery_id, event_type, payload_json, due_at)
+          VALUES (?, 'openings', ?, 'delivery.ready', '{}', '2026-01-01T00:00:00.000Z')`).run(id, id);
+      }
+      const database = { prepare(sql: string) {
+        let values: SQLInputValue[] = [];
+        const statement = {
+          bind(...inputs: unknown[]) { values = inputs as SQLInputValue[]; return statement; },
+          all: () => Promise.resolve({ results: sqlite.prepare(sql).all(...values) }),
+          run: () => Promise.resolve(sqlite.prepare(sql).run(...values)),
+        };
+        return statement;
+      } };
+      const pending: Promise<unknown>[] = [];
+      const send = vi.fn().mockResolvedValue(undefined);
+      const response = await createWorker({ publicationHandler: () => Promise.resolve(new Response(null, { status: 202 })) })
+        .fetch(new Request('https://worker.test/v1/publications', { method: 'POST' }), {
+          LEDGER: database, DELIVERY_QUEUE: { send }, DELIVERY_DLQ: {}, ARTIFACTS: {},
+          CAPACITY_BUDGETS: JSON.stringify({ d1Rows: 55000, queueOperations: 5500, r2Bytes: 5500000000 }),
+          ENABLED_ADAPTERS: '',
+        }, { waitUntil: (promise: Promise<unknown>) => { pending.push(promise); } } as unknown as ExecutionContext);
+      expect(response.status).toBe(202);
+      await expect(pending[0]).resolves.toBe(1);
+      expect(send).toHaveBeenCalledOnce();
+      expect(sqlite.prepare('SELECT id FROM outbox WHERE dispatched_at IS NOT NULL').all()).toEqual([{ id: 'a' }]);
+      expect(sqlite.prepare('SELECT id FROM outbox WHERE dispatched_at IS NULL AND claim_token IS NULL AND claimed_until IS NULL ORDER BY id').all())
+        .toEqual([{ id: 'b' }, { id: 'c' }]);
+    } finally { sqlite.close(); }
+  });
+
   it.each(['binding', 'query'])('does not swallow a background %s failure', async (failure) => {
     const pending: Promise<unknown>[] = [];
     const environment = failure === 'binding' ? {} : {
@@ -148,9 +192,13 @@ describe('worker HTTP router', () => {
 
   it('preserves all maintenance stages on the default scheduled path', async () => {
     const queries: string[] = [];
+    let outboxLimit: unknown;
     const prepare = vi.fn((sql: string) => {
       queries.push(sql);
-      const statement = { bind: () => statement,
+      const statement = { bind: (...values: unknown[]) => {
+        if (sql.includes('UPDATE outbox SET claim_token')) outboxLimit = values[2];
+        return statement;
+      },
         all: () => Promise.resolve({ results: [] }), first: () => Promise.resolve(null) };
       return statement;
     });
@@ -170,6 +218,7 @@ describe('worker HTTP router', () => {
     expect(queries[5]).toContain("name = 'artifact-cleanup'");
     expect(queries[6]).toContain('FROM artifacts AS artifact');
     expect(queries[7]).toContain('UPDATE outbox SET claim_token');
+    expect(outboxLimit).toBe(50);
   });
 
   it('routes queue batches through the durable consumer', async () => {

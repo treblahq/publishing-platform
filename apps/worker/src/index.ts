@@ -197,16 +197,17 @@ async function runRuntimeMaintenance(environment: Environment): Promise<number> 
   await enqueueDueRetries(database, 25);
   await runD1UploadCleanup(database, bindings.artifacts as R2Bucket, 25);
   await runD1ArtifactCleanup(database, bindings.artifacts as R2Bucket, 25);
-  return dispatchRuntimeOutbox(environment);
+  return dispatchRuntimeOutbox(environment, 50);
 }
 
-async function dispatchRuntimeOutbox(environment: Environment): Promise<number> {
+async function dispatchRuntimeOutbox(environment: Environment, limit = 1): Promise<number> {
   const bindings = parseWorkerBindings(environment);
   const database = bindings.ledger as D1Database;
   const queue = bindings.deliveryQueue as Queue;
+  // HTTP intake only nudges the queue; scheduled maintenance drains the backlog.
   return dispatchOutbox(createD1OutboxStore(database), {
     send: async (message) => { await queue.send(message); },
-  }, 50);
+  }, limit);
 }
 
 export async function reconcileRuntimeDeliveries(
