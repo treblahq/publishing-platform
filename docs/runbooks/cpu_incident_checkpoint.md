@@ -1,5 +1,33 @@
 # CPU Incident and Recovery Checkpoint
 
+## September 9 local workerd route profile
+
+The actual unchanged `handleWebEntityRequest` was bundled into local workerd
+with in-memory manifest/object checks and the three real static Pages shells.
+Exactly three bounded static GETs loaded the shells; runtime outbound calls were
+denied. Separate instances handled one first and 30 warm requests for each kind,
+and all 93 responses returned 200 with the expected entity metadata.
+
+| Kind | Shell bytes | HTML-cleanup regex leaf samples | Handler leaf samples |
+| --- | ---: | ---: | ---: |
+| Jobs | 140,831 | 88 / 275 | 67 / 275 |
+| Authors | 94,856 | 45 / 142 | 30 / 142 |
+| Communities | 96,505 | 62 / 203 | 47 / 203 |
+
+The four cleanup regexes account for roughly 30–32% of these sparse local
+samples; no one regex consistently dominates. This identifies local work, not
+the cause of the historical incident. Sample timing includes scheduling/idle
+effects and is not per-request CPU. Mock response construction contributes too.
+The full Worker, signed intake, D1/R2 and queue path are not covered by this
+profile. Do not remove security/metadata safeguards or lift the rollout hold
+based on these results.
+
+Versions: Node 24.14.1, Wrangler 4.129.0, Miniflare 5.20260903.0-alpha,
+workerd 1.20260903.1 and esbuild 0.25.12. The summary is backed up in the
+owner-only external platform docs folder. No production deployment or resource
+mutation occurred. The approach follows Cloudflare's
+[local CPU profiling guidance](https://developers.cloudflare.com/workers/observability/dev-tools/cpu-usage/).
+
 ## September 9 UTC read-only follow-up
 
 At `2026-09-09T01:02:25Z`, the seven-day analytics query returned 1,218
