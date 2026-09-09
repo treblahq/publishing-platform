@@ -42,6 +42,29 @@ Proceed through independent work when a dependency is blocked. A blocked item is
 
 ### September 9 release and deployment follow-up
 
+#### Bounded browser acceptance on canonical domains
+
+Fresh browser checks on September 9 verified these specific interactions:
+
+- Troco: home-to-calculator navigation, two required-field messages after an
+  empty submission, and navigation to the English calculator with translated
+  field labels. Successful numeric calculation has not yet been exercised.
+- Trebla: home-to-projects navigation and theme toggling in both directions
+  on the canonical site; the Pages hostname also responded to theme toggling.
+  The first home-page click produced no observable label change, so that
+  initial interaction remains inconclusive rather than a proven persistent bug.
+  All nine distinct home-page script URLs returned HTTP 200 with JavaScript
+  content types in a separate bounded HEAD check.
+- Kako: the age FAQ expanded with its answer; the Kako Aventureiro link opened
+  the game screen; sound could be disabled and starting the game transitioned
+  to its game-over screen. This does not prove successful gameplay, scoring,
+  every game, or external video/music playback.
+
+These checks supplement the earlier HTTP parity checks; they do not complete
+all browser/integration acceptance. No deployment, publishing call, DNS change,
+or paid feature was used. Openings entity navigation and the remaining complete
+interactive flows still require browser acceptance.
+
 #### Kako canonical cutover and static behavior
 
 The existing `turmadokako-website-preview` production now serves
