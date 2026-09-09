@@ -29,7 +29,7 @@ Proceed through independent work when a dependency is blocked. A blocked item is
 | 15 | Validate current site builds | Builds, content, links and legacy entity routes tested | All four local site builds, tests and lint passed; browser acceptance remains |
 | 16 | Prepare Pages deployment configuration | Validated build output and least-privilege deploy configuration | Openings main targets verified production; Trebla/Troco/Kako guarded manual production workflows now integrated into main after fresh local tests/builds; environment protection and package access verification remain before activation |
 | 17 | Validate Cloudflare-hosted sites | Candidate URLs, navigation, redirects and integrations checked | Production Pages candidates: Troco eight redirects/five pages; Trebla ten routes; Kako four redirects/33 routes passed; complete browser/integration acceptance pending |
-| 18 | Complete necessary domain cutovers | DNS/HTTPS checks and rollback evidence | Openings domains bound to Pages; Troco/Trebla apex/www and Kako apex Active with SSL September 9, production checks passed; Kako www binding still verifying though HTTPS redirect works; Trebla .com.br redirect origin preserved |
+| 18 | Complete necessary domain cutovers | DNS/HTTPS checks and rollback evidence | Openings domains bound to Pages; Troco/Trebla/Kako apex and www Active with SSL September 9, production checks passed; Trebla .com.br redirect origin deliberately preserved pending its separate migration |
 | 19 | Verify deployment/publication triggers | One execution owner per effect; no duplicate schedules | Current main workflow/API inventory recorded September 9; exclusive provider ownership and cutover gates still pending |
 | 20 | Run non-publishing end-to-end validation | Preparation, package, state, media and recovery evidence | Real local Worker and fresh-producer lost-acceptance recovery passed with zero reuploads and no duplicate rows; product/native-provider and public gateway acceptance remain pending |
 | 21 | Activate one publisher at a time | Bounded real cycle verified before routine enablement | Blocked on safety, cost and integration gates |
@@ -82,8 +82,9 @@ The existing rule was corrected to exclude only the ACME path prefix. Fresh
 HTTP/HTTPS challenge probes now return 404 without Location, while the normal
 www blog still returns the expected 301 with query. A new DNS verification was
 requested after that correction. See [Pages HTTP validation](https://developers.cloudflare.com/pages/configuration/debugging-pages/#blocked-http-validation).
-At this checkpoint www still awaits final dashboard confirmation; do not count
-its binding/certificate acceptance complete from ordinary HTTPS alone.
+The subsequent dashboard check confirmed www Active and SSL enabled as well.
+Both Kako bindings now have direct dashboard confirmation, not only ordinary
+HTTPS evidence.
 No build, publisher call, Worker deployment, paid option or hosting retirement
 occurred during this cutover. Public executor and repeatable workflow activation
 remain separate pending items.
