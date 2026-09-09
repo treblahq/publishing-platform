@@ -18,7 +18,7 @@ Proceed through independent work when a dependency is blocked. A blocked item is
 | 4 | Establish Free execution boundaries | Applicable limits and representative runtime evidence | Pending; historical Worker CPU incident remains unresolved |
 | 5 | Verify shared package | Release identity, package contents and tests verified | Released 0.1.3 checksum/content allowlist and clean Node 20 installation verified; integration acceptance tracked separately |
 | 6 | Complete Trebla private/public split | All state consumers private; clean public executor ready | Partial; isolated implementation exists, not deployed |
-| 7 | Complete Kako private/public split | Inputs, media metadata and operational state remain private | Private-state and release routing committed to isolated branch; 1,445 tests passed with separate source credentials; editorial-input separation, token provisioning and cutover pending |
+| 7 | Complete Kako private/public split | Inputs, media metadata and operational state remain private | Private-state/release routing committed; source-read token backed up and configured, but draft release access returns 403; state token, editorial separation and cutover pending |
 | 8 | Audit public repositories | Selected source/history and workflow permissions reviewed | Partial: read-only selected-code inventory passed for Trebla/Kako; full history, private input and public workflow boundaries remain unapproved |
 | 9 | Verify Openings package integration | Intake, content, duplicate prevention and provider ownership tested | Package adopted; end-to-end acceptance pending |
 | 10 | Verify Troco package integration | Content, media, channels and durable state tested | Package adopted; end-to-end acceptance pending |
@@ -43,6 +43,32 @@ Proceed through independent work when a dependency is blocked. A blocked item is
 ### September 9 release and deployment follow-up
 
 #### Current private-release and Troco diagnostic follow-up
+
+The owner generated `kako-publisher-private-source-read` with Contents read and
+required Metadata read, scoped to the original private repository ID 1349928184,
+expiring October 9, 2026. Its owner-only `.env` backup is outside Git at the
+approved external project docs folder. The temporary encrypted transfer and
+ephemeral private key were removed after byte/permission verification. Following
+specific approval, `PUBLISHING_SOURCE_TOKEN` was added to the original private
+repository's Actions secrets at `2026-09-09T11:07:35Z`. The curated workflow
+remained `disabled_manually`; no workflow was dispatched.
+
+Live source-token checks returned 200 for repository identity and package.json
+on the integration branch. However, exact draft release 383205199 returned 403
+twice: `Resource not accessible by personal access token`, despite the endpoint
+advertising `contents=read`. The second response had 4,982 requests remaining,
+so this evidence does not indicate primary rate-limit exhaustion. The existing
+administrative session independently confirmed that the same release exists,
+is a draft, has the expected tag and contains 140 assets. That administrative
+credential was used only for diagnosis, never installed as the runtime fallback.
+
+GitHub documents a push-access distinction for draft release listings in its
+[release API reference](https://docs.github.com/en/rest/releases/releases#list-releases).
+The observed draft-access restriction blocks this token's media bootstrap even
+though source reads work. Full asset inventory and byte recovery are therefore
+not verified with the new token. Do not silently grant write access, publish the
+draft, weaken the draft-only validator or mark media recovery ready. A reviewed
+private media-access design and the relevant explicit authority are still needed.
 
 Kako's isolated branch now resolves the original private release repository by
 immutable ID and accepts only its approved current/future names. Preparation uses
