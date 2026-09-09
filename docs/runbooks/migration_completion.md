@@ -1147,6 +1147,22 @@ No reschedule or duplicate create was sent. A dedicated Troco recovery branch is
 preparing explicit same-ID reconciliation because the normal state machine
 correctly keeps failed terminal and cannot currently observe later recovery.
 
+Troco recovery is now integrated into main as `1846d8e`, followed by the targeted
+sharp 0.35.4 security update `f89d521`. Root checks pass all 236 tests,
+formatting/typecheck, and catalog/brand/render/media/state/workflow validation.
+The recovery slice received independent specification and security reviews.
+It requires an explicit campaign/channel and preserves the normal failed-state
+terminal rule. It cannot create or reschedule provider posts.
+
+A real read-only CLI check against the September 4 Facebook post made exactly
+one GraphQL query, rejected recovery while Buffer still reported error, and
+preserved the campaign bytes unchanged. The six provider posts have not yet been
+rescheduled or declared recovered. Their allowedActions include schedule updates;
+actual recovery still requires a bounded same-ID operation and confirmed state
+reconciliation. The dependency update passed local npm audit with zero reported
+vulnerabilities; GitHub's existing alert remained open at the first post-push
+check, so remote alert closure is not yet claimed.
+
 ### Remaining execution order (historical; later checkpoints supersede completed items)
 
 1. Complete browser/integration and legacy HTTP behavior acceptance for the three canonical Pages candidates before attaching custom domains.
