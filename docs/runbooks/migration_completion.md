@@ -18,20 +18,20 @@ Proceed through independent work when a dependency is blocked. A blocked item is
 | 4 | Establish Free execution boundaries | Applicable limits and representative runtime evidence | Pending; historical Worker CPU incident remains unresolved |
 | 5 | Verify shared package | Release identity, package contents and tests verified | Verified package 0.1.2 checksum/content allowlist and platform validation; integration acceptance tracked separately |
 | 6 | Complete Trebla private/public split | All state consumers private; clean public executor ready | Partial; isolated implementation exists, not deployed |
-| 7 | Complete Kako private/public split | Inputs, media metadata and operational state remain private | Pending |
+| 7 | Complete Kako private/public split | Inputs, media metadata and operational state remain private | Private-state routing implemented and reviewed on isolated branch; editorial-input separation, token provisioning and cutover pending |
 | 8 | Audit public repositories | Selected source/history and workflow permissions reviewed | Pending; original Trebla/Kako histories remain private |
 | 9 | Verify Openings package integration | Intake, content, duplicate prevention and provider ownership tested | Package adopted; end-to-end acceptance pending |
 | 10 | Verify Troco package integration | Content, media, channels and durable state tested | Package adopted; end-to-end acceptance pending |
 | 11 | Verify Trebla package integration | Editorial approvals, media and delivery tested | Package adopted; public executor cutover pending |
 | 12 | Verify Kako package integration | Content/media preparation and delivery tested | Package adopted; public executor cutover pending |
-| 13 | Inspect and integrate Equity | Actual workflow mapped and applicable integration tested | Isolated branch inspected; all 381 local factory tests and typecheck passed; live credentials/provider validation pending; original dirty checkout preserved |
+| 13 | Inspect and integrate Equity | Actual workflow mapped and applicable integration tested | Isolated receipt projection implemented; 446 tests passed; existing durable local executor retained; live credentials/provider validation pending; original dirty checkout preserved |
 | 14 | Preserve history and quotas | Counters, receipts and deduplication survive repository changes | Trebla read-only migration bridge implemented and reviewed locally; actual freeze/drain/reconciliation record and cutover still pending |
 | 15 | Validate current site builds | Builds, content, links and legacy entity routes tested | All four local site builds, tests and lint passed; browser acceptance remains |
 | 16 | Prepare Pages deployment configuration | Validated build output and least-privilege deploy configuration | Openings main targets verified production; Trebla/Troco/Kako guarded manual production workflows tested and pushed to isolated branches; main integration, environment protection and package access verification remain before activation |
 | 17 | Validate Cloudflare-hosted sites | Candidate URLs, navigation, redirects and integrations checked | Production Pages candidates: Troco eight redirects/five pages; Trebla ten routes; Kako four redirects/33 routes passed; complete browser/integration acceptance pending |
 | 18 | Complete necessary domain cutovers | DNS/HTTPS checks and rollback evidence | Openings domains bound to Pages; Trebla/Troco/Kako now have canonical Pages production without custom domains; remaining domain cutovers pending |
 | 19 | Verify deployment/publication triggers | One execution owner per effect; no duplicate schedules | Inventory begun; trigger details and current gates pending |
-| 20 | Run non-publishing end-to-end validation | Preparation, package, state, media and recovery evidence | Pending; platform local validation alone is insufficient |
+| 20 | Run non-publishing end-to-end validation | Preparation, package, state, media and recovery evidence | Real local Worker upload/intake/shadow/restart replay passed; fresh-producer response-loss recovery and product acceptance remain pending |
 | 21 | Activate one publisher at a time | Bounded real cycle verified before routine enablement | Blocked on safety, cost and integration gates |
 | 22 | Verify stability and consumption | Actual CPU, storage, execution and media cleanup evidence | Pending; no synthetic load test |
 | 23 | Retire unused old infrastructure | All dependencies verified absent; recovery retained | Pending; do not delete or cancel current hosting prematurely |

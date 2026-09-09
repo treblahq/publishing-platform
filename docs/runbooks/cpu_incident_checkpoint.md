@@ -1,5 +1,16 @@
 # CPU Incident and Recovery Checkpoint
 
+## September 9 UTC read-only follow-up
+
+At `2026-09-09T01:02:25Z`, the seven-day analytics query returned 1,218
+successful invocations for current version `76c2fb69` (497 on September 7,
+683 on September 8 and 38 on September 9), with no error-status group for
+that version. Its daily P99 values were 26.803, 27.749 and 19.009 ms.
+The 128 historical `exceededResources` events remained on older versions.
+This is existing aggregated traffic, not a load test, event-level attribution
+or sufficient Free CPU acceptance. Local changes after that version have not
+been deployed. The rollout hold remains in place.
+
 > Preserve completed work and resume with a bounded CPU investigation, not another migration or architecture rewrite.
 
 ## Rollout hold
