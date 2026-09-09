@@ -31,7 +31,7 @@ Proceed through independent work when a dependency is blocked. A blocked item is
 | 17 | Validate Cloudflare-hosted sites | Candidate URLs, navigation, redirects and integrations checked | Production Pages candidates: Troco eight redirects/five pages; Trebla ten routes; Kako four redirects/33 routes passed; complete browser/integration acceptance pending |
 | 18 | Complete necessary domain cutovers | DNS/HTTPS checks and rollback evidence | Openings domains bound to Pages; Trebla/Troco/Kako now have canonical Pages production without custom domains; remaining domain cutovers pending |
 | 19 | Verify deployment/publication triggers | One execution owner per effect; no duplicate schedules | Inventory begun; trigger details and current gates pending |
-| 20 | Run non-publishing end-to-end validation | Preparation, package, state, media and recovery evidence | Real local Worker upload/intake/shadow/restart replay passed; fresh-producer response-loss recovery and product acceptance remain pending |
+| 20 | Run non-publishing end-to-end validation | Preparation, package, state, media and recovery evidence | Real local Worker and fresh-producer lost-acceptance recovery passed with zero reuploads and no duplicate rows; product/native-provider and public gateway acceptance remain pending |
 | 21 | Activate one publisher at a time | Bounded real cycle verified before routine enablement | Blocked on safety, cost and integration gates |
 | 22 | Verify stability and consumption | Actual CPU, storage, execution and media cleanup evidence | Pending; no synthetic load test |
 | 23 | Retire unused old infrastructure | All dependencies verified absent; recovery retained | Pending; do not delete or cancel current hosting prematurely |
@@ -484,6 +484,46 @@ SQLite tests are not deployed D1 concurrency or CPU evidence. Neither migration
 blocked pending the environment's requested explicit approval; local commits are
 not evidence of remote availability. Grant issuance, native-provider ownership,
 retention coordination, usage admission and activation remain pending.
+
+### Upload cleanup confirmation
+
+Local commit `c5ea29f` extends the existing artifact collector's fail-closed
+claim acknowledgement to upload cleanup. Only exactly one changed row permits
+R2 deletion; zero keeps its existing skip behavior. Six real-SQLite regressions
+reproduced unsafe progress with absent/invalid metadata, then passed with the
+guard. All 40 cleanup tests, scoped lint, typecheck and independent review
+passed. Unconfirmed claims retain a retryable failed upload and its reservation,
+without advancing the cursor. No eligibility or retention limit changed and no
+remote object was deleted.
+
+### Fresh producer recovery and streamed-upload correction
+
+The new opt-in rehearsal uses actual package producers in separate processes,
+not an in-memory manual replay. It found an integration failure: streamed upload
+without Content-Length was rejected by local R2 as an unknown-length stream.
+A separate disposable emulator reproduced the cause with identical bytes and
+then accepted the explicit verified length. Package commit `4de5325` adds that
+header after existing size/hash checks, without buffering or weaker validation.
+
+Rehearsal commit `b88429a` subsequently passed against the actual local Worker:
+lost acceptance preserved pending state; the original producer and Worker
+stopped; the fixture media was deleted; a fresh producer recovered from saved
+handoff after Worker restart. Recovery performed zero PUTs. Actual local D1 had
+exactly one publication, delivery, receipt, attempt and upload, with the same
+verified shadow receipt. This does not prove native provider ingestion, public
+gateway behavior or production CPU compliance. Both independent reviews passed.
+
+Version 0.1.3 is prepared locally for the upload fix, with internal workspace
+pins aligned. The archive allowlist passed for all 67 files; the 24,663-byte
+archive SHA-1 is `08b3fedd9ff0617c5df7d3e403c4fc310d249ca7`. A clean offline
+installation and public exports passed under Node 20. It has not been published
+to npm or adopted by product repositories; their released 0.1.2 remains intact.
+
+Final verification passed 794 tests across 97 files, lint, typecheck and secret
+scanning. The read-only npm authentication check returned E401; the browser
+reported the Mac locked. Release is blocked on interactive authentication, in
+addition to the outstanding environment approval for platform main push. No
+credentials were created or exposed and no deploy was attempted.
 
 ### Remaining execution order
 
