@@ -125,6 +125,27 @@ was printed. This is not proof against unknown/encoded credentials, unpublished
 or unavailable refs, Actions logs/artifacts, or private editorial information.
 It does not approve changing Trebla/Kako repository visibility.
 
+Kako package-only main adoption `0f360c1` is based on `d98a32b`. The stale main
+compiler identity regression failed first; the actual 191-artifact collector
+then produced `24c9c9ea71141a758709bf3f61f153b4d939d35b231c2ca7b20265ecc0f3d729`
+for the package-updated main sources. An independent review recomputed the same
+identity and verified registry integrity. All 16 focused tests and the complete
+1,431-test suite passed with no failures/skips, followed by typecheck, lint and
+diff checks (full suite 1,051.2 seconds). Only package.json, lockfile and the
+generated identity constant changed; workflow, configuration and state files
+remain untouched. Push used a leading `[skip ci]`. All five publisher remote
+mains now declare 0.1.3; larger isolated migrations and live acceptance remain
+separate from dependency adoption.
+
+The Troco site source explicitly defines `https://troco.net` as canonical;
+`trocofacil.app` remains the Android application identifier and an additional
+zone. Authenticated DNS inventory now also covers all 16 displayed `troco.net`
+entries, with a private mode-0600 snapshot and a fresh 17-query public baseline.
+Its apex and www still target Hostinger. The existing `newsletter.troco.net`
+managed Worker binding and Resend/SES/Hostinger mail records must remain intact.
+Do not treat the earlier `trocofacil.app` backup as covering the canonical site
+or overwrite the managed Worker entry during website cutover.
+
 ##### Approved live release completion, September 9
 
 Subsequent full recovery through the actual publisher downloader verified all
