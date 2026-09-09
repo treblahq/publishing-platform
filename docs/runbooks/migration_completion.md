@@ -70,6 +70,28 @@ deterministic contracts. The push used `[skip ci]`; no workflow was dispatched.
 This package adoption does not resolve the separate pending media bridge or
 establish end-to-end provider acceptance.
 
+Troco main now contains package adoption `d1f27a6` and reviewed retention fix
+`54ba5e2`. Relative to prior main `c25798f`, persisted state and workflows are
+byte-identical. Package-only validation passed 182 tests; the final retention
+integration passed 192 tests, formatting, typecheck and catalog validation
+(20 tracked campaigns, three provider contracts). A fresh isolated dependency
+installation initially lacked FFmpeg because install scripts were disabled;
+the scoped FFmpeg rebuild restored the local prerequisite before final checks.
+Independent integration review confirmed the exact previously reviewed patch.
+In-flight media now remains available regardless of campaign age; actual media
+and metadata are bounded before candidate replacement. No old post was retried,
+provider error cleared or deployment dispatched. Both pushes used `[skip ci]`.
+
+Bounded Troco Pages browser checks additionally verified the R$ 100.00 minus
+R$ 82.65 calculation (R$ 17.35), denomination details with both banknote images
+loaded, and insufficient payment (R$ 32.65 remaining). No browser error was
+recorded. These supplement earlier route checks, not provider acceptance.
+
+Fresh run metadata still shows Openings `34344980444` failing its preserved
+intake-error step (`bridge_platform_media_pending`) and Troco `34345276763`
+failing publication health. Neither run was rerun. Package adoption and media
+retention must not be presented as clearing those existing operational failures.
+
 ##### Approved live release completion, September 9
 
 Subsequent full recovery through the actual publisher downloader verified all
