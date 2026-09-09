@@ -1,7 +1,7 @@
-import { describe, expect, test } from 'vitest';
+import { afterEach, describe, expect, test, vi } from 'vitest';
 
 import { compareDnsBaselines } from './compare-dns-baseline.js';
-import { normalizeDnsAnswers } from './capture-dns-baseline.js';
+import { normalizeDnsAnswers, queryDnsRecord } from './capture-dns-baseline.js';
 import type { DnsBaseline } from './capture-dns-baseline.js';
 
 const BASELINE: DnsBaseline = {
@@ -16,6 +16,119 @@ const BASELINE: DnsBaseline = {
     { name: 'selector._domainkey.openings.dev', type: 'TXT', values: ['v=DKIM1; p=abc'] },
   ],
 };
+
+describe('DNS response validation', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.restoreAllMocks();
+  });
+
+  function respond(payload: unknown): void {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(Response.json(payload)));
+  }
+
+  test.each([{}, { Status: 2 }, { Status: 1 }, { Status: 5 }, { Status: '0' }, { Status: null }, null, []].map(payload => ({ payload })))(
+    'rejects absent, failed, or malformed DNS status: $payload', async ({ payload }) => {
+      respond(payload);
+      await expect(queryDnsRecord('example.com', 'TXT')).rejects.toThrow(/DNS/);
+    },
+  );
+
+  test.each([
+    { Status: 0 }, { Status: 0, Answer: [] }, { Status: 0, TC: false },
+    { Status: 3 }, { Status: 3, Answer: [] },
+  ])('accepts explicit empty results: %j', async payload => {
+    respond(payload);
+    await expect(queryDnsRecord('EXAMPLE.COM', 'TXT')).resolves.toEqual({ name: 'example.com', type: 'TXT', values: [] });
+  });
+
+  test.each([true, 'false', 0, null])('rejects truncation or malformed TC: %j', async TC => {
+    respond({ Status: 0, TC });
+    await expect(queryDnsRecord('example.com', 'TXT')).rejects.toThrow(/DNS/);
+  });
+
+  test.each([
+    null, {}, 'answer', [null], [[]], [{}], [{ type: 16 }], [{ type: 16, data: 4 }],
+    [{ type: '16', data: 'secret' }], [{ type: -1, data: 'secret' }],
+    [{ type: 1.5, data: 'secret' }], [{ type: 65536, data: 'secret' }],
+    [{ type: 5, data: null }],
+  ].map(Answer => ({ Answer })))('rejects malformed Answer: $Answer', async ({ Answer }) => {
+    respond({ Status: 0, Answer });
+    await expect(queryDnsRecord('example.com', 'TXT')).rejects.toThrow(/DNS/);
+  });
+
+  test('rejects NXDOMAIN with contradictory answers', async () => {
+    respond({ Status: 3, Answer: [{ type: 5, data: 'alias.example.com.' }] });
+    await expect(queryDnsRecord('example.com', 'TXT')).rejects.toThrow(/DNS/);
+  });
+
+  test.each([
+    { type: 'A', numeric: 1, data: '192.0.2.10', expected: '192.0.2.10' },
+    { type: 'AAAA', numeric: 28, data: '2001:DB8::A', expected: '2001:db8::a' },
+    { type: 'CNAME', numeric: 5, data: 'ALIAS.EXAMPLE.COM.', expected: 'alias.example.com' },
+    { type: 'MX', numeric: 15, data: '10 MAIL.EXAMPLE.COM.', expected: '10 mail.example.com' },
+    { type: 'TXT', numeric: 16, data: '"Token=AbC."', expected: '"Token=AbC."' },
+    { type: 'CAA', numeric: 257, data: '0 issue "CA.EXAMPLE"', expected: '0 issue "CA.EXAMPLE"' },
+  ] as const)('selects only the requested $type answers', async ({ type, numeric, data, expected }) => {
+    respond({ Status: 0, Answer: [{ type: 46, data: 'signature' }, { type: numeric, data }, { type: numeric, data }] });
+    await expect(queryDnsRecord('example.com', type)).resolves.toEqual({ name: 'example.com', type, values: [expected] });
+  });
+
+  test('does not relabel a CNAME chain as TXT', async () => {
+    respond({ Status: 0, Answer: [{ type: 5, data: 'alias.example.com.' }, { type: 16, data: '"Token=AbC"' }] });
+    await expect(queryDnsRecord('example.com', 'TXT')).resolves.toEqual({ name: 'example.com', type: 'TXT', values: ['"Token=AbC"'] });
+  });
+
+  test('returns no TXT values for an answer containing only other types', async () => {
+    respond({ Status: 0, Answer: [{ type: 5, data: 'alias.example.com.' }] });
+    await expect(queryDnsRecord('example.com', 'TXT')).resolves.toMatchObject({ values: [] });
+  });
+
+  test('rejects HTTP errors without exposing the response body', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('private-token', { status: 503 })));
+    await expect(queryDnsRecord('example.com', 'TXT')).rejects.toThrow('DNS query failed for example.com TXT: HTTP 503');
+  });
+
+  test('rejects invalid JSON without exposing the response body', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response('private-token')));
+    await expect(queryDnsRecord('example.com', 'TXT')).rejects.toThrow('DNS response contains invalid JSON');
+  });
+
+  test('cancels a streaming response larger than 256 KiB', async () => {
+    const cancel = vi.fn();
+    let pulls = 0;
+    const body = new ReadableStream<Uint8Array>({
+      pull(controller) {
+        pulls += 1;
+        if (pulls <= 5) controller.enqueue(new Uint8Array(65536).fill(32));
+        else controller.close();
+      },
+      cancel,
+    }, { highWaterMark: 0 });
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(body)));
+    await expect(queryDnsRecord('example.com', 'TXT')).rejects.toThrow(/DNS response exceeds/);
+    expect(cancel).toHaveBeenCalledOnce();
+  });
+
+  test('accepts a valid response exactly 256 KiB long', async () => {
+    const json = '{"Status":0}';
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(json.padEnd(256 * 1024, ' '))));
+    await expect(queryDnsRecord('example.com', 'TXT')).resolves.toMatchObject({ values: [] });
+  });
+
+  test('uses a 15 second abort signal for the HTTP request', async () => {
+    const controller = new AbortController();
+    const timeout = vi.spyOn(AbortSignal, 'timeout').mockReturnValue(controller.signal);
+    const fetchMock = vi.fn((_url: URL, options: RequestInit) => {
+      expect(options.signal).toBe(controller.signal);
+      controller.abort();
+      return Promise.reject(new DOMException('Aborted', 'AbortError'));
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    await expect(queryDnsRecord('example.com', 'TXT')).rejects.toThrow('Aborted');
+    expect(timeout).toHaveBeenCalledWith(15000);
+  });
+});
 
 describe('DNS cutover guard', () => {
   test('allows a web-only address change', () => {

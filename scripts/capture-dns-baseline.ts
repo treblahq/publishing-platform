@@ -19,7 +19,61 @@ export interface DnsBaseline {
 }
 
 interface DnsJsonAnswer { data: string }
-interface DnsJsonResponse { Answer?: DnsJsonAnswer[] }
+
+const DNS_TYPE_CODES: Record<DnsRecordType, number> = { A: 1, AAAA: 28, CNAME: 5, MX: 15, TXT: 16, CAA: 257 };
+const MAX_DNS_RESPONSE_BYTES = 256 * 1024;
+
+function isObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function validatedAnswers(payload: unknown, type: DnsRecordType): DnsJsonAnswer[] {
+  if (!isObject(payload) || (payload.Status !== 0 && payload.Status !== 3)) {
+    throw new Error('DNS response has missing, invalid, or unsuccessful status');
+  }
+  if ('TC' in payload && payload.TC !== false) throw new Error('DNS response is truncated or has invalid TC');
+  if (!('Answer' in payload)) return [];
+  if (!Array.isArray(payload.Answer)) throw new Error('DNS response has invalid Answer');
+  if (payload.Status === 3 && payload.Answer.length > 0) throw new Error('DNS NXDOMAIN response contains answers');
+  const answers: DnsJsonAnswer[] = [];
+  for (const entry of payload.Answer as unknown[]) {
+    if (!isObject(entry) || typeof entry.type !== 'number' || !Number.isInteger(entry.type)
+      || entry.type < 1 || entry.type > 65535 || typeof entry.data !== 'string') {
+      throw new Error('DNS response has invalid answer entry');
+    }
+    if (entry.type === DNS_TYPE_CODES[type]) answers.push({ data: entry.data });
+  }
+  return answers;
+}
+
+async function readDnsResponse(response: Response): Promise<unknown> {
+  if (!response.body) throw new Error('DNS response has no body');
+  const reader = response.body.getReader();
+  const decoder = new TextDecoder();
+  let size = 0;
+  let body = '';
+  try {
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      size += value.byteLength;
+      if (size > MAX_DNS_RESPONSE_BYTES) {
+        await reader.cancel();
+        throw new Error('DNS response exceeds 256 KiB');
+      }
+      body += decoder.decode(value, { stream: true });
+    }
+    body += decoder.decode();
+  } finally {
+    reader.releaseLock();
+  }
+  try {
+    return JSON.parse(body) as unknown;
+  } catch {
+    // JSON parse errors can include opaque TXT values from the response body.
+    throw new Error('DNS response contains invalid JSON');
+  }
+}
 
 export function normalizeDnsAnswers(answers: DnsJsonAnswer[], type: DnsRecordType): string[] {
   return [...new Set(answers.map(({ data }) => type === 'TXT' || type === 'CAA'
@@ -31,10 +85,13 @@ export async function queryDnsRecord(name: string, type: DnsRecordType): Promise
   const url = new URL('https://cloudflare-dns.com/dns-query');
   url.searchParams.set('name', name);
   url.searchParams.set('type', type);
-  const response = await fetch(url, { headers: { accept: 'application/dns-json' } });
+  const response = await fetch(url, {
+    headers: { accept: 'application/dns-json' },
+    signal: AbortSignal.timeout(15000),
+  });
   if (!response.ok) throw new Error(`DNS query failed for ${name} ${type}: HTTP ${String(response.status)}`);
-  const payload: DnsJsonResponse = await response.json();
-  return { name: name.toLowerCase(), type, values: normalizeDnsAnswers(payload.Answer ?? [], type) };
+  const payload = await readDnsResponse(response);
+  return { name: name.toLowerCase(), type, values: normalizeDnsAnswers(validatedAnswers(payload, type), type) };
 }
 
 function defaultQueries(domain: string): Array<[string, DnsRecordType]> {
