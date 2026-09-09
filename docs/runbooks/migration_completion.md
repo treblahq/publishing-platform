@@ -13,12 +13,12 @@ Proceed through independent work when a dependency is blocked. A blocked item is
 | # | Work item | Completion evidence | Current state |
 | --- | --- | --- | --- |
 | 1 | Inventory all products | Current repositories, branches, runtime, DNS, package and triggers recorded | In progress; GitHub and local repository inventory checked September 8 |
-| 2 | Complete project backups | Missing credentials/configuration saved without overwriting user files | Troco/Openings/Trebla/Kako original repository credentials recovered; local producer backups saved; newer Trebla private-state token backup still pending |
+| 2 | Complete project backups | Missing credentials/configuration saved without overwriting user files | Original publisher and local producer backups preserved; new dedicated Trebla/Kako state tokens backed up owner-only September 9; deployment credential inventory remains separate |
 | 3 | Validate backup security | Owner-only access, integrity, no Git inclusion, transfer cleanup | Completed for recovered files: owner-only permissions, exact inventory and transfer cleanup verified; user files preserved |
 | 4 | Establish Free execution boundaries | Applicable limits and representative runtime evidence | Pending; historical Worker CPU incident remains unresolved |
 | 5 | Verify shared package | Release identity, package contents and tests verified | Released 0.1.3 checksum/content allowlist and clean Node 20 installation verified; integration acceptance tracked separately |
 | 6 | Complete Trebla private/public split | All state consumers private; clean public executor ready | Partial; isolated implementation exists, not deployed |
-| 7 | Complete Kako private/public split | Inputs, media metadata and operational state remain private | Explicit completed-release descriptor adopted; all 140 media files and replay verified; state token, editorial source separation and public executor cutover pending |
+| 7 | Complete Kako private/public split | Inputs, media metadata and operational state remain private | Release bytes verified and dedicated state token installed; current source/renderer/date acceptance, editorial source separation and public executor cutover remain pending |
 | 8 | Audit public repositories | Selected source/history and workflow permissions reviewed | Partial: read-only selected-code inventory passed for Trebla/Kako; full history, private input and public workflow boundaries remain unapproved |
 | 9 | Verify Openings package integration | Intake, content, duplicate prevention and provider ownership tested | Package adopted; end-to-end acceptance pending |
 | 10 | Verify Troco package integration | Content, media, channels and durable state tested | Package adopted; end-to-end acceptance pending |
@@ -41,6 +41,30 @@ Proceed through independent work when a dependency is blocked. A blocked item is
 ## Fresh evidence: September 8, 2026
 
 ### September 9 release and deployment follow-up
+
+#### Dedicated private-state credentials provisioned
+
+Owner reauthentication completed during the September 9 continuation. Two
+fine-grained tokens were then created: `trebla-state-2026-09-09` and
+`kako-state-2026-09-09`, both expiring October 9, 2026. Each selects only its
+original private `social-publisher` repository, with Contents read/write and
+mandatory Metadata read. No organization, workflow, administration, Actions or
+secret-management permission was granted. Existing tokens were not revoked.
+
+Each token was saved in the approved external project folder as
+`publishing-state-token-2026-09-09.env`, mode 0600 under its existing mode-0700
+directory, without overwriting files. Token values were not printed. A temporary
+loopback-only, nonce-bound form transferred the browser clipboard to local
+`apply_patch`; its server exited after verifying the saved file, and owned
+clipboard copies and browser tabs were cleared/closed afterward.
+
+Authenticated GETs verified immutable repository IDs 1348881573 (Trebla) and
+1349928184 (Kako), exact original names and private visibility. The tokens were
+installed as `PUBLISHING_STATE_TOKEN` on the respective original repositories;
+GitHub secret-name metadata confirms updates at 16:58:59Z and 17:02:28Z.
+No workflow, provider or deployment was dispatched. No public preparation
+repository received credentials. This closes provisioning/backup, not write
+acceptance, rename/cutover, public-executor security or publication activation.
 
 #### Equity live identity and active-executor boundary
 
