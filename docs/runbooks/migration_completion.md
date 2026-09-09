@@ -1139,6 +1139,14 @@ were scheduled at inspection. Instagram's inspected scheduled media references
 Buffer's own upload storage. This does not establish the historical failure
 cause or successful delivery; recovery still needs provider-specific evidence.
 
+Subsequent bounded read-only inspection of Buffer's `Post.error.message`
+identified the same media-access failure for all six records. Each of their nine
+referenced GitHub Pages media URLs now returns HEAD 200. This establishes current
+reachability, not historical availability or successful provider ingestion.
+No reschedule or duplicate create was sent. A dedicated Troco recovery branch is
+preparing explicit same-ID reconciliation because the normal state machine
+correctly keeps failed terminal and cannot currently observe later recovery.
+
 ### Remaining execution order (historical; later checkpoints supersede completed items)
 
 1. Complete browser/integration and legacy HTTP behavior acceptance for the three canonical Pages candidates before attaching custom domains.
