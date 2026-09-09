@@ -95,6 +95,7 @@ export async function runD1UploadCleanup(
         AND (state = 'failed' OR expires_at <= strftime('%Y-%m-%dT%H:%M:%fZ', 'now'))`)
       .bind(candidate.tenantId, candidate.id).run();
     if (claimed.meta?.changes === 0) continue;
+    if (claimed.meta?.changes !== 1) throw new Error('Upload cleanup claim could not be confirmed');
     await bucket.delete(candidate.locator);
     // Keep the upload retryable until its reservation has been released.
     await database.prepare(`UPDATE capacity_reservations SET state = 'released'

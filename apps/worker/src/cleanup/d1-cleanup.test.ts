@@ -47,7 +47,7 @@ describe('temporary upload collector', () => {
           all: () => Promise.resolve({ results: [{ id: 'u1', tenant_id: 'openings', locator: 'temporary/openings/u1/hash.mp4' }] }),
           run: () => {
             order.push(sql.includes("SET state = 'failed'") ? 'claim' : sql.includes("state = 'deleted'") ? 'mark' : sql.includes('capacity_reservations') ? 'release' : 'cursor');
-            return Promise.resolve({});
+            return Promise.resolve({ meta: { changes: 1 } });
           },
         };
         statement.bind.mockReturnValue(statement);

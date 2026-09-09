@@ -21,7 +21,8 @@ beforeEach(() => {
 });
 afterEach(() => { sqlite.close(); });
 
-function database(beforeRun: (sql: string) => void = () => {}, afterRun: (sql: string) => void = () => {}) {
+function database(beforeRun: (sql: string) => void = () => {}, afterRun: (sql: string) => void = () => {},
+  claimMetadata?: { meta?: { changes?: number } }) {
   return {
     prepare(sql: string) {
       let values: SQLInputValue[] = [];
@@ -33,6 +34,7 @@ function database(beforeRun: (sql: string) => void = () => {}, afterRun: (sql: s
           beforeRun(sql);
           const result = sqlite.prepare(sql).run(...values);
           afterRun(sql);
+          if (sql.includes("SET state = 'failed'") && claimMetadata !== undefined) return Promise.resolve(claimMetadata);
           return Promise.resolve({ meta: { changes: Number(result.changes) } });
         },
       };
@@ -42,6 +44,19 @@ function database(beforeRun: (sql: string) => void = () => {}, afterRun: (sql: s
 }
 
 describe('upload cleanup against actual migrations', () => {
+  it.each([{}, { meta: {} }, { meta: { changes: 2 } }, { meta: { changes: -1 } },
+    { meta: { changes: Number.NaN } }, { meta: { changes: 0.5 } }])('stops before deletion when the claim acknowledgement is uncertain: %j', async (metadata) => {
+    let deletes = 0;
+    await expect(runD1UploadCleanup(database(() => {}, () => {}, metadata), {
+      delete: () => { deletes++; return Promise.resolve(); },
+    }, 10)).rejects.toThrow('Upload cleanup claim could not be confirmed');
+    expect(deletes).toBe(0);
+    expect(sqlite.prepare('SELECT state FROM artifact_uploads').get()).toEqual({ state: 'failed' });
+    expect(sqlite.prepare('SELECT state FROM capacity_reservations').get()).toEqual({ state: 'reserved' });
+    expect(sqlite.prepare('SELECT COUNT(*) AS count FROM maintenance_cursors').get()).toEqual({ count: 0 });
+    expect(await runD1UploadCleanup(database(), { delete: () => Promise.resolve() }, 10)).toBe(1);
+  });
+
   it('deletes an expired unclaimed upload and releases its actual reservation column', async () => {
     const deleted: string[] = [];
     expect(await runD1UploadCleanup(database(), {
