@@ -49,22 +49,22 @@ Never change entity, artifact, reference, delivery, lease or receipt tables.
 
 ## TDD execution
 
-- [ ] Reproduce missing issuance with a real SQLite fixture loading all migrations.
+- [x] Reproduce missing issuance with a real SQLite fixture loading all migrations.
   Use existing public-media resolver tests for fixture/interface patterns.
-- [ ] Implement the internal issuer with atomic availability and lease conditions.
-- [ ] Prove accepted exact grant; immutable exact replay; conflicting expiry,
+- [x] Implement the internal issuer with atomic availability and lease conditions.
+- [x] Prove accepted exact grant; immutable exact replay; conflicting expiry,
   released/stale/expired/missing lease; wrong/disabled tenant and adapter; shadow
   and Equity denial; cross-tenant records; hash/size/MIME/locator mismatch;
   malformed runtime inputs; no mutation of retention or lease state.
-- [ ] Exercise both races through actual SQL and the real cleanup function:
+- [x] Exercise both races through actual SQL and the real cleanup function:
   approval before tombstone prevents deletion; tombstone before approval prevents
   insertion, including retry after a failed bucket deletion. No actual bucket.
-- [ ] Prove lost INSERT response followed by fresh exact retry yields replay
+- [x] Prove lost INSERT response followed by fresh exact retry yields replay
   without duplicate grants or timestamp extension. Compose issued approval with
   the actual resolver; released reference revokes effective access without
   reauthorizing or restoring bytes.
-- [ ] Focused tests, targeted lint and independent reviews before full validation.
-- [ ] Root runs full platform validation, records evidence/remaining gates and
+- [x] Focused tests, targeted lint and independent reviews before full validation.
+- [x] Root runs full platform validation, records evidence/remaining gates and
   commits only reviewed files with skip-CI marker. No public route activation.
 
 This does not close account allocation provisioning, denial cost bounds, native

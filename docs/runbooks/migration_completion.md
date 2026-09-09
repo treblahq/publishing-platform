@@ -29,7 +29,7 @@ Proceed through independent work when a dependency is blocked. A blocked item is
 | 15 | Validate current site builds | Builds, content, links and legacy entity routes tested | All four local site builds, tests and lint passed; browser acceptance remains |
 | 16 | Prepare Pages deployment configuration | Validated build output and least-privilege deploy configuration | Openings main targets verified production; Trebla/Troco/Kako guarded manual production workflows now integrated into main after fresh local tests/builds; environment protection and package access verification remain before activation |
 | 17 | Validate Cloudflare-hosted sites | Candidate URLs, navigation, redirects and integrations checked | Production Pages candidates: Troco eight redirects/five pages; Trebla ten routes; Kako four redirects/33 routes passed; complete browser/integration acceptance pending |
-| 18 | Complete necessary domain cutovers | DNS/HTTPS checks and rollback evidence | Openings domains bound to Pages; Troco apex and www bound and Active with SSL September 9, six production GET checks passed; Trebla/Kako cutovers pending |
+| 18 | Complete necessary domain cutovers | DNS/HTTPS checks and rollback evidence | Openings domains bound to Pages; Troco and Trebla apex/www Active with SSL September 9 and production GET checks passed; Trebla .com.br redirect origin preserved; Kako cutover pending |
 | 19 | Verify deployment/publication triggers | One execution owner per effect; no duplicate schedules | Current main workflow/API inventory recorded September 9; exclusive provider ownership and cutover gates still pending |
 | 20 | Run non-publishing end-to-end validation | Preparation, package, state, media and recovery evidence | Real local Worker and fresh-producer lost-acceptance recovery passed with zero reuploads and no duplicate rows; product/native-provider and public gateway acceptance remain pending |
 | 21 | Activate one publisher at a time | Bounded real cycle verified before routine enablement | Blocked on safety, cost and integration gates |
@@ -41,6 +41,32 @@ Proceed through independent work when a dependency is blocked. A blocked item is
 ## Fresh evidence: September 8, 2026
 
 ### September 9 release and deployment follow-up
+
+#### Trebla canonical domain cutover
+
+`treb.la` and `www.treb.la` are now bound to the existing production Pages
+deployment of `trebla-website-preview`; both report Active and SSL enabled.
+Only their original proxied A records (`212.1.209.199`) were replaced by
+proxied CNAMEs to `trebla-website-preview.pages.dev`. The refreshed dashboard
+still has all 12 records; `goal`, domain-connect and email configuration remain
+unchanged. Fresh before/after DNS comparisons for both Trebla zones reported no
+protected changes. Restore the original two A records for rollback.
+
+Four HTTPS GET checks passed for apex/www home and blog. All ten exported
+index routes on the canonical domain returned 200 and matched the Pages
+candidate after decoding the existing Cloudflare email-obfuscation transform
+and removing its decoder script. Raw HTML comparison initially differed for
+that reason; it was not a stale build. The candidate's actual nonexistent route
+still returns 404, independently of exported error-template paths.
+
+`trebla.com.br` and `www.trebla.com.br` were deliberately left untouched on
+their original origin. Their apex A/AAAA and www CNAME do not depend on the
+changed `treb.la` DNS. Four fresh requests confirmed the existing 308 to
+`https://treb.la/`, including the existing removal of path/query. Migrating this
+alias behavior and retiring its origin remain pending. Pages also normalizes
+`/blog` with 308 instead of the previous 301 and redirects `/index.html` to `/`;
+normal content routes and query preservation were checked before cutover.
+No new build, Worker, Actions run, paid plan or Hostinger cancellation occurred.
 
 #### Troco production domain cutover
 
