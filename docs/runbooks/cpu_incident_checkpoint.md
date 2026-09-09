@@ -30,6 +30,24 @@ mutation occurred. The approach follows Cloudflare's
 
 ## September 9 UTC read-only follow-up
 
+An additional instrumented copy of the existing local runtime rehearsal
+captured the real user Worker through signed intake, artifact storage, outbox,
+shadow queue delivery and fresh-process recovery after restart. The unchanged
+fixture flow passed with one publication, delivery, receipt, attempt and upload;
+recovery issued zero PUTs. The submit profile contained 84 samples and recovery
+16. Observed application functions included nonce validation, intake, outbox,
+queue consumption and artifact verification, alongside D1/native storage and
+hashing calls. No dominant application hotspot was established at that sample
+size. Separate Miniflare binding-service CPU, scheduled events and live
+providers are not covered. This is not Free CPU certification.
+
+The temporary harness retained isolated environment/configuration, the legacy
+configuration refusal, dummy bindings, local-only commands, shadow adapter and
+process-group cleanup. An initial inspector handshake failed before submitting
+the fixture; exactly one fixture flow was executed successfully. All owned
+processes were stopped. The runtime summary is backed up in the same external
+owner-only docs folder; no repository runtime code or Cloudflare state changed.
+
 At `2026-09-09T01:02:25Z`, the seven-day analytics query returned 1,218
 successful invocations for current version `76c2fb69` (497 on September 7,
 683 on September 8 and 38 on September 9), with no error-status group for

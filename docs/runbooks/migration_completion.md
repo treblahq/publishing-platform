@@ -27,7 +27,7 @@ Proceed through independent work when a dependency is blocked. A blocked item is
 | 13 | Inspect and integrate Equity | Actual workflow mapped and applicable integration tested | Isolated receipt projection implemented; 446 tests passed; existing durable local executor retained; live credentials/provider validation pending; original dirty checkout preserved |
 | 14 | Preserve history and quotas | Counters, receipts and deduplication survive repository changes | Trebla read-only migration bridge implemented and reviewed locally; actual freeze/drain/reconciliation record and cutover still pending |
 | 15 | Validate current site builds | Builds, content, links and legacy entity routes tested | All four local site builds, tests and lint passed; browser acceptance remains |
-| 16 | Prepare Pages deployment configuration | Validated build output and least-privilege deploy configuration | Openings main targets verified production; Trebla/Troco/Kako guarded manual production workflows tested and pushed to isolated branches; main integration, environment protection and package access verification remain before activation |
+| 16 | Prepare Pages deployment configuration | Validated build output and least-privilege deploy configuration | Openings main targets verified production; Trebla/Troco/Kako guarded manual production workflows now integrated into main after fresh local tests/builds; environment protection and package access verification remain before activation |
 | 17 | Validate Cloudflare-hosted sites | Candidate URLs, navigation, redirects and integrations checked | Production Pages candidates: Troco eight redirects/five pages; Trebla ten routes; Kako four redirects/33 routes passed; complete browser/integration acceptance pending |
 | 18 | Complete necessary domain cutovers | DNS/HTTPS checks and rollback evidence | Openings domains bound to Pages; Trebla/Troco/Kako now have canonical Pages production without custom domains; remaining domain cutovers pending |
 | 19 | Verify deployment/publication triggers | One execution owner per effect; no duplicate schedules | Inventory begun; trigger details and current gates pending |
@@ -101,6 +101,29 @@ lockfile, preserve existing execution/state/credential behavior, and use
 `[skip ci]`. Original local checkouts remain untouched. The larger isolated
 private-state and receipt-projection changes are not included in these package
 adoptions and remain pending separately.
+
+The three static-site mains now include the guarded manual Pages workflows:
+Trebla `61eaa6e` (100 tests; 101 exported files), Troco `600fa92` (62 Node tests
+plus 45 Vitest tests; 375 files), and Kako `1dbf070` (135 tests; 916 files and
+43 canonical artifacts verified). Fresh lint/build/static guards passed for
+each, and independent review found no blockers. These are fast-forward
+integrations of the previously reviewed isolated changes, not new deployments.
+Existing Hostinger workflows remain unchanged. Each pushed tip starts with
+`[skip ci]`, covering GitHub and the documented Pages skip-prefix behavior.
+Fresh Actions metadata still showed the September 6 runs for all three sites,
+not runs from these integrations. No enablement variable, secret, environment
+protection, domain or deployment was changed. Production activation still
+requires the remaining environment and domain checks.
+
+A bounded local history scan also examined every blob reachable from the
+locally available origin refs of the two already-public publishers. Troco:
+765 text blobs (5,002,339 bytes) plus three MP3 blobs, compared against six
+known secret values and the shared key-pattern scanner. Openings: 1,180 text
+blobs (110,669,796 bytes) plus two MP3 blobs, compared against seven known
+secret values and the same scanner. No matches were found, and no secret value
+was printed. This is not proof against unknown/encoded credentials, unpublished
+or unavailable refs, Actions logs/artifacts, or private editorial information.
+It does not approve changing Trebla/Kako repository visibility.
 
 ##### Approved live release completion, September 9
 
