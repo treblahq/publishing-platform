@@ -399,6 +399,27 @@ not historical revision immutability or stale revision ordering. The immutable
 media binding itself remains pending. No live D1 write, Worker deployment or
 provider call was performed for this change.
 
+### Troco existing-run diagnosis (September 9 UTC)
+
+Read-only inspection of run `34252257230` confirmed that 6,360,508 archive bytes
+uploaded successfully, but GitHub's artifact finalization returned an intermediary
+403 before deployment. The log does not establish a quota or repository-permission
+cause. No retry or permission expansion was made.
+
+Later existing run `34290390212`, source `36140a39ba49afbe3a21de6bc65df232dd11a4f2`,
+succeeded at preserving the archive, deploying Pages media, running the publishing
+step and reconciling intents. It failed only at publication health: Facebook and
+YouTube failures for the September 4, 5 and 6 campaigns remained unresolved.
+Thus the latest red run is not evidence of a new deploy failure. These six
+historical failures remain visible; no post was retried or marked healthy without
+provider evidence. Success of a publishing step alone does not prove every post
+was delivered. The archive incident's exact upstream cause remains unknown.
+
+Credential inventory also confirmed owner-only mode 0600 for the four existing
+project JSON backups, without printing values. Neither Trebla nor Kako's backup
+contains `PUBLISHING_STATE_TOKEN`; the dedicated private-state credentials remain
+a provisioning/backup gate, not a completed item.
+
 ### Remaining execution order
 
 1. Complete browser/integration and legacy HTTP behavior acceptance for the three canonical Pages candidates before attaching custom domains.
