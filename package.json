@@ -15,6 +15,7 @@
     "build": "npm run build --workspace @trebla/publishing && npm run build --workspace @trebla/publishing-adapter-kit && npm run build --workspaces --if-present",
     "lint": "eslint .",
     "rehearse:local": "node tooling/rehearse-local.mjs",
+    "rehearse:runtime": "node tooling/rehearse-runtime.mjs",
     "scan:secrets": "node tooling/secret-scan.mjs",
     "pretest": "npm run build --workspace @trebla/publishing && npm run build --workspace @trebla/publishing-adapter-kit && npm run build --workspace @trebla/publishing-adapter-test",
     "test": "NODE_NO_WARNINGS=1 vitest run --passWithNoTests",
