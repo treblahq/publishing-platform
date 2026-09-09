@@ -42,6 +42,24 @@ Proceed through independent work when a dependency is blocked. A blocked item is
 
 ### September 9 release and deployment follow-up
 
+#### Trebla original executor frozen; drainage not complete
+
+All six original publisher workflows were verified active, then disabled and
+verified `disabled_manually` after 17:05 UTC September 9. The exact IDs, previous
+states and recovery cautions are saved owner-only in the external Trebla docs
+folder. No provider schedules were altered and no existing run was restarted.
+
+Fresh separate API queries showed no in-progress or waiting executions but one
+queued scout run `33938442523` from September 5, with zero jobs. Normal and force
+cancellation each returned HTTP 409 claiming the run had not been queued yet.
+Do not erase its history, repeatedly retry unchanged cancellation, or write a
+false drained declaration. Private/public rename and quota cutover remain held.
+The original state branch and dedicated token remain intact.
+
+The prepared Trebla integration also merged virtually with current remote main
+`f33e71d` without conflicts and with an identical resulting tree; no source
+integration fix or production branch change was needed for that check.
+
 #### Dedicated private-state credentials provisioned
 
 Owner reauthentication completed during the September 9 continuation. Two
