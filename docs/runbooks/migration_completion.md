@@ -1171,6 +1171,21 @@ that this run is terminal or delete its history to manufacture a clean result.
 Previously scheduled Buffer posts remain unchanged. Resolve or independently
 exclude the old execution before the same-ID recovery and routine reenablement.
 
+### Shared image dependency security follow-up
+
+Openings main now includes sharp 0.35.4 via `dceaf58`; the isolated update
+preserved publishing 0.1.3 and the dirty original checkout. Verification passed
+27 platform tests, 42 artwork/state tests and 165 deterministic contracts, with
+independent lockfile review and zero reported npm audit vulnerabilities.
+Only sharp and its platform/libvips dependencies changed. Troco's equivalent
+patch is `f89d521`. Fresh GitHub main lockfile reads confirmed Trebla and Kako
+already resolve sharp 0.35.4 and publishing 0.1.3. No workflow was dispatched.
+
+The designated per-project GitHub-secret backups were checked by key name only;
+none of the four contains a Cloudflare/Pages deployment credential. Secret
+values were not printed. This check does not prove that no credential exists
+elsewhere or authorize searching unrelated private storage.
+
 ### Remaining execution order (historical; later checkpoints supersede completed items)
 
 1. Complete browser/integration and legacy HTTP behavior acceptance for the three canonical Pages candidates before attaching custom domains.
