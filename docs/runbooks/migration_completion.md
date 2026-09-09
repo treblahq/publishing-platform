@@ -1163,6 +1163,14 @@ reconciliation. The dependency update passed local npm audit with zero reported
 vulnerabilities; GitHub's existing alert remained open at the first post-push
 check, so remote alert closure is not yet claimed.
 
+Recovery freeze found old run `34065936726` still reported queued with no jobs
+or checks. Direct normal/force cancellation both returned HTTP 409 saying it
+had not been queued yet, contradicting the read status. Troco `publish.yml` is
+temporarily `disabled_manually`; no provider post was rescheduled. Do not infer
+that this run is terminal or delete its history to manufacture a clean result.
+Previously scheduled Buffer posts remain unchanged. Resolve or independently
+exclude the old execution before the same-ID recovery and routine reenablement.
+
 ### Remaining execution order (historical; later checkpoints supersede completed items)
 
 1. Complete browser/integration and legacy HTTP behavior acceptance for the three canonical Pages candidates before attaching custom domains.
