@@ -1116,7 +1116,30 @@ reported the Mac locked. Release is blocked on interactive authentication, in
 addition to the outstanding environment approval for platform main push. No
 credentials were created or exposed and no deploy was attempted.
 
-### Remaining execution order
+### Public media runtime checkpoint — 2026-09-09
+
+Commit `8e50b75` is pushed to platform main. The actual Worker router now
+composes the existing finite admission, grant resolver and public media
+transport. Native R2 range requests use `{ range }`; HEAD remains metadata-only.
+Configuration is absent in Wrangler, so this new flow remains disabled. No
+allocation, approval, provider activation, migration or deployment was performed.
+
+The focused integration suite passes 98 tests against real SQLite and the
+actual router. Root full validation passes 1,189 tests across 100 files, build,
+lint, typecheck and known-secret scanning. Independent specification and quality
+reviews approved the slice. This is local implementation evidence, not Free CPU
+certification or completion of native-provider ownership.
+
+A read-only Troco check found six historical Facebook/YouTube records from
+September 4–6 still in Buffer error status with retained provider identifiers.
+The latest inspected workflow failed its publication-health check on those
+records. They were not reopened, cleared or resent. The September 9 Facebook
+image and YouTube video returned successful media HEAD responses and their posts
+were scheduled at inspection. Instagram's inspected scheduled media references
+Buffer's own upload storage. This does not establish the historical failure
+cause or successful delivery; recovery still needs provider-specific evidence.
+
+### Remaining execution order (historical; later checkpoints supersede completed items)
 
 1. Complete browser/integration and legacy HTTP behavior acceptance for the three canonical Pages candidates before attaching custom domains.
 2. Complete the newer Trebla private-state token backup without revoking existing credentials; freeze/drain and reconcile actual historical usage before provisioning its cutover record.

@@ -45,7 +45,7 @@ scheduled/queue behavior, approvals, references, receipts or provider ownership.
 - [x] Prove new callers share the same finite allocation, and reservations are
   neither retried nor refunded on response loss or downstream failure.
 - [x] Focused tests, spec review, quality review, then root full validation.
-- [ ] Record actual evidence and push reviewed implementation with skip-CI.
+- [x] Record actual evidence and push reviewed implementation with skip-CI.
 
 Implementation scope: new `apps/worker/src/artifacts/public-media-runtime.ts`
 and `.test.ts`, and the minimal import/router dispatch in `apps/worker/src/index.ts`.
@@ -60,3 +60,4 @@ optional-header typing error in the test helper; after correction it passes
 1,189 tests across 100 files, build, lint, typecheck and known-secret scanning.
 Independent specification and quality reviews found no blocking findings.
 No Wrangler configuration, allocation, provider activation or deployment changed.
+Reviewed implementation was pushed to main as `8e50b75` with skip-CI.
