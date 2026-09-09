@@ -29,7 +29,7 @@ Proceed through independent work when a dependency is blocked. A blocked item is
 | 15 | Validate current site builds | Builds, content, links and legacy entity routes tested | All four local site builds, tests and lint passed; browser acceptance remains |
 | 16 | Prepare Pages deployment configuration | Validated build output and least-privilege deploy configuration | Openings main targets verified production; Trebla/Troco/Kako guarded manual production workflows now integrated into main after fresh local tests/builds; environment protection and package access verification remain before activation |
 | 17 | Validate Cloudflare-hosted sites | Candidate URLs, navigation, redirects and integrations checked | Production Pages candidates: Troco eight redirects/five pages; Trebla ten routes; Kako four redirects/33 routes passed; complete browser/integration acceptance pending |
-| 18 | Complete necessary domain cutovers | DNS/HTTPS checks and rollback evidence | Openings domains bound to Pages; Troco and Trebla apex/www Active with SSL September 9 and production GET checks passed; Trebla .com.br redirect origin preserved; Kako cutover pending |
+| 18 | Complete necessary domain cutovers | DNS/HTTPS checks and rollback evidence | Openings domains bound to Pages; Troco/Trebla apex/www and Kako apex Active with SSL September 9, production checks passed; Kako www binding still verifying though HTTPS redirect works; Trebla .com.br redirect origin preserved |
 | 19 | Verify deployment/publication triggers | One execution owner per effect; no duplicate schedules | Current main workflow/API inventory recorded September 9; exclusive provider ownership and cutover gates still pending |
 | 20 | Run non-publishing end-to-end validation | Preparation, package, state, media and recovery evidence | Real local Worker and fresh-producer lost-acceptance recovery passed with zero reuploads and no duplicate rows; product/native-provider and public gateway acceptance remain pending |
 | 21 | Activate one publisher at a time | Bounded real cycle verified before routine enablement | Blocked on safety, cost and integration gates |
@@ -41,6 +41,46 @@ Proceed through independent work when a dependency is blocked. A blocked item is
 ## Fresh evidence: September 8, 2026
 
 ### September 9 release and deployment follow-up
+
+#### Kako canonical cutover and static behavior
+
+The existing `turmadokako-website-preview` production now serves
+`turmadokako.com`, whose binding reports Active and SSL enabled. Both apex and
+www DNS now use proxied CNAMEs to that Pages hostname. The original apex A
+`212.1.209.199` and AAAA `2a02:4780:1:793:0:24b8:e5ab:a` became one CNAME;
+www previously aliased the apex. The dashboard count consequently changed from
+14 to 13, with FTP, mail and verification records preserved. Fresh matching
+14-query DNS snapshots reported no protected changes. Original web records and
+rollback instructions are saved privately; do not remove old hosting.
+
+One narrowly scoped Single Redirect preserves original www canonicalization:
+`http.host eq "www.turmadokako.com"`, dynamic target
+`concat("https://turmadokako.com", http.request.uri.path)`, status 301, query
+preservation enabled. It was saved disabled before activation; the rule list
+had no other active redirect rules. The generic wildcard template produced a
+DNS applicability warning, so it was cancelled and replaced with this explicit
+host condition, not blindly deployed. The rule uses the existing Free feature,
+not a Worker. See [Single Redirects availability](https://developers.cloudflare.com/rules/url-forwarding/)
+and [settings](https://developers.cloudflare.com/rules/url-forwarding/single-redirects/settings/).
+
+Fresh HTTP/HTTPS www blog requests redirect to the exact canonical path/query.
+Home/blog returned 200 and both Lola redirects retained their existing external
+destinations/query without following those destinations. All 33 exported index
+routes matched the candidate after accounting for existing Cloudflare email
+obfuscation. Home initially differed because plain email text was transformed
+into a protected anchor; decoding that exact transform confirmed equivalence.
+
+Five retired product/campaign routes intentionally remain unavailable as true
+404 responses under the static Pages target instead of Apache's 410. The
+retired products remain absent from the export and sitemap; this is not exact
+HTTP-status parity. No runtime was added solely for that distinction.
+
+At this checkpoint the www Pages binding still reports Verifying, despite
+working HTTPS canonical redirects and the correct CNAME; a single DNS recheck
+was requested. Do not mark its binding/certificate acceptance complete yet.
+No build, publisher call, Worker deployment, paid option or hosting retirement
+occurred during this cutover. Public executor and repeatable workflow activation
+remain separate pending items.
 
 #### Trebla canonical domain cutover
 
