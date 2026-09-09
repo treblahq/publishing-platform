@@ -42,6 +42,35 @@ Proceed through independent work when a dependency is blocked. A blocked item is
 
 ### September 9 release and deployment follow-up
 
+#### Openings individual entity identity repaired and deployed
+
+Browser acceptance found that `/authors/techdyvn` displayed `GiovaniPole0`:
+the exporter copied a representative entity into each Worker shell, while the
+Worker personalized only metadata. Web main `4acc40c` now copies the existing
+URL-driven job, author and community client shells into the same `route-indexes`
+paths. Separate directory listing exports are preserved. A regression test
+failed on the old representative job body before the fix; all validations,
+lint and the 1,007-file production build passed afterward. Independent review
+approved the change, and an isolated local browser displayed `techdyvn` with
+zero headings for the incorrect representative author.
+
+One manual public-runner deployment,
+[34377172604](https://github.com/openings-dev/web/actions/runs/34377172604),
+completed successfully, including upload-access preflight. Fresh isolated
+Chromium checks on the canonical domain verified the visible identities at
+`/authors/techdyvn`, `/communities/backend-br/vagas`, and
+`/jobs/gh_0e6bd5dbd7f6d69f3e81bc93` (the Evertec Python/React vacancy).
+This fixes the confirmed identity mismatch, not every interactive flow or the
+previous persistent-browser job-list discrepancy. No publishing Worker rollout,
+database write, backfill, social publication or DNS change was performed.
+
+Read-only checks also confirmed that `treblahq/website`, `trocohq/frontend`
+and `turmadokako/website` remain private, each has only the `cloudflare-preview`
+environment and none has the production-enable repository variable. Their
+guarded production workflows must not be described as activated or as free
+public-runner deployments; production environment/access and execution-boundary
+work remain pending.
+
 #### Openings listing repair deployed successfully
 
 Openings web main `3a1ef05` includes listing repair `9a9b023` and a Pages
