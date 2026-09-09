@@ -37,6 +37,21 @@ function uploader(fetch: typeof globalThis.fetch) {
 }
 
 describe('temporary artifact uploader', () => {
+  it('declares the verified file length so R2 receives a known-length stream', async () => {
+    const filePath = await mediaFile();
+    let bytes = '';
+    const fetch: typeof globalThis.fetch = async (_url, init) => {
+      const length = new Headers(init?.headers).get('content-length');
+      bytes = await new Response(init?.body).text();
+      expect(length).toBe(String(reference.byteSize));
+      expect(new TextEncoder().encode(bytes).byteLength).toBe(Number(length));
+      return Response.json({ status: 'stored' }, { status: 201 });
+    };
+    await expect(uploader(fetch).upload({ tenant: 'troco', reference, filePath }))
+      .resolves.toEqual({ outcome: 'available', stored: true });
+    expect(bytes).toBe('media');
+  });
+
   it('streams one signed content-addressed upload', async () => {
     const fetch = vi.fn<typeof globalThis.fetch>().mockResolvedValue(Response.json(
       { status: 'stored' }, { status: 201 },

@@ -72,7 +72,8 @@ export function createArtifactUploader(options: ArtifactUploaderOptions): Artifa
       const body = Readable.toWeb(createReadStream(filePath)) as unknown as BodyInit;
       const init = {
         method: 'PUT',
-        headers,
+        // R2 requires a known-length request stream; bytes were verified above.
+        headers: { ...headers, 'content-length': String(reference.byteSize) },
         body,
         duplex: 'half',
       } satisfies RequestInit & { duplex: 'half' };
