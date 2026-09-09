@@ -54,7 +54,8 @@ www previously aliased the apex. The dashboard count consequently changed from
 rollback instructions are saved privately; do not remove old hosting.
 
 One narrowly scoped Single Redirect preserves original www canonicalization:
-`http.host eq "www.turmadokako.com"`, dynamic target
+`http.host eq "www.turmadokako.com"` excluding paths beginning
+`/.well-known/acme-challenge/`, dynamic target
 `concat("https://turmadokako.com", http.request.uri.path)`, status 301, query
 preservation enabled. It was saved disabled before activation; the rule list
 had no other active redirect rules. The generic wildcard template produced a
@@ -75,9 +76,14 @@ Five retired product/campaign routes intentionally remain unavailable as true
 retired products remain absent from the export and sitemap; this is not exact
 HTTP-status parity. No runtime was added solely for that distinction.
 
-At this checkpoint the www Pages binding still reports Verifying, despite
-working HTTPS canonical redirects and the correct CNAME; a single DNS recheck
-was requested. Do not mark its binding/certificate acceptance complete yet.
+The initial redirect also intercepted Pages certificate validation. A fresh
+ACME diagnostic returned 301 to the apex, reproducing the documented blocker.
+The existing rule was corrected to exclude only the ACME path prefix. Fresh
+HTTP/HTTPS challenge probes now return 404 without Location, while the normal
+www blog still returns the expected 301 with query. A new DNS verification was
+requested after that correction. See [Pages HTTP validation](https://developers.cloudflare.com/pages/configuration/debugging-pages/#blocked-http-validation).
+At this checkpoint www still awaits final dashboard confirmation; do not count
+its binding/certificate acceptance complete from ordinary HTTPS alone.
 No build, publisher call, Worker deployment, paid option or hosting retirement
 occurred during this cutover. Public executor and repeatable workflow activation
 remain separate pending items.
