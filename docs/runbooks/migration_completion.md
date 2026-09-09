@@ -42,6 +42,32 @@ Proceed through independent work when a dependency is blocked. A blocked item is
 
 ### September 9 release and deployment follow-up
 
+#### Openings listing repair deployed successfully
+
+Openings web main `3a1ef05` includes listing repair `9a9b023` and a Pages
+credential preflight before dependency installation/build. The preflight checks
+the exact project and production branch, then obtains and discards a short-lived
+upload token without uploading assets. It suppresses response bodies and secrets.
+Local tests/lint passed; the listing build contained 1,007 files. Independent
+review approved both changes. Four local Pages responses matched their original
+listing HTML byte-for-byte; representative entity shells remain unchanged.
+
+One manual standard-runner execution in the public `openings-dev/web` repository,
+[34376067644](https://github.com/openings-dev/web/actions/runs/34376067644),
+completed successfully on September 9, including credential preflight, tests,
+lint, build and Pages deployment. No retry was dispatched. Post-deploy canonical
+checks returned HTTP 200: `/authors/` displayed "Browse jobs by GitHub author",
+`/communities/` displayed "Find jobs by community", and `/users/` and
+`/community/` preserved their intentional page-moved screens. A browser check
+confirmed the author directory with 344 profiles instead of one representative
+profile. Individual entity and complete interactive acceptance remain pending.
+
+Before this deployment, two existing browser sessions showed a job-list load
+error, while a fresh isolated Chromium session loaded the first 20 jobs from
+the current 796-job snapshot successfully. The cause of that discrepancy is
+not established; do not claim this listing-route fix resolves it. The publishing
+Worker was not deployed and its CPU hold remains unchanged.
+
 #### Bounded browser acceptance on canonical domains
 
 Fresh browser checks on September 9 verified these specific interactions:
