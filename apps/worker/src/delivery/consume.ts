@@ -98,6 +98,9 @@ export async function consumeDelivery(
       return;
     }
     const receipt = validateDeliveryReceipt(await resolution.adapter.deliver(context));
+    if (receipt.provider !== resolution.adapter.manifest.name) {
+      throw new Error('Receipt provider does not match delivery adapter');
+    }
     const state = resolution.adapter.manifest.capabilities.asynchronousIngestion
       ? 'processing'
       : 'verified';

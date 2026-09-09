@@ -22,6 +22,29 @@ function states() {
 }
 
 describe('duplicate-safe delivery consumer', () => {
+  it.each([false, true])('rejects a foreign receipt before retention or success (async=%s)', async (asynchronousIngestion) => {
+    const adapter = createFakeAdapter();
+    const foreignReceipt = { provider: 'other.provider', remoteId: 'effect-1', acceptedAt: '2026-09-09T12:00:00.000Z' };
+    const retention = vi.fn().mockResolvedValue({ safeToDelete: true, reason: 'consumed' });
+    const stateStore = states();
+    const commit = vi.spyOn(stateStore, 'commit');
+    await consumer.consumeDelivery({ ...delivery, artifacts: [{
+      id: 'artifact-1', storage: 'r2-temporary', sha256: 'a'.repeat(64),
+      byteSize: 10, mediaType: 'image/png', locator: 'temporary/openings/image',
+    }] }, {
+      registry: createAdapterRegistry([{
+        ...adapter,
+        manifest: { ...adapter.manifest, capabilities: { ...adapter.manifest.capabilities, asynchronousIngestion } },
+        deliver: () => Promise.resolve(foreignReceipt), artifactRetention: retention,
+      }], ['test.fake']),
+      leases: createMemoryLeaseStore(), states: stateStore, now: () => new Date('2026-09-09T12:00:00.000Z'),
+    });
+    expect(stateStore.values).toEqual(['needs_attention']);
+    expect(stateStore.safeArtifacts).toEqual([[]]);
+    expect(retention).not.toHaveBeenCalled();
+    expect(commit.mock.calls[0]?.[4]).toBeUndefined();
+  });
+
   it('passes producer options and logical media to adapters but releases storage IDs', async () => {
     const adapter = createFakeAdapter();
     const validate = vi.spyOn(adapter, 'validate');

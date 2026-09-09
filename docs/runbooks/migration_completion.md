@@ -42,6 +42,20 @@ Proceed through independent work when a dependency is blocked. A blocked item is
 
 ### September 9 release and deployment follow-up
 
+#### Initial provider receipt ownership
+
+Initial delivery now checks that the returned receipt belongs to the resolved
+adapter, matching reconciliation's existing identity boundary. A foreign
+provider receipt previously passed shape validation and could mark synchronous
+work verified, asynchronous work processing, and invoke media-retention release.
+Both paths were reproduced by failing tests before the guard was added. They
+now enter `needs_attention` without retaining the foreign receipt, calling
+retention, or scheduling an automatic retry. Nineteen focused consumer and
+reconciliation tests passed; full validation passed 901 tests across 97 files,
+build, lint, types and secret scanning. Independent review approved the change.
+This closes an internal receipt boundary, not native-provider cutover or public
+media gateway acceptance. No deployment or external provider call was made.
+
 #### Static-site deployment activation gates
 
 #### Current publisher trigger inventory
