@@ -92,6 +92,16 @@ intake-error step (`bridge_platform_media_pending`) and Troco `34345276763`
 failing publication health. Neither run was rerun. Package adoption and media
 retention must not be presented as clearing those existing operational failures.
 
+Trebla package-only main adoption `f33e71d` is based on current remote main
+`8b2490c`; a fresh isolated installation passed all 1,651 tests across 132 files,
+lint, build and all three publication-boundary checks. Equity package-only main
+adoption `6551eec`, based on `0c6c8f8`, passed 381 tests and typecheck after a
+fresh isolated installation. Both change only the dependency declaration and
+lockfile, preserve existing execution/state/credential behavior, and use
+`[skip ci]`. Original local checkouts remain untouched. The larger isolated
+private-state and receipt-projection changes are not included in these package
+adoptions and remain pending separately.
+
 ##### Approved live release completion, September 9
 
 Subsequent full recovery through the actual publisher downloader verified all
