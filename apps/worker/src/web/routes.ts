@@ -26,16 +26,35 @@ export async function handleWebEntityRequest(request: Request, dependencies: Dep
       + `<meta name="twitter:description" content="${escapeHtml(manifest.summary)}">` : '');
   const entityJson = JSON.stringify({ revision: manifest.revision, contentSha256: manifest.contentSha256 })
     .replaceAll('<', '\\u003c');
-  const cleanShell = (await shell.text())
-    .replace(/<link(?=[^>]+rel=["']canonical["'])[^>]*>/giu, '')
-    // The bounded shell may be exported from a different concrete entity. None
-    // of its social metadata or structured data proves identity for this route.
-    .replace(/<meta(?=[^>]+(?:property|name)=["'](?:og|twitter):[^"']+["'])[^>]*>/giu, '')
-    .replace(/<script(?=[^>]+type=["']application\/ld\+json["'])[^>]*>[\s\S]*?<\/script\s*>/giu, '')
-    .replace(/<meta(?=[^>]+name=["']description["'])[^>]*>/giu, '');
-  const html = cleanShell.replace(/<title>[^<]*<\/title>/iu, metadata)
-    .replace('</body>', `<script type="application/json" id="publishing-entity">${entityJson}</script></body>`);
-  return new Response(html, { headers: {
+  let metadataInserted = false;
+  let markerInserted = false;
+  // Native parsing removes stale identity without buffering or modifying bootstrap script bytes.
+  const transformed = new HTMLRewriter()
+    .on('head title', { element(element) { element.remove(); } })
+    .on('head', { element(element) {
+      if (!metadataInserted) element.append(metadata, { html: true });
+      metadataInserted = true;
+    } })
+    .on('link', { element(element) {
+      if (element.getAttribute('rel')?.toLowerCase().split(/\s+/u).includes('canonical')) element.remove();
+    } })
+    .on('meta', { element(element) {
+      const names = [element.getAttribute('name'), element.getAttribute('property')];
+      if (names.some((name) => {
+        const normalized = name?.toLowerCase().trim();
+        return normalized === 'description' || normalized?.startsWith('og:') || normalized?.startsWith('twitter:');
+      })) element.remove();
+    } })
+    .on('script', { element(element) {
+      if (element.getAttribute('type')?.trim().toLowerCase() === 'application/ld+json'
+        || element.getAttribute('id') === 'publishing-entity') element.remove();
+    } })
+    .on('body', { element(element) {
+      if (!markerInserted) element.append(`<script type="application/json" id="publishing-entity">${entityJson}</script>`, { html: true });
+      markerInserted = true;
+    } })
+    .transform(shell);
+  return new Response(transformed.body, { headers: {
     'content-type': 'text/html; charset=utf-8',
     'cache-control': 'public, max-age=60, stale-while-revalidate=300',
     'x-robots-tag': 'noindex, follow',

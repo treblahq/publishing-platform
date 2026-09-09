@@ -1,5 +1,30 @@
 # CPU Incident and Recovery Checkpoint
 
+## September 9 streaming route comparison — local candidate
+
+The candidate replaces the four whole-shell cleanup regex passes and buffered
+text read with native HTMLRewriter. The previous profiler was reused with the
+same cached jobs/authors/communities shells and old compiled route; the candidate
+was freshly bundled. Both variants completed 31 requests per kind locally, with
+expected selected-entity metadata. No Pages fetch, Cloudflare write or public
+load test was performed; runtime outbound requests remained denied.
+
+| Kind | Old local median elapsed ms | Candidate local median elapsed ms | Old cleanup regex leaf samples | Candidate cleanup regex leaf samples |
+| --- | ---: | ---: | ---: | ---: |
+| Jobs | 3.222 | 2.786 | 116 | 0 |
+| Authors | 2.241 | 2.146 | 79 | 0 |
+| Communities | 2.267 | 1.990 | 82 | 0 |
+
+These are local elapsed times and sparse V8 samples, not Cloudflare billable
+CPU or complete native-parser CPU measurements. The 4–14% median elapsed
+improvement is a bounded observation, not a production performance guarantee.
+The comparison does not cover deployed D1/R2, intake, queue or scheduled work.
+The rollout hold remains. Independent specification/security reviews approved
+the change, and full validation passed 1,204 tests across 100 files, build, lint,
+types and secret scanning. The existing router integration assertion now runs
+in native workerd instead of Node, retaining its exact shell-fetch and fake
+Mastodon configuration checks. No production deployment occurred.
+
 ## September 9 local workerd route profile
 
 The actual unchanged `handleWebEntityRequest` was bundled into local workerd

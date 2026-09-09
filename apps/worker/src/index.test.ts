@@ -1,6 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
 import { readFileSync, readdirSync } from 'node:fs';
 import { DatabaseSync, type SQLInputValue } from 'node:sqlite';
+import { build } from 'esbuild';
+import { Miniflare, Response as NativeResponse, convertV4MiniflareOptions } from 'miniflare';
 
 import { createWorker } from './index.js';
 
@@ -8,11 +10,7 @@ describe('worker HTTP router', () => {
   it('serves web entities when Mastodon is configured with a Worker secret', async () => {
     const row = { kind: 'job', entity_id: 'gh_123', revision: 'r1', status: 'active',
       title: 'Engineer', canonical_path: '/jobs/gh_123', content_sha256: 'a'.repeat(64), object_key: 'entity.json' };
-    const statement = { bind: () => statement, first: () => Promise.resolve(row) };
-    const shell = vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('<html><head><title>Shell</title></head><body></body></html>'));
-    try {
-      const response = await createWorker().fetch(new Request('https://worker.test/web/openings/jobs/gh_123'), {
-        LEDGER: { prepare: () => statement }, ARTIFACTS: { head: () => Promise.resolve({ size: 1 }) },
+    const environment = {
         DELIVERY_QUEUE: {}, DELIVERY_DLQ: {},
         CAPACITY_BUDGETS: JSON.stringify({ d1Rows: 55000, queueOperations: 5500, r2Bytes: 5500000000 }),
         ENABLED_ADAPTERS: 'web.r2,social.shadow,social.mastodon',
@@ -21,12 +19,34 @@ describe('worker HTTP router', () => {
           'web.r2': { shellBaseUrl: 'https://openings-dev-web-dfy.pages.dev', canonicalBaseUrl: 'https://openings.dev' },
           'social.mastodon': { baseUrl: 'https://mastodon.social' },
         } }),
-      });
+    };
+    const bundle = await build({ stdin: { resolveDir: import.meta.dirname, loader: 'js', contents: `
+      import { createWorker } from './index.ts';
+      const statement = { bind: () => statement, first: () => Promise.resolve(${JSON.stringify(row)}) };
+      export default { fetch(request) {
+        return createWorker().fetch(request, {
+          ...${JSON.stringify(environment)},
+          LEDGER: { prepare: () => statement }, ARTIFACTS: { head: () => Promise.resolve({ size: 1 }) },
+        });
+      } };` }, bundle: true, write: false, format: 'esm', platform: 'browser', target: 'es2023', external: ['node:*'] });
+    const script = bundle.outputFiles[0]?.text;
+    if (!script) throw new Error('Native router test bundle is missing');
+    const shellCalls: URL[] = [];
+    const native = new Miniflare(convertV4MiniflareOptions({ modules: true, script,
+      compatibilityDate: '2026-09-09', compatibilityFlags: ['nodejs_compat'], cf: false,
+      // Every outbound request terminates at this local fixture; none can reach a provider.
+      outboundService: (request) => {
+        shellCalls.push(new URL(request.url));
+        return new NativeResponse('<html><head><title>Shell</title></head><body></body></html>');
+      },
+    }));
+    try {
+      const response = await native.dispatchFetch('https://worker.test/web/openings/jobs/gh_123');
       expect(response.status).toBe(200);
       expect(await response.text()).toContain('<title>Engineer | openings.dev</title>');
-      expect(shell).toHaveBeenCalledOnce();
-      expect(shell.mock.calls[0]?.[0]).toEqual(new URL('https://openings-dev-web-dfy.pages.dev/route-indexes/jobs/'));
-    } finally { shell.mockRestore(); }
+      expect(shellCalls).toHaveLength(1);
+      expect(shellCalls[0]).toEqual(new URL('https://openings-dev-web-dfy.pages.dev/route-indexes/jobs/'));
+    } finally { await native.dispose(); }
   });
 
   it('keeps liveness independent from every durable binding', async () => {
