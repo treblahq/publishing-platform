@@ -44,6 +44,23 @@ Proceed through independent work when a dependency is blocked. A blocked item is
 
 #### Kako source-bound reconstruction rehearsal
 
+Follow-up isolated the fingerprint inputs changed since candidate registration
+`d81d6a7`: `package-lock.json`, `src/daily-pairs/manifest.ts`,
+`src/daily-pairs/media.ts`, and `src/seasons/companion-schema.ts`. These include
+actual companion scene/timeline validation changes, not only a package release.
+The candidate spans September 7–13, 2026; on September 9 it also fails the
+documented prerequisite that all seven activation dates be future local dates.
+Keep this candidate as historical recovery evidence, not a deployable current
+activation. Do not relabel old dates, hashes or review receipts to pass the gate.
+
+Fresh GitHub secret-name checks confirmed no `PUBLISHING_STATE_TOKEN` on either
+original Trebla or Kako publisher. Their prepared `social-publisher-public`
+repositories are still private and empty. Opening the GitHub fine-grained-token
+creation page reached `Confirm access` for the authenticated owner, requiring
+interactive reauthentication. No token, permission, repository visibility or
+workflow setting was changed. That page was retained for user authentication;
+credential provisioning cannot be claimed complete.
+
 A fresh local registry read validated the reviewed seven-day block and matched
 its source checksum. Reconstruction from the 140 previously recovered private
 assets then failed closed during the real snapshot validator, before publishing
