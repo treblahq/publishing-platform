@@ -26,6 +26,14 @@ function fixture(extra = {}) {
 afterEach(() => { vi.unstubAllEnvs(); for (const directory of directories.splice(0)) rmSync(directory, { recursive: true, force: true }); });
 
 describe('exact public source inventory', () => {
+  it.each(['scripts/render-troco-review-fixture.ts', 'scripts/render-review-fixtures.ts',
+    'src/editorial.fixture.ts', 'src/seed_fixture.json', 'src/Fixture/data.ts'])(
+    'rejects fixture-bearing file names even when committed content passes the secret scan: %s', path => {
+      const input = fixture({ [path]: 'export const editorialDraft = "Unreleased campaign text";' });
+      input.manifest.files = [input.entry(path)];
+      expect(() => auditPublicSnapshot(input)).toThrow('PUBLIC_SNAPSHOT_MANIFEST_INVALID');
+    });
+
   it('reads only a bounded regular manifest and rejects a FIFO without blocking', () => {
     const input = fixture();
     const path = join(input.repositoryRoot, 'manifest.json');

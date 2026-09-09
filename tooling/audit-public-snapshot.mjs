@@ -19,6 +19,7 @@ function allowedPath(path) {
   if (typeof path !== 'string' || path.length > 240 || !/^[a-zA-Z0-9_./-]+$/u.test(path)) return false;
   const segments = path.split('/');
   if (segments.some(part => !part || part === '.' || part === '..' || sensitiveName.test(part)
+    || /(?:^|[-_.])fixtures?(?:[-_.]|$)/iu.test(part)
     || /^(?:fixtures?|testdata|tests?|__tests__|__fixtures__|\.git|\.github)$/iu.test(part))) return false;
   if (/\.(?:test|spec)\./iu.test(path)) return false;
   return rootFiles.has(path) || /^(?:src|scripts)\/.+\.(?:ts|tsx|js|jsx|mjs|cjs|json)$/u.test(path);
