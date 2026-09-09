@@ -18,7 +18,7 @@ Proceed through independent work when a dependency is blocked. A blocked item is
 | 4 | Establish Free execution boundaries | Applicable limits and representative runtime evidence | Pending; historical Worker CPU incident remains unresolved |
 | 5 | Verify shared package | Release identity, package contents and tests verified | Released 0.1.3 checksum/content allowlist and clean Node 20 installation verified; integration acceptance tracked separately |
 | 6 | Complete Trebla private/public split | All state consumers private; clean public executor ready | Partial; isolated implementation exists, not deployed |
-| 7 | Complete Kako private/public split | Inputs, media metadata and operational state remain private | Private-state routing implemented and reviewed on isolated branch; editorial-input separation, token provisioning and cutover pending |
+| 7 | Complete Kako private/public split | Inputs, media metadata and operational state remain private | Private-state and release routing committed to isolated branch; 1,445 tests passed with separate source credentials; editorial-input separation, token provisioning and cutover pending |
 | 8 | Audit public repositories | Selected source/history and workflow permissions reviewed | Partial: read-only selected-code inventory passed for Trebla/Kako; full history, private input and public workflow boundaries remain unapproved |
 | 9 | Verify Openings package integration | Intake, content, duplicate prevention and provider ownership tested | Package adopted; end-to-end acceptance pending |
 | 10 | Verify Troco package integration | Content, media, channels and durable state tested | Package adopted; end-to-end acceptance pending |
@@ -41,6 +41,32 @@ Proceed through independent work when a dependency is blocked. A blocked item is
 ## Fresh evidence: September 8, 2026
 
 ### September 9 release and deployment follow-up
+
+#### Current private-release and Troco diagnostic follow-up
+
+Kako's isolated branch now resolves the original private release repository by
+immutable ID and accepts only its approved current/future names. Preparation uses
+`PUBLISHING_SOURCE_TOKEN` with no executor-token fallback; public verification
+receives no source credential. The 18 release/workflow tests and 43 CLI tests
+passed, and an independent security review found no blockers. The runtime
+compiler identity was regenerated with the existing collector and independently
+matched against the final sources. Full verification passed 1,445 tests with zero
+skips in 982.6 seconds, followed by typecheck, lint and diff checks. The known
+credential-pattern scan also passed. Commit `2ed0c5d` was pushed only to
+`cloudflare-publishing-cutover`; no workflow was dispatched or activated.
+
+Fresh GitHub read-only queries returned the same latest publisher runs recorded
+below. A bounded Buffer read matched all six original Facebook/YouTube IDs for
+September 4–6, each still in `error`. Their recorded cause is unavailable public
+media. Eight distinct exact asset URLs on `trocohq.github.io` currently return
+HEAD 200, expected JPEG/MP4 MIME types and nonzero lengths (68,497–448,550 bytes).
+This is current header availability, not a historical availability guarantee,
+byte-hash validation or proof that Buffer can ingest them now. No state was
+rewritten, error hidden, post edited/retried, workflow run or media redeployed.
+
+The source access setup and activation hold are documented separately in Kako's
+`docs/operations/private_bootstrap_source_access.md`. Source token provisioning,
+private input hydration and public executor cutover remain separate work.
 
 The platform main push succeeded through `427b7f9` after the user's continuation.
 This resolves the previous push blocker, not the runtime deployment gates.
