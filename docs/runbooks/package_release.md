@@ -1,22 +1,30 @@
 # Public package release
 
-## Prepared 0.1.3 candidate (not published)
+## Version 0.1.3 release record
+
+Published September 9, 2026 after official npm login and the separate security-key
+confirmation. The public registry exposes version 0.1.3 with SHA-1
+`08b3fedd9ff0617c5df7d3e403c4fc310d249ca7`, matching the reviewed archive.
+A fresh registry installation under Node 20 verified the publisher and uploader
+exports. Product adoption can now proceed on isolated branches with their normal
+verification gates. No Worker or product deployment accompanied this release.
+
+### Candidate evidence retained
 
 The streamed-upload length fix passed the real local fresh-producer recovery
 rehearsal: deleted source media, zero recovery uploads and one durable publication
 and receipt. Its locally packed archive contains 67 allowlisted files, 24,663
 bytes, SHA-1 `08b3fedd9ff0617c5df7d3e403c4fc310d249ca7`. A clean offline install
 and public exports passed with Node 20. Only local workspace pins are updated;
-do not update product dependencies before registry publication and verification.
-The existing authenticated release/approval gates still apply. No registry
-publication or Worker deployment is represented by this candidate.
+product dependencies were not updated before registry publication and verification.
+The candidate itself did not represent a Worker deployment.
 
 Final candidate verification passed 794 tests across 97 files, lint, typecheck
 and the known credential-pattern scan. Independent metadata review confirmed
 only the intended version/pin changes in the lockfile. On September 9 UTC,
 the read-only npm identity check returned E401 and the UI reported the Mac
-locked. Interactive authentication is required before release; no token or
-passkey step was bypassed.
+locked. Those authentication blockers were subsequently resolved for this release;
+no token or passkey step was bypassed.
 
 The producer-facing API is one public, free npm package. It is the only
 release target:

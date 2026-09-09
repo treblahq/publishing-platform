@@ -44,9 +44,27 @@ Proceed through independent work when a dependency is blocked. A blocked item is
 
 The platform main push succeeded through `427b7f9` after the user's continuation.
 This resolves the previous push blocker, not the runtime deployment gates.
-Official npm web login also completed. Publishing the audited 0.1.3 archive
-requires a separate security-key confirmation and is still pending; do not
-install 0.1.3 into product branches before registry verification.
+Official npm web login and separate publication security-key confirmation also
+completed. The public registry now exposes 0.1.3 with matching SHA-1
+`08b3fedd9ff0617c5df7d3e403c4fc310d249ca7`; a fresh Node 20 registry installation
+passed. Adoption is being verified on the five isolated product branches, without
+changing production mains or dispatching workflows.
+
+Verified isolated adoption of the registry package:
+
+| Product | Branch commit | Local evidence |
+| --- | --- | --- |
+| Troco | `d4a0bb2` | 192 tests, formatting, typecheck and validation (19 campaigns/3 provider contracts) passed using the existing canonical BRAND_ROOT |
+| Equity | `36fbc7e` | 446 tests and typecheck passed; videos and credentials remain local |
+| Openings | `e28f30b` | 27 package tests, 29 artwork tests and 165 contracts passed; four legacy sibling-deploy tests skipped because that checkout is absent |
+
+All three commits were pushed only to their existing integration branches.
+Trebla/Kako dependency changes are still under local validation. Trebla's two
+CLI shadow fixtures referenced the former public-state destination; updating
+them to the existing private-state contract passed 63 focused tests without
+relaxing credential isolation. Two later full-suite tests timed out under
+concurrent local rendering; a bounded-worker rerun keeps the original timeout.
+No successful production deployment or live publisher recovery is claimed here.
 
 Fresh read-only GitHub inspection separates site deployment from publishing:
 
