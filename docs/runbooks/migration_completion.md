@@ -42,6 +42,42 @@ Proceed through independent work when a dependency is blocked. A blocked item is
 
 ### September 9 release and deployment follow-up
 
+#### Kako source-bound reconstruction rehearsal
+
+A fresh local registry read validated the reviewed seven-day block and matched
+its source checksum. Reconstruction from the 140 previously recovered private
+assets then failed closed during the real snapshot validator, before publishing
+an immutable local reference or activating anything. A focused identity check
+confirmed matching pair/date, both source hashes and both compiled-content
+hashes, but a different renderer fingerprint: reviewed `877bf1a9…`, current
+`c6405ca6…`. The renderer fingerprint includes the full package lock as well as
+rendering, rights and other source files. The exact changed inputs have not yet
+been isolated. Do not replace the reviewed fingerprint or weaken validation.
+
+The materializer removed its temporary copied object on failure. Original
+recovered assets remain untouched; only the empty owner-private preparation
+directory remains outside Git. No network download, provider call, operational
+state event or Cloudflare operation occurred. Native reconstruction/current
+renderer acceptance is still pending, separately from verified byte recovery.
+
+#### Openings upstream availability and error-state distinction
+
+After the entity deployment, the existing integrated browser requested the
+public `api/authors/techdyvn.json` artifact directly and received a GitHub raw
+cache error twice: HTTP 503, `Backend.max_conn reached`, Varnish error 54113.
+Fresh isolated Chromium had loaded the same author correctly. This establishes
+an upstream failure in that browser path, not the cause of every earlier
+job-list failure and not a Cloudflare CPU event.
+
+Web branch `fix/listing-indexes` commit `1dfb67d` now distinguishes rejected
+author/community requests from genuine missing profiles using the existing
+localized load-error text and alert semantics. The regression contract failed
+before implementation. Tests, lint, production build and independent review
+passed; local browser checks with intercepted 503 author/community responses
+and a 404 author response verified the distinct states. This secondary change
+is branch-only and was not deployed. It does not repair GitHub availability or
+introduce additional retries, proxy infrastructure or paid services.
+
 #### Openings individual entity identity repaired and deployed
 
 Browser acceptance found that `/authors/techdyvn` displayed `GiovaniPole0`:
