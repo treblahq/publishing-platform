@@ -361,6 +361,27 @@ passed 654 tests before two additional background-error cases, and the final
 focused router suite passed 14 tests with lint/typecheck. Build and secret scan
 also passed. This is not a measured CPU improvement or authorization to deploy.
 
+### Local runtime replay and public snapshot safeguards
+
+Commit `cb10d09` adds an opt-in real Wrangler local-runtime rehearsal using only
+disposable local D1/R2 state, actual migrations and the shadow adapter. A signed
+upload and intake produced one verified receipt. Restarting the Worker against
+the same persisted state and replaying the envelope preserved exactly one
+publication, delivery, receipt, attempt and upload. This proves Worker-restart
+idempotency, not a fresh producer's media recovery or live provider ingestion.
+Nineteen focused tests include interrupt cleanup of detached subprocess groups;
+independent review approved the corrected cleanup behavior. No cloud resource or
+production credential was used.
+
+The new public snapshot inventory requires exact committed paths and SHA256
+hashes. It does not copy files or approve disclosure. Private input directories,
+existing workflows, symlinks, invalid text, known credential patterns and
+oversized content are rejected. Git subprocesses cannot inherit repository
+overrides or fetch promised objects; manifest reads are bounded and reject
+non-regular files. Independent review and 31 focused tests passed. Final combined
+platform verification passed 706 tests across 93 files, lint, typecheck and the
+known credential-pattern scan. Public/private cutovers remain pending.
+
 ### Active-revision concurrency prerequisite
 
 The media-binding investigation reproduced a race in the existing entity store:
