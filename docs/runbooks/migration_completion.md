@@ -16,10 +16,10 @@ Proceed through independent work when a dependency is blocked. A blocked item is
 | 2 | Complete project backups | Missing credentials/configuration saved without overwriting user files | Troco/Openings/Trebla/Kako original repository credentials recovered; local producer backups saved; newer Trebla private-state token backup still pending |
 | 3 | Validate backup security | Owner-only access, integrity, no Git inclusion, transfer cleanup | Completed for recovered files: owner-only permissions, exact inventory and transfer cleanup verified; user files preserved |
 | 4 | Establish Free execution boundaries | Applicable limits and representative runtime evidence | Pending; historical Worker CPU incident remains unresolved |
-| 5 | Verify shared package | Release identity, package contents and tests verified | Verified package 0.1.2 checksum/content allowlist and platform validation; integration acceptance tracked separately |
+| 5 | Verify shared package | Release identity, package contents and tests verified | Released 0.1.3 checksum/content allowlist and clean Node 20 installation verified; integration acceptance tracked separately |
 | 6 | Complete Trebla private/public split | All state consumers private; clean public executor ready | Partial; isolated implementation exists, not deployed |
 | 7 | Complete Kako private/public split | Inputs, media metadata and operational state remain private | Private-state routing implemented and reviewed on isolated branch; editorial-input separation, token provisioning and cutover pending |
-| 8 | Audit public repositories | Selected source/history and workflow permissions reviewed | Pending; original Trebla/Kako histories remain private |
+| 8 | Audit public repositories | Selected source/history and workflow permissions reviewed | Partial: read-only selected-code inventory passed for Trebla/Kako; full history, private input and public workflow boundaries remain unapproved |
 | 9 | Verify Openings package integration | Intake, content, duplicate prevention and provider ownership tested | Package adopted; end-to-end acceptance pending |
 | 10 | Verify Troco package integration | Content, media, channels and durable state tested | Package adopted; end-to-end acceptance pending |
 | 11 | Verify Trebla package integration | Editorial approvals, media and delivery tested | Package adopted; public executor cutover pending |
@@ -54,17 +54,74 @@ Verified isolated adoption of the registry package:
 
 | Product | Branch commit | Local evidence |
 | --- | --- | --- |
-| Troco | `d4a0bb2` | 192 tests, formatting, typecheck and validation (19 campaigns/3 provider contracts) passed using the existing canonical BRAND_ROOT |
+| Troco | `feb5537` | 192 tests, formatting, typecheck and validation (19 campaigns/3 provider contracts) passed using the existing canonical BRAND_ROOT; latest production receipt preserved |
 | Equity | `36fbc7e` | 446 tests and typecheck passed; videos and credentials remain local |
-| Openings | `e28f30b` | 27 package tests, 29 artwork tests and 165 contracts passed; four legacy sibling-deploy tests skipped because that checkout is absent |
+| Openings | `b023c3a` | 27 package tests, 42 artwork/title/state tests and 165 contracts passed with zero skips, after incorporating current main |
+| Trebla | `e6bf778` | 1,781 tests, lint, build and all three publication-boundary checks passed; private-state CLI fixtures corrected in `812b7e6` |
 
-All three commits were pushed only to their existing integration branches.
-Trebla/Kako dependency changes are still under local validation. Trebla's two
-CLI shadow fixtures referenced the former public-state destination; updating
-them to the existing private-state contract passed 63 focused tests without
-relaxing credential isolation. Two later full-suite tests timed out under
-concurrent local rendering; a bounded-worker rerun keeps the original timeout.
+All four product tips were pushed only to their existing integration branches.
+Trebla's two CLI shadow fixtures referenced the former public-state destination;
+updating them to the existing private-state contract retained explicit refusal
+of the broad executor token. Concurrent runs exposed cold-import test timeouts;
+the isolated pipeline tests and subsequent full single-worker suite passed
+without changing timeouts or production code.
+
+Openings initially skipped the sibling-deploy checks. A detached worktree of
+the current legacy deploy (`6b6fd31`) exposed a genuine title-renderer mismatch:
+the integration branch had not incorporated the social-title changes on main.
+Merge `b023c3a` preserves current main through `731354e`, including publication
+receipts, while retaining package 0.1.3. The four formerly skipped checks now
+pass, including byte-identical portable artwork. The legacy deploy's own four
+tests and contract validator also passed; its main was not changed.
+
+Troco merge `feb5537` preserves main's September 5 Instagram delivery receipt
+without resetting Facebook/YouTube failures or repeating a post. The complete
+check and validator passed again after this state-only synchronization.
+
+Kako's initial 1,440-test run had twelve compiler-identity failures, not twelve
+provider errors. Its committed identity intentionally includes package.json
+and the dependency lock. The existing collector calculated the new identity
+from all 191 implementation artifacts under Node 24.14.1; updating the generated
+constant restored all sixteen focused identity/locking tests. Final full-suite
+validation is in progress; no safety comparison was removed or weakened.
 No successful production deployment or live publisher recovery is claimed here.
+
+### Additional mobile acceptance and private-boundary findings
+
+At 390 px, the existing Trebla Pages candidate rendered its home, Design and
+Privacy pages without horizontal overflow. Theme switching worked. All six
+lazy social specimens loaded after navigating to the editorial section; an
+unloaded offscreen image was not treated as a broken image. No browser error
+was recorded during these checks.
+
+The existing Kako Pages candidate's mobile menu opened its game submenu and
+navigated to Nina Splash. Portrait orientation displayed its rotate-device
+guard; at 844 x 390 the game started, muted and paused correctly. These checks
+do not certify every game or external music/video provider and do not change
+DNS, hosting or deployment ownership.
+
+Read-only Kako source inventory found 299 tracked asset files and 349 content
+files. Moving the state branch alone cannot make this history safe to publish.
+In addition, `src/daily-pairs/bootstrap-release.ts` verifies and addresses only
+the current private repository name, while `scripts/bootstrap-pair-media.ts`
+uses the executor token for release downloads and reads private configuration
+from the executor checkout. Future rename-safe release access and private input
+hydration must preserve immutable repository identity, byte hashes, draft
+release checks and retention. No rename or visibility change was attempted.
+
+The existing read-only `audit-public-snapshot.mjs` verified selected committed
+source/scripts against exact SHA256 and the known credential-pattern scanner:
+
+| Repository snapshot | Selected files | Bytes | Excluded files |
+| --- | --- | --- | --- |
+| Trebla `e6bf7783330e21117a1cc46b67d8f063c5f5173c` | 150 | 1,188,887 | 261 |
+| Kako `accf1c7c846b0a673298aa299ac3bab346aaf16e` | 249 | 1,309,085 | 955 |
+
+Selection excluded tests, fixtures, workflows, sensitive filenames, asset and
+content directories. The audit read committed blobs, not uncommitted package
+updates. Its result is explicitly inventory-only: no export, historical scan,
+license clearance or semantic confidentiality approval. Pattern scanning alone
+does not prove that code is safe to publish. Both original histories stay private.
 
 Fresh read-only GitHub inspection separates site deployment from publishing:
 
