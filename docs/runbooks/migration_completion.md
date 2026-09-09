@@ -29,7 +29,7 @@ Proceed through independent work when a dependency is blocked. A blocked item is
 | 15 | Validate current site builds | Builds, content, links and legacy entity routes tested | All four local site builds, tests and lint passed; browser acceptance remains |
 | 16 | Prepare Pages deployment configuration | Validated build output and least-privilege deploy configuration | Openings main targets verified production; Trebla/Troco/Kako guarded manual production workflows now integrated into main after fresh local tests/builds; environment protection and package access verification remain before activation |
 | 17 | Validate Cloudflare-hosted sites | Candidate URLs, navigation, redirects and integrations checked | Production Pages candidates: Troco eight redirects/five pages; Trebla ten routes; Kako four redirects/33 routes passed; complete browser/integration acceptance pending |
-| 18 | Complete necessary domain cutovers | DNS/HTTPS checks and rollback evidence | Openings domains bound to Pages; Trebla/Troco/Kako now have canonical Pages production without custom domains; remaining domain cutovers pending |
+| 18 | Complete necessary domain cutovers | DNS/HTTPS checks and rollback evidence | Openings domains bound to Pages; Troco apex and www bound and Active with SSL September 9, six production GET checks passed; Trebla/Kako cutovers pending |
 | 19 | Verify deployment/publication triggers | One execution owner per effect; no duplicate schedules | Current main workflow/API inventory recorded September 9; exclusive provider ownership and cutover gates still pending |
 | 20 | Run non-publishing end-to-end validation | Preparation, package, state, media and recovery evidence | Real local Worker and fresh-producer lost-acceptance recovery passed with zero reuploads and no duplicate rows; product/native-provider and public gateway acceptance remain pending |
 | 21 | Activate one publisher at a time | Bounded real cycle verified before routine enablement | Blocked on safety, cost and integration gates |
@@ -41,6 +41,43 @@ Proceed through independent work when a dependency is blocked. A blocked item is
 ## Fresh evidence: September 8, 2026
 
 ### September 9 release and deployment follow-up
+
+#### Troco production domain cutover
+
+The existing validated production deployment of `troco-frontend-preview` now
+serves `troco.net` and `www.troco.net`. Both custom domains report Active with
+SSL enabled. Fresh HTTPS GET requests to `/`, `/calculate/` and `/blog/` on
+both hosts returned 200 with the expected Pages content. No new build,
+publisher dispatch, Worker deployment or paid option was used.
+
+Only the two web DNS records changed: apex A `212.1.209.199` and www CNAME
+`troco.net` became proxied CNAMEs to `troco-frontend-preview.pages.dev`.
+The refreshed dashboard still contains all 16 records, including unchanged
+mail, DKIM, SPF, DMARC, Resend and managed newsletter Worker records. The
+17-query before/after DNS comparison reported no protected changes; proxied
+web records can retain identical public DNS answers, so the dashboard is the
+evidence of origin replacement. Private snapshots remain outside Git under
+the Troco backup directory. Restore the two original web records for rollback;
+do not cancel Hostinger while email and other dependencies remain.
+
+#### Fenced public-media approval issuance
+
+The internal issuer now creates immutable approvals only with an available
+temporary artifact, unsafe same-tenant reference, enabled tenant and explicit
+adapter control, and a current matching delivery lease. INSERT and exact replay
+share the same eligibility fence. Expiry is bounded locally to seven days and
+does not prove provider ingestion. Neither insertion nor replay acquires or
+releases retention, extends existing approvals or revives tombstoned bytes.
+
+The 101 focused tests cover real cleanup interleavings, failed bucket deletion,
+lost INSERT responses, exact replay, resolver composition and stale ownership.
+Quality review found an input mutation race between the two statements; a
+captured six-field snapshot and two red/green regressions close it. Independent
+specification and quality reviews approved the component. Fresh full validation
+passed 1,091 tests across 99 files, build, lint, typechecking and secret scan.
+No route activation or remote migration occurred. Account allocation
+provisioning, denial costs, native ownership, HTTP integration and Free CPU
+acceptance remain separate open gates.
 
 #### Provider acceptance versus cleanup
 
@@ -60,9 +97,9 @@ approved the boundary. Additional indexed reads are not certified production
 costs. Stuck accepted work may retain storage and must be reconciled; capacity
 pressure must not be resolved by silently deleting still-needed media.
 
-The grant-creation side still needs an atomic available-artifact fence so that
-approval cannot revive an artifact after cleanup claims it. This change closes
-the cleanup side only; no remote migration, provider call or deployment occurred.
+The cleanup change closes the collector side; the subsequent internal issuer
+above closes the atomic grant-creation fence. Neither component has been
+activated remotely, and no provider call occurred during these validations.
 
 #### Finite public-media admission
 
