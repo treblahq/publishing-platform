@@ -18,7 +18,7 @@ Proceed through independent work when a dependency is blocked. A blocked item is
 | 4 | Establish Free execution boundaries | Applicable limits and representative runtime evidence | Pending; historical Worker CPU incident remains unresolved |
 | 5 | Verify shared package | Release identity, package contents and tests verified | Released 0.1.3 checksum/content allowlist and clean Node 20 installation verified; integration acceptance tracked separately |
 | 6 | Complete Trebla private/public split | All state consumers private; clean public executor ready | Partial; isolated implementation exists, not deployed |
-| 7 | Complete Kako private/public split | Inputs, media metadata and operational state remain private | Private-state/release routing committed; source-read token backed up and configured, but draft release access returns 403; state token, editorial separation and cutover pending |
+| 7 | Complete Kako private/public split | Inputs, media metadata and operational state remain private | Private release completed with approval; read-only token verified 140 asset metadata records and one file hash; descriptor adoption, full media recovery, state token, editorial separation and cutover pending |
 | 8 | Audit public repositories | Selected source/history and workflow permissions reviewed | Partial: read-only selected-code inventory passed for Trebla/Kako; full history, private input and public workflow boundaries remain unapproved |
 | 9 | Verify Openings package integration | Intake, content, duplicate prevention and provider ownership tested | Package adopted; end-to-end acceptance pending |
 | 10 | Verify Troco package integration | Content, media, channels and durable state tested | Package adopted; end-to-end acceptance pending |
@@ -43,6 +43,32 @@ Proceed through independent work when a dependency is blocked. A blocked item is
 ### September 9 release and deployment follow-up
 
 #### Current private-release and Troco diagnostic follow-up
+
+##### Approved live release completion, September 9
+
+After specific owner approval, release `383205199` was completed at
+`2026-09-09T12:05:07Z`, with `make_latest=false`. Repository ID `1349928184`
+remained private under `turmadokako/social-publisher`; its tag and 140 assets
+were preserved. The main-branch workflow files were checked before mutation:
+none subscribed to release events. The curated publisher remained
+`disabled_manually` afterward, and the latest workflow run remained the
+September 8 run `34261249813`; no new run was observed.
+
+The dedicated source-read token successfully verified exact repository and
+completed-release identity, plus all 140 asset IDs, names, sizes, MIME types and
+uploaded states against the existing descriptor. The smallest asset was fetched
+without forwarding authorization to the GitHub release-assets redirect, bounded
+to its expected 562,766 bytes, and its SHA-256 matched. No media was saved locally.
+This resolves the observed draft-access 403 for this completed release; it does
+not establish integrity of every asset's bytes or full bootstrap readiness.
+
+The production descriptor still uses version one and therefore intentionally
+rejects the newly completed release. Next, adopt the explicit version-two
+descriptor with this exact timestamp in the isolated branch and perform bounded
+full media recovery before any workflow activation. Credentials were not widened;
+no deploy, social post, repository visibility change or Cloudflare operation was
+performed. Earlier notes below describe the preceding local-only checkpoint and
+draft-access failure, not the current remote release state.
 
 Kako commit `9c6f5db` adds explicit version-two descriptors for a completed
 release in the same pinned private repository. Version one remains draft-only;
