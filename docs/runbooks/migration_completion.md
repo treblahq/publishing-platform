@@ -396,7 +396,7 @@ All 511 tests across 88 files, lint, typecheck and build passed. Independent
 review found no blockers. Matching replay, distinct revisions and tenant
 isolation remain covered. This guarantees only active-revision hash consistency,
 not historical revision immutability or stale revision ordering. The immutable
-media binding itself remains pending. No live D1 write, Worker deployment or
+media binding was subsequently implemented locally, as recorded below. No live D1 write, Worker deployment or
 provider call was performed for this change.
 
 ### Troco existing-run diagnosis (September 9 UTC)
@@ -449,6 +449,41 @@ three later signal-scout runs succeeded, which does not imply a successful
 weekly edition or provider delivery. The cap was not relaxed and no private
 heavy workflow was rerun. Kako's recent non-migration publisher executions were
 cancelled; the successful secret-transfer run is not delivery evidence.
+
+### Kako private-state routing evidence
+
+Commit `accf1c7` is pushed only to `cloudflare-publishing-cutover`. The resolver
+checks immutable repository ID `1349928184`, private visibility and the exact
+allowed current/future repository names before all six state checkouts. It uses
+only the dedicated state token, with no broader-token fallback. Response reads
+are bounded to 64 KiB and ten seconds; redirects are rejected. All 1,440 tests,
+typechecking, lint and independent spec/quality reviews passed. This prepares
+routing; it does not provision the token, complete editorial-input separation,
+change visibility or reactivate publishing.
+
+### Atomic capacity rejection and Openings binding evidence
+
+Local commit `5021f47` preserves HTTP 429 retry-later semantics when the existing
+account-global reservation trigger rejects intake after preflight. Eight tests
+cover actual SQLite rollback and bounded error recognition. No accounting limit
+was raised and no publication is accepted in the tested rejected transactions.
+
+Local commit `9d1ace4` adds exact-revision Openings media manifests and migration
+0010. Sixty-eight focused tests cover validation, atomic eligibility, contiguous
+generations, exact replay and latest-only reads. New entity revisions do not
+inherit old media. The store does not acquire retention, issue public grants,
+approve providers or alter source entities. Each accepted generation adds one
+manifest row and its primary-key index entry; exact replay adds no rows.
+Eligibility changing between insertion and confirmation can return rejected
+after insertion, so rejection must not be interpreted as proof of zero writes.
+
+Combined verification passed 783 tests across 96 files, lint, typecheck, build
+and the known credential-pattern scan; independent reviews approved both slices.
+SQLite tests are not deployed D1 concurrency or CPU evidence. Neither migration
+0010 nor these runtime changes have been deployed. The platform push remains
+blocked pending the environment's requested explicit approval; local commits are
+not evidence of remote availability. Grant issuance, native-provider ownership,
+retention coordination, usage admission and activation remain pending.
 
 ### Remaining execution order
 
