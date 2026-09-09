@@ -44,6 +44,22 @@ Proceed through independent work when a dependency is blocked. A blocked item is
 
 #### Current private-release and Troco diagnostic follow-up
 
+Kako commit `9c6f5db` adds explicit version-two descriptors for a completed
+release in the same pinned private repository. Version one remains draft-only;
+version two requires an exact whole-second UTC `releasePublishedAt`, verified
+against remote `published_at`. Repository privacy/identity, asset inventory,
+checksums, bounded transport and descriptor-specific cache checks are unchanged.
+The existing production descriptor and remote draft remain unchanged.
+
+Local verification passed 1,449 tests with zero failures or skips in 910.3
+seconds, followed by typecheck, lint and diff checks. Independent review passed
+23 release/workflow tests and found no defects. The compiler identity matched
+the existing collector, and the known credential-pattern scan passed. These are
+local implementation results, not evidence of live media access. Remote release
+completion still needs specific approval because it changes access for existing
+repository readers and can trigger notifications. No deployment, workflow
+activation, credential expansion or media download was performed in this slice.
+
 The owner generated `kako-publisher-private-source-read` with Contents read and
 required Metadata read, scoped to the original private repository ID 1349928184,
 expiring October 9, 2026. Its owner-only `.env` backup is outside Git at the
