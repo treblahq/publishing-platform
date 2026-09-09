@@ -44,6 +44,32 @@ Proceed through independent work when a dependency is blocked. A blocked item is
 
 #### Current private-release and Troco diagnostic follow-up
 
+##### September 9 DNS acceptance and Openings package main integration
+
+DNS response validation now rejects unsuccessful/malformed status, truncation,
+malformed answers and contradictory NXDOMAIN data. Matching numeric record
+types are selected without relabeling CNAME chains. Requests use a 15-second
+abort signal and a 256 KiB streaming cap; opaque TXT/CAA values remain intact.
+All 57 focused tests and full validation (845 tests across 97 files, build,
+lint, types and secret scanning) passed, followed by independent specification
+and quality reviews. Commit `1f89b8d` contains the guard and verified plan.
+
+Fresh public-DNS baselines were captured at 13:04 UTC for `trocofacil.app`
+(18 record sets), `treb.la` (17), `trebla.com.br` (20), and `turmadokako.com`
+(19). Files are saved exclusively in the respective external project docs
+folders with mode 0600. Queries included supported types from the private UI
+inventories, including mail records. These are public resolver observations,
+not authoritative origin exports or proof of completed DNS propagation. No
+DNS record was changed and no Worker execution was invoked by these queries.
+
+Openings social-publisher main now includes merge `5b61653`: only package.json
+and its lockfile change relative to prior main `c1c9ead`, adopting the verified
+registry package 0.1.3. A clean offline dependency installation followed by
+validation passed 27 platform tests, 42 artwork/title/state tests and 165
+deterministic contracts. The push used `[skip ci]`; no workflow was dispatched.
+This package adoption does not resolve the separate pending media bridge or
+establish end-to-end provider acceptance.
+
 ##### Approved live release completion, September 9
 
 Subsequent full recovery through the actual publisher downloader verified all
