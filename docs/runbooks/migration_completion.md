@@ -40,6 +40,31 @@ Proceed through independent work when a dependency is blocked. A blocked item is
 
 ## Fresh evidence: September 8, 2026
 
+### September 9 release and deployment follow-up
+
+The platform main push succeeded through `427b7f9` after the user's continuation.
+This resolves the previous push blocker, not the runtime deployment gates.
+Official npm web login also completed. Publishing the audited 0.1.3 archive
+requires a separate security-key confirmation and is still pending; do not
+install 0.1.3 into product branches before registry verification.
+
+Fresh read-only GitHub inspection separates site deployment from publishing:
+
+| Component | Latest inspected run | Result |
+| --- | --- | --- |
+| Trebla website | 34065063732, September 6 | Hostinger deployment succeeded |
+| Troco frontend | 34045538571, September 6 | Deployment succeeded |
+| Kako website | 34065064548, September 6 | Deployment succeeded |
+| Openings publisher | 34294030595, September 9 UTC | Failed at preserved intake error; media integration boundary remains |
+| Troco publisher | 34290390212, September 8 | Failed at publication health, not Pages deployment |
+| Trebla signal scout | 34278707896, September 8 | Succeeded; not proof of provider delivery |
+| Kako curated publisher | 34168053935, September 7 | Cancelled; publisher workflow remains manually disabled |
+| Equity | Workflow inventory | Zero registered GitHub Actions workflows |
+
+No inspected run was retried. Successful old site deployments do not establish
+completion of Cloudflare cutover, and cancelled/disabled work must not be called
+a corrected publisher. Keep historical provider failures visible.
+
 The active completion scope is items 1–24. OneSignal is deferred, not silently
 counted as implemented and not a reason to stop the other migration work.
 
